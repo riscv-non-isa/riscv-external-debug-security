@@ -1,0 +1,18 @@
+
+[[chapter1]]
+== Chapter 1. Security requirments for debugging and tracing
+
+The following constrains shall be enforced in debugging and tracing functions:
+
+1. Debug accesses, excluding those from the System Bus Block, should be regulated based on privilege levels. Each debug access should be assigned a privilege level. Less privileged debug accesses should not be able to observe or interrupt the hart when it is running in a higher privilege level. For example, supervisor mode debug privilege should not be able to read/halt the trap handler or context switch rountine in machine mode.
+
+2. Less privileged debug accesses should not be allowed to modify resources that belong to a more privileged level. For instance, supervisor mode debug privilege should not be able to access machine mode CSRs or memory that is granted to machine mode by PMP.
+
+3. Conditional enabling of debug access should be supported. For example, both ROM and Non-ROM can exist in machine mode, but the debugability should be granted differently based on lifecyle.
+
+4. The tracing function shall be enabled/disabled per privilege level of hart. 
+
+5. Memory accesses from the System Bus Block should be regulated by bus initiator protection mechanism.
+
+By enforcing these constraints, the debugging and tracing functions can ensure proper availability and prevent unauthorized access or modification.
+

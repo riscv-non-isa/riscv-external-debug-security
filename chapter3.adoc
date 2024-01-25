@@ -1,0 +1,52 @@
+[[chapter3]]
+== Chapter 3. Debug security enforcement
+
+This chapter describes the security enhancements to Debug Module and Trace Encoder. The external debugger accesses shall be constrained and the trace output shall be clamped when the privilege does not suffice.
+
+=== 3.1 Debug authentication
+
+The authentication mechanisim could be additonally adopted to Debug Module or/and Trace Module which is othogonal to the topic covered in this extension and will not be address in the document.
+
+=== 3.2 Debug security extension discovery 
+
+The debug security extension enforce extra security constrains and bring in non back-compatible changes. The existance of debug security extension could be discover by allsecured/anysecured bits in dmstatus. 
+
+[options="header"]
+|===============================================================================================================================================
+| Field      | Bit | Description                                                                                                | Access | Reset
+| allsecured | 21  | The field is 1 when all currently selected hart are secured and not running in debuggable privilege levels | R    | 0    
+| anysecured | 20  | The field is 1 when any currently selected hart is secured and not running in debuggable privilege levels  | R    | 0    
+|===============================================================================================================================================
+
+=== 3.3 Halt
+
+The hart can only be halted when it is runing in *debuggable privilege level* or less privileged level. Otherwise, the halt request will be pending until the hart meets the aforementioned requirement. Consequently, the halt request may not respond less than one second and this contrained must be relaxed. 
+
+When the machine mode is not allowed to debug, the halt-on-reset operation must fail and set cmderr to 6 (secuirty fault error).
+
+=== 3.4 Reset
+
+Reset operations must be carefully protected against various attack. The RSIC-V Debug Specification defines hartreset and ndmreset operation that will reset the selected harts or reset the whole system (except Debug Module) respectively. Hartreset should be prohibited when machine mode is not allowed to debug. Ndmreset is a sytem level reset which is not associated with hart privilege, thus it shall either not be supported or use a secured method to control its availability. The failed reset operation results in security fault error by setting cmderr to 6.
+
+=== 3.5 Relaxed permission checks
+
+The field relaxedpriv in abstractcs allows relaxed permission checks (e.g. bypassing PMA, PMP, MMU etc.). The relaxation violates the security requirements and the extension mandate the relaxedpriv to be hardwired to 0x0. 
+
+=== 3.6 System bus access 
+
+The system bus access can directly read/write the memory space without involving the hart. The system bus access shall always regulated by bus initiator protection mechanism such as IOPMP, WorldGuard etc. Otherwise, the system bus access should not be implemented. The failed system bus access cause bus security fault error (sberror 6).
+
+> The trusted entity such as RoT should set up IOPMP or equivalent protection before it grants debug access to machine mode. Similarly, machine mode should apply the protection before enable supervisor/hypervisor mode debug.
+
+=== 3.7 Security fault error
+
+A dedicated error code security fault error (cmderr 6) is added in abstractcs.cmderr to indicate any case that violate security rules in hart. The bus security fault error (sberror 6) is added for system bus access.
+
+=== 3.8 Keepalive
+
+The keepalive operation shall only be available when machine mode is allowed to debug.
+
+=== 3.9 Trace
+
+The filtering feature in Trace Encoder can filter the the trace packets according to the hart privilege level. However, the filtering is not protected by any security rules. The extension enforce the trace output being regulated by *traceable privilege level*. The output will be clamped if the hart privilege exceed the *traceable privilege level*.
+

@@ -1,47 +1,128 @@
 [[chapter2]]
-== The Second Chapter
+== Chapter 2. ISA extension Zedsec
 
-. The first item.
+This chapter describes the Zedsec ISA extension, which applies security control on external debugger access. The extension constrains the hart behavior when it responses to the external debugger requests and introduce several mechanisms to manage privilege level based debug policy. 
 
-. The second item.
-+
-.. The first sub item.
+=== 2.1 Debuggable/traceable privilege level
 
-.. The second sub item.
-+
-[CAUTION]
-====
-A moment of caution is required for this block of text must be read and apreciated for its importance.
-====
+The extension pose a constrain for debug and trace according to RISC-V privilege modes. The debuggbale/traceable privilege level are determinedd by sideband signals mdbgen/mtrcen and mseccfg.sdbgen/mseccfg.strcen.
 
-. Yet another item.
+[options="header"]
+|===========================================================
+| mdbgen sigal | mseccfg.sdbgen | debuggable privilege level
+| 0            | 0              | none                      
+| 0            | 1              | sub-machine only          
+| 1            | 0              | all
+| 1            | 1              | all                       
+|===========================================================
 
-. Again, an item.
+[options="header"]
+|==========================================================
+| mtrcen sigal | mseccfg.strcen | traceable privilege level
+| 0            | 0              | none                     
+| 0            | 1              | sub-machine only         
+| 1            | 0              | all             
+| 1            | 1              | all                      
+|==========================================================
 
-.. A multi-line item.
-+
-This item has multiple lines.
-+
-By multiple lines, this is what we mean.
-+
-Seriously, multiple.
+=== 2.2 Debug Control and Status (dcsr, at 0x7b0)
 
-=== An example table
+The hart shall not unconditionally treat an entity with machine mode privilege (or beyand machine mode privilege). The prv and v dcsr is enhanced to grant privilege for debugger accesses. Upon entry into Debug Mode, v and prv are updated with the privilege level the hart was previously in. The memory and CSR accesses issued by abstract commands or program buffer will be treated as they are in privilege of prv and v. The accesses will go through PMA, PMP, MMU and etc., and trap if they violate corresponding rules. The most privileged level can be configured in prv and v is determined by *debuggable privilege level*.
 
-[cols="^1,^1,^1,^1,^3,^3",stripes=even,options="header"]
-|===
-4+|Letters _and_ bits {set:cellbgcolor:green} 2+|A much longer area
-|L|R|W|X|Quarter 1|Quarter 2
-|{set:cellbgcolor:!} 0|0|0|0 2+|Rows alternate colors
-|0|0|0|1|Thing 1|Thing 2
-|1|0|0|0|Thing 3|Thing 4
-|1|1|1|1 2+|Span Thing 1 and 2
-|===
+The dcsr itself is always allowed to access in Debug Mode. It yields security fault error (cmderr 6) when the external debug configure dcsr.prv/dcsr.v with a privilege higher than *debuggable privilege level*.
 
-=== Sub section
+> The external debugger can write prv/v and read back the value to determine maximum debuggable privilege level.  
 
-Diam donec adipiscing tristique risus indexterm:[risus]. Nisl rhoncus mattis rhoncus urna. Egestas egestas fringilla phasellus faucibus scelerisque eleifend donec pretium vulputate. Porta non pulvinar neque laoreet suspendisse interdum consectetur libero id. Massa vitae tortor condimentum lacinia quis vel. Donec ac odio tempor orci. Mi sit amet mauris commodo quis imperdiet massa tincidunt. Quis enim lobortis scelerisque fermentum dui. Lacus viverra vitae congue eu. Sed faucibus turpis in eu mi bibendum neque. Sit amet porttitor eget dolor. Aliquet eget sit amet tellus cras adipiscing enim. Id cursus metus aliquam eleifend mi. Vestibulum lorem sed risus ultricies tristique nulla aliquet.
+Besides, the follwing fields in dcsr are enhanced according to their privilege. 
 
-=== Yet another subsection
+<TBD clarify the RW behavior in details>
+[options="header"]
+|============================================
+| Field    | Accessiblility                          
+| ebreakvs |  VS mode and above
+| ebreakvu |  VU mode and above
+| ebreakm  |  M mode            
+| ebeaks   |  S mode            
+| ebreaku  |  U mode            
+| stepie   |  M mode            
+| stoptime |  M mode            
+| mprven   |  M mode            
+| nmip     |  M mode            
+|============================================
 
-Quam lacus suspendisse faucibus interdum posuere lorem ipsum. Nulla aliquet enim tortor at auctor urna nunc id cursus. Massa massa ultricies mi quis hendrerit dolor magna. Integer enim neque volutpat ac tincidunt. Dolor magna eget est lorem ipsum dolor. Urna neque viverra justo nec. Neque gravida in fermentum et. Fringilla ut morbi tincidunt augue interdum velit euismod. Dolor sit amet consectetur adipiscing elit. Eu facilisis sed odio morbi. In cursus turpis massa tincidunt dui. Orci indexterm:[orci] phasellus egestas tellus rutrum tellus. Semper eget duis at tellus at urna condimentum. Orci porta non pulvinar neque laoreet suspendisse interdum consectetur.
+=== 2.3 Debug PC (dpc, at 0x7b1) and Debug Scratch Register (dscratch0, at 0x7b2; dscratch1, at 0x7b3)
+
+Debug PC (dpc) and Debug Scratch Register (dscratch0, dscratch1) are not restricted by prv and v fields to simplify the architecture.
+
+=== 2.4 Machine Security Configuration (mseccfg, at 0x747 on RV64, 0x747(low 32 bits) and 0x757(high 32 bits) on RV32) 
+
+The supervisor/hypervisor mode debug/trace shall be regulated by machine mode. The **sdbgen** and **strcen** are added as RW field in mseccfg to manage debug policy for supervisor/hypervisor mode.
+
+> The application level debug is mostly achieved by self-hosted debug where the debug policy could be managed underlying OS. Thus, the user level debug management is not covered in this extension. 
+
+=== 2.5 Traps
+
+The extension requires debugger accesses to go through privilege based access control. The accesses might fail when they violate the enforced rules. In such case, the accesses shall stop and not leak any information. Meanwhile cmderr shall be set to 3 (exception).
+
+When the debugger is single stepping through an instruction which traps the hart to higher privilege, the hart must check against *debuggable privilege level* before entering Debug Mode. If the hart is allowed to debug, the hart re-enters Debug Mode after retiring the instruction. Otherwise, the hart continue to execute with pending single step request until the hart becomes debuggable and re-enters Debug Mode. As with the trace 
+
+
+=== 2.6 Triggers 
+
+The triggers are regulated by *debuggable privilege level*. The triggers that enters Debug Mode or start/stop/notify the Trace Encoder will only match or fire when the hart runs in a less prvileged mode than *debuggable privilege level*. The external debugger cannot modified the triggers that are enabled in higher privilege than *debuggable privilege level*. The extension mandates that all pending triggers that enter Debug Mode have to fire and take effect before mode switch to avoid privilege escaltion. 
+
+==== 2.6.2 Trigger chain
+
+The *chain privilege level* of the trigger chain is determined by the highest privilege level among the chain. The whole trigger chain cannot the be modified if the *chain privilege level* is higher than *debuggable privilege level*.
+
+>  This is a trade-off between usability and hardware complexity. The integrity of the trigger chain set by hart need to be assured when external debugger is going to leverage triggers. There might be the case that the triggers are chained up across privilege levels (e.g. from supervisor mode to machine mode), while the external debugger could only acquire supervisor mode privilege. The external debugger should not twist the chain since it might silence or mis-fire the breakpoint exception in machine mode. 
+
+==== 2.6.3 External triggers
+
+The output external trigger follows the same contrains as other trigger which will not match or fire when the hart privilege is higher than *debuggable privilege level*. The input external trigger source (e.g. machine mode performance counter overflow, interrupts etc.) must be protected to avoid information leak. The tmexttrigger.intctl and tmexttrigger.select should be constrained to legal values according to *debuggable privilege level*.
+
+==== 2.5.1 CSR
+
+<TBD clarify R/W behavior when privilege not suffice>
+
+The trigger CSR accessiblity in Debug Mode is defined as the following in order to meet security requirement and not to complicate architecture. 
+
+[options="header"]
+|===========================================================
+| Always allowed in Debug Mode | Access wtih *debuggable privilege level*
+| tselect(0x7a0)               | tcontrol(0x7a5)            
+| tdata1(0x7a1)                | scontext(0x5a8)            
+| tdata2(0x7a2)                | hcontext(0x6a8)            
+| tdata3(0x7a3)                | mcontext(0x7a8)            
+| tinfo(0x7a4)                 | mscontext(0x7aa)           
+|===========================================================
+
+The following fields are redefined for mcontrol, mcontrol6, icount, itrigger, etrigger and tmexttrigger (they are variants of tdata1 at 0x7a1).
+
+[options="header"]
+|============================================================================================================================================================================================================================================================================================================================================
+| Field  | Description                                                                                                                                                                                                                                                                                                     | Access  | Reset 
+| vs     | When set, enable this trigger for corresponding event that are taken from VS mode. The Debug Mode is prohibited to modify the trigger setting when the trigger is enabled for higher privilege than *debuggable privilege level*. This bit is hard-wired to 0 if the hart does not support virtualization mode. | WARL    | 0     
+| vu     | When set, enable this trigger for corresponding event that are taken from VU mode. The Debug Mode is prohibited to modify the trigger setting when the trigger is enabled for higher privilege than *debuggable privilege level*. This bit is hard-wired to 0 if the hart does not support virtualization mode. | WARL    | 0     
+| m      | When set, enable this trigger for corresponding event that are taken from M mode. The Debug Mode is prohibited to modify the trigger setting when the trigger is enabled for higher privilege than *debuggable privilege level*.                                                                                | WARL    | 0     
+| s      | When set, enable this trigger for corresponding event that are taken from S mode. The Debug Mode is prohibited to modify the trigger setting when the trigger is enabled for higher privilege than *debuggable privilege level*. This bit is hard-wired to 0 if the hart does not support S mode.               | WARL    | 0     
+| u      | When set, enable this trigger for corresponding event that are taken from U mode. The Debug Mode is prohibited to modify the trigger setting when the trigger is enabled for higher privilege than *debuggable privilege level*. This bit is hard-wired to 0 if the hart does not support U mode.               | WARL    | 0     
+|============================================================================================================================================================================================================================================================================================================================================
+
+The beneath fields are redefined for tmexttrigger.
+
+|========================================================================================================================================================================================================================================================================
+| Field  | Description                                                                                                                                                                                                                                 | Access  | Reset 
+| intctl | This optional bit, when set, causes this trigger to fire whenever an attached interrupt controller signals a trigger. The legal value must be constrained by *debuggable privilege level* according to the setting of interrupt controller. | WARL    | 0     
+| select | Selects any combination of up to 16 TM external trigger inputs that cause this trigger to fire The legal value must be constrained by *debuggable privilege level* according to trigger input type.                                         | WARL    | 0     
+|========================================================================================================================================================================================================================================================================
+
+<TBD tdata3(textra32,textra64) >
+
+=== 2.7 Sideband signals 
+
+The machine mode debug/trace must be granted by trusted entity such as Root of Trust(RoT). A set of sideband signals mdbgen and mtrcen are required to manage machine mode debug policy. The signals are solely controlled by RoT or Chain of Trust(CoT) entity who is responsible to manage the hart.  
+
+The mdbgen and mtrcen shall be lockable by RoT to avoid that the values are flipped maliciouly. 
+
+> If the machine mode ROM serves as RoT, the ROM itself is responsible to manage mdbgen and mtrcen. The sideband signal could be bundled in a MMIO ouside the hart (e.g. in Debug Module).The physical protections over the signals are implementation-specific and will not be discussed in this document. 
