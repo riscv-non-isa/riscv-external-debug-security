@@ -1,6 +1,6 @@
 
 [[chapter1]]
-== Chapter 1. Security requirments for debugging and tracing
+== Security requirments for debugging and tracing
 
 The following constrains shall be enforced in debugging and tracing functions:
 
