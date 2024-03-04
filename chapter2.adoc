@@ -1,13 +1,13 @@
 [[chapter2]]
-== ISA extension Zedsec
+== Zedsec (ISA extension)
 
 This chapter introduces the Zedsec ISA extension, designed to enhance security by controlling external debugger access. The extension regulates how the hart responds to external debugger requests and apples protection mechanisms to enforce debug policies based on privilege levels.
 
 === Debuggable/traceable privilege level
 
-image::Smsdedbg.png[The debug access control regulation]
+image::new_pic.png[The debug access control regulation]
 
-The extension imposes restrictions on debug and trace capabilities in alignment with RISC-V privilege modes. Debuggable/traceable privilege levels are determined by sideband signals mdbgen/mtrcen and CSR fields mseccfg.sdbgen/mseccfg.strcen. In the absence of the security extension, debug requests are accommodated across all privilege levels. To improve system security, debug access is restricted to instances where the hart's privilege level is equal to or lower than the designated *debuggable privilege level*. This measure prevents unauthorized access to resources allocated to higher privilege levels by the debugger. Similarly, trace capability is limited to the *traceable privilege level*, with trace output being restricted if the hart's privilege level exceeds the *traceable privilege level*.
+The extension imposes restrictions on debug and trace capabilities in alignment with RISC-V privilege modes. Debuggable/traceable privilege levels are determined by input ports mdbgen/mtrcen and CSR fields mseccfg.sdbgen/mseccfg.strcen. In the absence of the security extension, debug requests are accommodated across all privilege levels. To improve system security, debug access is restricted to instances where the hart's privilege level is equal to or lower than the designated *debuggable privilege level*. This measure prevents unauthorized access to resources allocated to higher privilege levels by the debugger. Similarly, trace capability is limited to the *traceable privilege level*, with trace output being restricted if the hart's privilege level exceeds the *traceable privilege level*.
 
 [options="header"]
 |===========================================================
@@ -32,10 +32,23 @@ The privilege level of the hart is determined by code execution, while the debug
 
 === Machine Security Configuration (mseccfg, at 0x747 on RV64, 0x747(low 32 bits) and 0x757(high 32 bits) on RV32) 
 
-The regulation of supervisor/hypervisor mode debug/trace operations will be managed by the machine mode. The **sdbgen** and **strcen** fields have been added as R/W fields in mseccfg to enforce the debug/trace policies for supervisor/hypervisor mode. These fields are only R/W in machine mode.
+[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
+[title="`sdbgen` and `strcen` fields in mseccfg"]
+[id=mseccfg-dt]
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:   4, name: 'WPRP'},
+  {bits:   1, name: 'strcen'},
+  {bits:   1, name: 'sdbgen'},
+  {bits:   26, name: 'WPRP'},
+], config:{lanes: 2, hspace:1024}}
+....
+
+The regulation of supervisor/hypervisor mode debug/trace operations will be managed by the machine mode. The `sdbgen` and `strcen` fields have been added as R/W fields in mseccfg to enforce the debug/trace policies for supervisor/hypervisor mode. These fields are only R/W in machine mode.
 
 [NOTE]
-Application-level debugging is primarily accomplished through self-hostmaked debugging, allowing the management of debug policies at the operating system level. As a result, user-level debugging management is not addressed within this extension.
+Application-level debugging is primarily accomplished through self-hosted debugging, allowing the management of debug policies at the operating system level. As a result, user-level debugging management is not addressed within this extension.
 In scenarios where supervisor mode is bypassed and machine mode directly launches user mode code execution, the supervisor mode runtime must facilitate self-hosted debugging. Otherwise, the use of an external debugger under these circumstances could potentially result in privilege escalation.
 
 === Debug Control and Status (dcsr, at 0x7b0)
@@ -131,4 +144,4 @@ The beneath fields are redefined for tmexttrigger.
 | select | Selects any combination of up to 16 TM external trigger inputs that cause this trigger to fire The legal value must be constrained by *debuggable privilege level* according to trigger input type.                                         | WARL    | 0     
 |========================================================================================================================================================================================================================================================================
 
-<TBD tdata3(textra32,textra64) >
+The textra32, textra64 provides additional filtering capbility for triggers. They are permitted for access in Debug Mode, as they do not affact the trigger firing/matching when triggers are supressed by *debuggable privilege level*.
