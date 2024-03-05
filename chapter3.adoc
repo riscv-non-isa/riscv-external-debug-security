@@ -3,10 +3,11 @@
 
 This chapter outlines the security enhancements implemented in the Debug Module and trace function. Access by external debuggers will be restricted, and trace output will be limited when privilege levels are insufficient.
 
-=== Debug security extension discovery 
+=== External debug security extension discovery 
 
 The External Debug Security Extension imposes additional security constraints and introduces non-backward-compatible changes. The presence of the External Debug Security Extension can be determined by examining the allsecured/anysecured bits in dmstatus.
 
+.The fields in dmstatus for external debug security extension discovery 
 [options="header"]
 |===============================================================================================================================================
 | Field      | Bit | Description                                                                                                | Access | Reset
@@ -20,7 +21,7 @@ Access to machine mode debug/trace functionality must be granted by a trusted en
 
 The mdbgen and mtrcen signals must be lockable by the RoT to prevent unauthorized modification of their values.
 
-The sub-machine mode access control mechanisms are addressed in (<<chapter2>>).
+The sub-machine mode access control mechanisms are addressed in <<chapter2>>.
 
 [NOTE]
 If the machine mode ROM serves as the RoT, the ROM itself is responsible for managing mdbgen and mtrcen. The value of input ports could be bundled in an MMIO (Memory-Mapped I/O) outside the hart, such as in the Debug Module. Physical protections over the signals are implementation-specific and will not be discussed in this document.
@@ -35,15 +36,23 @@ When machine mode is not permitted to engage in debugging, the halt-on-reset ope
 
 Reset operations must be safeguarded against various attacks. The RISC-V Debug Specification defines the hartreset and ndmreset operations, which reset selected harts or the entire system (excluding the Debug Module), respectively. Hartreset should be prohibited when machine mode is not authorized to engage in debugging. Ndmreset is a system-level reset not tied to hart privilege and can only be secured by the system. Thus, it should be disabled.
 
-<add a table to sumarize here>
+=== Keepalive
 
-Operation |  Permit condition | 
-halt |   
-abstract commands |
-hartreset | 
-resethaltreq |
- ndmreset |     
- keepalive |
+The keepalive operation shall only be accessible when machine mode is permitted to engage in debugging.
+
+.Summary of permit condition for debug operations
+[%autowidth]
+[options="header"]
+|============================================================
+| Debug operations   | Permit condition                      
+| abstract commands  | debuggable privilege >= hart privilege
+| halt               | debuggable privilege >= hart privilege
+| hartreset          | debuggable privilege == machine mode  
+| resethaltreq       | debuggable privilege == machine mode  
+| ndmreset           | debuggable privilege == machine mode  
+| keepalive          | debuggable privilege == machine mode  
+|============================================================
+
 
 === Relaxed permission checks
 
@@ -60,12 +69,8 @@ Trusted entities like RoT should configure IOPMP or equivalent protection before
 
 A dedicated error code, security fault error (cmderr 6), is included in abstractcs.cmderr to signal any breaches of security protection linked to hart privilege levels. Additionally, the bus security fault error (sberror 6) is introduced to denote errors related to system bus access.
 
-=== Keepalive
-
-The keepalive operation shall only be accessible when machine mode is permitted to engage in debugging.
-
 === Trace
 
-The trace function might implement filtering feature, which can filter trace packets based on the hart privilege level. However, this filtering lacks protection by any security rules. The extension mandates that the trace output be regulated by the **traceable privilege level**. If the privilege level of the hart exceeds the **traceable privilege level**, the output will be clamped.
+The trace function might implement filtering feature, which can filter trace packets based on the hart privilege level. However, this filtering lacks protection by any security rules. The extension mandates that the trace output be regulated by the **traceable privilege level**. The trace output must be suspended when the hart transitions to a privilege level higher than the **traceable privilege level**. It should only be resumed when the hart returns to a privilege equal or less than **traceable privilege level**.
 
 
