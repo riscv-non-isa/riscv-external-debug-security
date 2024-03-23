@@ -1,0 +1,4 @@
+
+[[threatmodel]]
+== External Debug Security Threat model
+<TBD>
