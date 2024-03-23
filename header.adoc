@@ -1,4 +1,4 @@
-= RISC-V External Eebug Security Extension 
+= RISC-V External Debug Security Extension 
 :docgroup: RISC-V Task Group
 :description: RISC-V External Eebug Security Extension
 :company: RISC-V.org
@@ -61,6 +61,7 @@ include::intro.adoc[]
 include::chapter1.adoc[]
 include::chapter2.adoc[]
 include::chapter3.adoc[]
+include::appendix.adoc[]
 
 // The index must precede the bibliography
 include::index.adoc[]
