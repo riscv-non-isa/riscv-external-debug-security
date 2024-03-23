@@ -1,7 +1,6 @@
-= RISC-V Example Specification Document (Zexmpl)
-Authors: Author 1, Author 2
+= RISC-V External Debug Security Extension 
 :docgroup: RISC-V Task Group
-:description: RISC-V Example Specification Document (Zexmpl)
+:description: RISC-V External Eebug Security Extension
 :company: RISC-V.org
 :revdate: 1/2023
 :revnumber: 1.0
@@ -59,7 +58,10 @@ Copyright 2022 by RISC-V International.
 include::contributors.adoc[]
 
 include::intro.adoc[]
+include::chapter1.adoc[]
 include::chapter2.adoc[]
+include::chapter3.adoc[]
+include::appendix.adoc[]
 
 // The index must precede the bibliography
 include::index.adoc[]

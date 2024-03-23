@@ -1,0 +1,77 @@
+[[dmsext]]
+== Debug Module Security Extension (non-ISA extension)
+
+This chapter outlines the security enhancements implemented in the Debug Module. The debug operations from external debuggers will be prohibited when the debug capability is not allowed by `mdbgen` and `sdbgen`.
+
+The affected debug operations, including:
+
+    - Halt request
+    - Reset request 
+    - Keepalive request 
+    - Abstract commands 
+
+Will be addressed as follows.
+
+=== Debug Module Security Extension Discovery 
+
+The Debug Module Security Extension imposes security constraints and introduces non-backward-compatible changes. The presence of the Debug Module Security Extension can be determined by polling the allsecured/anysecured bits in dmstatus.
+
+[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
+[title="The `allsecured` and `anysecured` fields in dmstatus"]
+[id=dmstatus]
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:   20, name: 'defined in Debug Module'},
+  {bits:   1, name: 'allsecured'},
+  {bits:   1, name: 'anysecured'},
+  {bits:   3, name: 'defined in Debug Module'},
+  {bits:   7, name: '0'},
+], config:{lanes: 3, hspace:1024}}
+....
+
+[options="header"]
+|===============================================================================================================================================
+| Field      | Description                                                                                                | Access | Reset
+| allsecured |  The field is 1 when all currently selected hart are secured and not running in debuggable privilege levels | R    | 0    
+| anysecured |  The field is 1 when any currently selected hart is secured and not running in debuggable privilege levels  | R    | 0    
+|===============================================================================================================================================
+
+=== Halt
+
+The hart can only be halted when it is running in privilege levels specified in <<dbgpriv>>. Otherwise, the halt request will remain pending. Consequently, the response to the external debugger request may take longer than one second, and this constraint must be eliminated.
+
+When machine mode is not permitted (`mdbgen` set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and set cmderr to 6 (security fault error).
+
+=== Reset
+
+The reset operations must be safeguarded against various attacks. The RISC-V Debug Specification defines the hartreset and ndmreset operations, which reset selected harts or the entire system (excluding the Debug Module), respectively. The hartreset operation must be prohibited when machine mode is not allowed to be debugged. The security fault error will be raised if the operation is issued when `mdbgen` is 0. 
+
+The ndmreset operation is a system-level reset not tied to hart privilege levels and can only be secured by the system. Thus, it must be de-featured. Issuing ndmreset operation results in a security fault error when `mdbgen` is 0. 
+
+=== Keepalive
+
+The keepalive operation serves as an optional request for the hart to remain available for debugger. It is only allowed when machine mode is permitted to debug. Otherwise, it causes a security fault error.  
+
+=== Abstract Commands 
+The hart's response to abstract commands is details in <<mdbgctl>> and <<submdbgctl>>. The following subsection delineates the constrains when the Debug Module issues the abstract commands. 
+
+==== Relaxed Permission Check `relaxedpriv`
+
+The field `relaxedpriv` in abstractcs (at 0x16) allows for relaxed permission checks, such as bypassing PMA, PMP, MMU, etc. However, this relaxation violates security requirements, and the extension mandates that `relaxedpriv` be hardwired to 0x0.
+
+==== Address Translation `aamvirtual`  
+
+The field `aamvirtual` in command (at 0x17) determines whether physical or virtual address translation is employed. However, irrespective of the value configured in `aamvirtual`, the extension mandates that memory access addresses are processed as if initiated by the hart in *debug access privilege*.
+
+=== System Bus Access 
+
+System Bus Access enables direct reading/writing of memory space without involving the hart. However, it must always be checked by bus initiator protection mechanisms such as IOPMP, WorldGuard, etc. If these protections are not in place, System Bus Access must not be implemented. Failed system bus access attempts result in a bus security fault error (sberror 6).
+
+[NOTE]
+Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling submachine mode debug. 
+
+=== Security Fault Error Reporting
+
+A dedicated error code, security fault error (cmderr 6), is included in cmderr of abstractcs (at 0x16) to signal any breaches of security enforcement by debug operations. Additionally, the bus security fault error (sberror 6) is introduced in sberror of sbcs (at 0x38) to denote errors related to system bus access.
+
