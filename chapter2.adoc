@@ -15,6 +15,7 @@ By default, the extension forbids the following debug operation in <<dbops>> unl
 
 When the debug operations are not granted, all the above operations issued by Debug Module or trigger will be pending or dropped. The subsequent subsections detail how debug operations are granted. 
 
+[[dbgaccpriv]]
 ==== Debug Access Privilege
 
 The *debug access privilege* is defined as the privilege with which abstract commands or instructions in program buffers access hardware resources such as registers and memory. This privilege operates independently of hart privilege levels and exclusively affects operations within Debug Mode. Memory and register access within Debug Mode are subject to the *debug access privilege*, with all hardware protections, including MMU, PMP, and PMA, checked against it. This privilege is represented by the `prv` and `v` fields in `dcsr`, and it is updated to reflect the hart privilege level upon entering Debug Mode. Each hart has a dedicated *debug access privilege* and it may vary from each other. The permissible privilege levels programmable to `dcsr` in Debug Mode are elaborated in subsequent sections.
@@ -36,7 +37,7 @@ In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug
 
 An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is transmitted to the hart and its corresponding debug access control logic. When mdbgen[i] is set to 1, the debug operations outlined in <<dbops>> are permitted when hart i executes in machine mode. Moreover the following rules apply:
 
-- The *debug access privilege* for the hart can be configured to any privilege level 
+- The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level 
 - If register access without halting the hart is supported, this access carries the privilege of machine mode.
 
 When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for hart i. Any attempt to halt the hart and bring it into Debug Mode will remain pending, and triggers configured to enter Debug Mode will neither fire nor match in machine mode.
@@ -45,7 +46,7 @@ When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for 
 ==== Submachine Mode Debug Control
 The submachine mode debug of hart i is determined by the `sdbgen` field of CSR `mseccfg` within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdbgen and mdbgen[i] is 1.
 
-The legal value of debug access privilege for hart i is solely determined by sdbgen when mdbgen[i] is 0. In the event of sdbgen being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
+The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by sdbgen when mdbgen[i] is 0. In the event of sdbgen being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
 
 If register access without halting the hart is supported, this access bears the privilege of supervisor/hypervisor mode to access the hart when mdbgen[i] is 0 and sdbgen is 1.
 
@@ -104,7 +105,7 @@ The sources of external trigger input (such as machine mode performance counter 
 
 ==== Trigger chain
 
-The privilege level of the trigger chain is determined by the highest privilege level within the chain. The entire trigger chain cannot be modified if the chain privilege level exceeds the *debug access privilege*. 
+The privilege level of the trigger chain is determined by the highest privilege level within the chain. The entire trigger chain cannot be modified if the chain privilege level exceeds the <<dbgaccpriv, debug access privilege>>.
 
 [NOTE]
 This represents a balance between usability and hardware complexity. The integrity of the trigger chain set by the hart must be maintained when an external debugger intends to utilize triggers. There may be instances where the triggers are linked across different privilege levels (e.g., from supervisor mode to machine mode), while the external debugger may only have access to supervisor mode privilege. The external debugger should not alter the chain, because it could suppress or incorrectly raise breakpoint exceptions in machine mode.
