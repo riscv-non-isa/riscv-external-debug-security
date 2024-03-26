@@ -1,4 +1,36 @@
-
 [[threatmodel]]
 == External Debug Security Threat model
-<TBD>
+
+RISC-V defines several privilege levels that are referred to as machine mode (M-mode), supervisor mode (S-mode), user mode (U-mode). Additionally, hypervisor extension changes the supervisor mode into hypervisor-extended supervisor mode (HS-mode) and further introduces virtual supervisor mode (VS-mode) as well as virtual user mode (VU-mode). The availability of privilege levels may vary cross different RISC-V implementations
+
+Numerous Trusted Execution Environment (TEE) architectures leverage the RISC-V privileged software stack. The following <<opmodel>> serves as an illustrative operating model. Within this model, the Trusted Computing Base (TCB) consists of the M-mode secure monitor, and secured partitions, which are prohibited from debugging.
+
+[[opmodel]]
+image::riscv_privilege_modes.png[title="The operating model of RISC-V privilege software stack",align="center"]
+
+The Debug Module and trace module are identified as potential attackers within the scope of this extension. The STRIDE threat model, presented in the <<stridetb>>, illustrates the attack vectors associated with each module. The considered attack scenarios include debuggable partitions targeting the M-mode secure monitor and other secured, non-debuggable partitions. Given that the Debug Module's capabilities is beyond M-mode, it can potentially execute attacks including:
+
+- Spoofing 
+- Tampering
+- Repudiation
+- Information Disclosure
+- Denial of Service
+- Elevation of Privilege
+
+Additionally, the trace module poses a risk of disclosing confidential information. However, the extension outlined in this specification aims to mitigate these attack vectors.
+
+
+[[stridetb]]
+[options="header"]
+.STRIDE threat modeling for debug and trace
+|====================================================================================================
+|            6+^h| Partition -> Secure Monitor   6+^h| Partition -> Partition  
+|              ^h| S ^h| T ^h| R ^h| I ^h| D ^h| E ^h|  S ^h| T ^h| R ^h| I ^h| D ^h| E
+| Debug Module  ^| Y  ^| Y  ^|  Y ^| Y  ^| Y  ^| Y  ^|  Y  ^| Y  ^|  Y ^| Y  ^| Y  ^| 
+| Trace Module  ^|    ^|    ^|    ^| Y  ^|    ^|    ^|     ^|    ^|    ^| Y  ^|    ^| 
+|====================================================================================================
+
+
+
+
+

@@ -58,11 +58,11 @@ The hart's response to abstract commands is details in <<mdbgctl>> and <<submdbg
 
 ==== Relaxed Permission Check `relaxedpriv`
 
-The field `relaxedpriv` in abstractcs (at 0x16) allows for relaxed permission checks, such as bypassing PMA, PMP, MMU, etc. However, this relaxation violates security requirements, and the extension mandates that `relaxedpriv` be hardwired to 0x0.
+The field `relaxedpriv` in abstractcs (at 0x16) allows for relaxed permission checks, such as bypassing PMA, PMP, MMU, etc. However, this relaxation violates security requirements, and the extension mandates that `relaxedpriv` be hardwired to 0.
 
 ==== Address Translation `aamvirtual`  
 
-The field `aamvirtual` in command (at 0x17) determines whether physical or virtual address translation is employed. However, irrespective of the value configured in `aamvirtual`, the extension mandates that memory access addresses are processed as if initiated by the hart in *debug access privilege*.
+The field `aamvirtual` in command (at 0x17) determines whether physical or virtual address translation is employed. However, when `mdbgen` is 0, the extension mandates that `aamvirtual` is hardwire to 1 and memory access addresses are processed as if initiated by the hart in <<dbgaccpriv, debug access privilege>>.
 
 === System Bus Access 
 
