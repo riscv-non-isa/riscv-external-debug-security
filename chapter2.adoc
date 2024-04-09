@@ -24,9 +24,9 @@ In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug
 
 [[maxdbgpriv]]
 [options="header"]
-.Determining maximum debug access privilege with mdbgen and sdbgen
+.Determining maximum debug access privilege with mdbgen and sdedbgalw
 |=========================================
-| mdbgen | sdbgen | Maximum debug privilege 
+| mdbgen | sdedbgalw | Maximum debug privilege 
 | 1      | x      | M                 
 | 0      | 1      | S(HS)             
 | 0      | 0      | n/a               
@@ -44,19 +44,19 @@ When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for 
 
 [[submdbgctl]]
 ==== Submachine Mode Debug Control
-The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<zedseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdbgen and mdbgen[i] is 1.
+The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<zedseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
-The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by sdbgen when mdbgen[i] is 0. In the event of sdbgen being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
+The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
 
-If register access without halting the hart is supported, this access bears the privilege of supervisor/hypervisor mode to access the hart when mdbgen[i] is 0 and sdbgen is 1.
+If register access without halting the hart is supported, this access bears the privilege of supervisor/hypervisor mode to access the hart when mdbgen[i] is 0 and `sdedbgalw` is 1.
 
-Debug operations in all modes are prohibited for hart i when the logical-OR of sdbgen and mdbgen[i] is 0. All halt requests from the Debug Module will remain pending, and triggers configured to enter debug mode will neither match nor fire. The register access without halting is dropped.
+Debug operations in all modes are prohibited for hart i when the logical-OR of `sdedbgalw` and mdbgen[i] is 0. All halt requests from the Debug Module will remain pending, and triggers configured to enter debug mode will neither match nor fire. The register access without halting is dropped.
 
 [[dbgpriv]]
 [options="header"]
 .The debuggable privilege levels per debug controls 
 |============================================
-| mdbgen | sdbgen | Debuggable privilege levels 
+| mdbgen | sdedbgalw | Debuggable privilege levels 
 | 1      | x      | All                      
 | 0      | 1      | All except M             
 | 0      | 0      | n/a                      
@@ -64,21 +64,21 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of s
 
 
 === Trace
-The extension requires that trace availability from each hart is constrained by default. When zdesec is supported, the optional sideband signal to trace encoder, halted, must be implemented for each hart, and this signal must be reset to 1. The halted signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
+The extension requires that trace availability from each hart is constrained by default. When Zedsec is supported, the optional sideband signal to trace encoder, halted, must be implemented for each hart, and this signal must be reset to 1. The halted signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
 
 ==== Machine Mode Trace Control 
 For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the halted signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the halted signal cannot be cleared when the hart operates in machine mode.
 
 ==== Submachine Mode Trace Control 
-The halted signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of strcen and mtrcen[i] is 1, the halted signal is cleared while the hart runs in submachine mode.
+The halted signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the halted signal is cleared while the hart runs in submachine mode.
 
-When both strcen and mtrcen[i] are set to 0, the halted signal cannot be cleared at all.
+When both `sdetrcalw` and mtrcen[i] are set to 0, the halted signal cannot be cleared at all.
 
 [[trcctl]]
 [options="header"]
 .The status of the halted sideband signal across privilege levels
 |===========================================================
-| mtrcen| strcen| Machine mode | Submachine mode
+| mtrcen| sdetrcalw| Machine mode | Submachine mode
 | 1     | x     | halted = 0   | halted = 0     
 | 0     | 1     | halted = 1   | halted = 0     
 | 0     | 0     | halted = 1   | halted = 1     
@@ -92,7 +92,7 @@ The extension requires that all pending triggers intending to enter Debug Mode m
 
 ==== Machine mode accessibility to `dmode` accessibility
  
-The RISC-V Debug Specification defines that the `dmode` field is accessible only in Debug Mode. When this field is set, the trigger is allocated exclusively to Debug Mode, and any write access from the hart are disregarded. However, the Debug Mode exclusive trigger could potentially serve as an attack surface for unauthorized submachine mode software where debugging is forbidden. The extension relaxes the constrain to the `dmode`, allowing it to be R/W in machine mode when mdbgen is set to 0. When mdbgen is set to 0, it remains exclusively accessible within Debug Mode.
+The RISC-V Debug Specification defines that the `dmode` field is accessible only in Debug Mode. When this field is set, the trigger is allocated exclusively to Debug Mode, and any write access from the hart are disregarded. However, the Debug Mode exclusive trigger could potentially serve as an attack surface for unauthorized submachine mode software where debugging is forbidden. The extension relaxes the constrain to the `dmode`, allowing it to be R/W in machine mode when `mdbgen` is set to 0. When `mdbgen` is set to 0, it remains exclusively accessible within Debug Mode.
 
 [NOTE]
 In this definition, machine mode software assumes responsibility for switching the trigger context according to the debug policy enforced for the sub-machine mode. As a result, it maintains a clean trigger context for the sub-machine mode.
@@ -101,7 +101,7 @@ In this definition, machine mode software assumes responsibility for switching t
 
 The external trigger outputs follow the same limitations as other triggers, ensuring they do not fire or match when the privilege level of the hart exceeds the ones specified in <<dbgpriv>>.
 
-The sources of external trigger input (such as machine mode performance counter overflow, interrupts, etc.) require protection to prevent information leakage. The external trigger inputs supported are platform-specific. Therefore, the platform is responsible for enforcing limitations on input sources. As a result, tmexttrigger.intctl and tmexttrigger.select should be restricted to legal values based on `mdbgen` and `sdbgen`. Their definitions are provided in the <<redtmext>> below.
+The sources of external trigger input (such as machine mode performance counter overflow, interrupts, etc.) require protection to prevent information leakage. The external trigger inputs supported are platform-specific. Therefore, the platform is responsible for enforcing limitations on input sources. As a result, tmexttrigger.intctl and tmexttrigger.select should be restricted to legal values based on `mdbgen` and `sdedbgalw`. Their definitions are provided in the <<redtmext>> below.
 
 ==== Trigger chain
 
@@ -178,7 +178,7 @@ Beyond CSR-level accessibility adjustments, the fields within mcontrol, mcontrol
 | vu    | M/S/VS/VU                  
 |====================================
 
-The textra32, textra64 provides additional filtering capability for triggers. They are permitted for access in Debug Mode, as they do not affect the trigger firing/matching as it is constrained by `mdbgen` and `sdbgen`.
+The textra32, textra64 provides additional filtering capability for triggers. They are permitted for access in Debug Mode, as they do not affect the trigger firing/matching as it is constrained by `mdbgen` and `sdedbgalw`.
 
 The `intctl` and `sselect` field within tmexttrigger are redifined as follows. 
 
@@ -188,7 +188,7 @@ The `intctl` and `sselect` field within tmexttrigger are redifined as follows.
 |========================================================================================================================================================================================================================================================================
 | Field  | Description                                                                                                                                                                                                                                 | Access  | Reset 
 | intctl | This optional bit, when set, causes this trigger to fire whenever an attached interrupt controller signals a trigger.  the field is only configurable when `mdbgen` is set to 1. | WLRL    | 0     
-| select | Selects any combination of up to 16 TM external trigger inputs that cause this trigger to fire The legal value must be constrained by `mdbgen` and `sdbgen` according to trigger input type.                                         | WLRL    | 0     
+| select | Selects any combination of up to 16 TM external trigger inputs that cause this trigger to fire The legal value must be constrained by `mdbgen` and `sdedbgalw` according to trigger input type.                                         | WLRL    | 0     
 |========================================================================================================================================================================================================================================================================
 
 [[zedseccsr]]
