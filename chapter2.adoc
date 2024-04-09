@@ -1,7 +1,7 @@
 [[zedsec]]
 == Zedsec (ISA extension)
 
-This chapter introduces the Zedsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement all features to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors. Additionally, it incorporates trace functionality, with its output undergoing check based on hart privilege levels.
+This chapter introduces the Zedsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement all features to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output undergoing check based on hart privilege levels.
 
 === External Debug
 
@@ -64,25 +64,29 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of `
 
 
 === Trace
-The extension requires that trace availability from each hart is constrained by default. When Zedsec is supported, the optional sideband signal to trace encoder, halted, must be implemented for each hart, and this signal must be reset to 1. The halted signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
+The extension requires that trace availability from each hart is constrained by default. When Zedsec is supported, the optional sideband signal to trace encoder, sec_check cite:[etrace], must be implemented for each hart, and this signal must be reset to 1. The sec_check signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
 
 ==== Machine Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the halted signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the halted signal cannot be cleared when the hart operates in machine mode.
+For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the sec_check signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check signal cannot be cleared when the hart operates in machine mode.
 
 ==== Submachine Mode Trace Control 
-The halted signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the halted signal is cleared while the hart runs in submachine mode.
+The sec_check signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check signal is cleared while the hart runs in submachine mode.
 
-When both `sdetrcalw` and mtrcen[i] are set to 0, the halted signal cannot be cleared at all.
+When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check signal cannot be cleared at all.
 
 [[trcctl]]
 [options="header"]
-.The status of the halted sideband signal across privilege levels
+.The status of the sec_check sideband signal across privilege levels
 |===========================================================
 | mtrcen| sdetrcalw| Machine mode | Submachine mode
-| 1     | x     | halted = 0   | halted = 0     
-| 0     | 1     | halted = 1   | halted = 0     
-| 0     | 0     | halted = 1   | halted = 1     
+| 1     | x     | sec_check = 0   | sec_check = 0     
+| 0     | 1     | sec_check = 1   | sec_check = 0     
+| 0     | 0     | sec_check = 1   | sec_check = 1     
 |===========================================================
+
+[NOTE]
+
+The sec_check signal serves as an additional signal for the trace module, indicating that trace output is prohibited due to security controls. Functionally, sec_check behaves identically to the halted signal. Both sec_check and halted signals cannot be active simultaneously. Reserved for future applications, the combined state of [sec_check, halted] as 0b11 remains unutilized. In cases where a trace module lacks support for the sec_check signal, the hart may alternatively toggle the halted signal to restrict trace output.
 
 === Trigger 
 
