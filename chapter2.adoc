@@ -8,7 +8,7 @@ This chapter introduces the Zedsec ISA extension, which extends the ISA section 
 By default, the extension forbids the following debug operation in <<dbops>> unless they are explicitly granted to the external debugger.
 	
 [[dbops]]
-.The debug operations affected by zedsec extension
+.The debug operations affected by Zedsec extension
 * Entering Debug Mode                                                     
 * Executing Program buffer                                                
 * Serving abstract commands (Access Register, Quick Access, Access Memory)
@@ -44,7 +44,7 @@ When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for 
 
 [[submdbgctl]]
 ==== Submachine Mode Debug Control
-The submachine mode debug of hart i is determined by the `sdbgen` field of CSR `mseccfg` within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdbgen and mdbgen[i] is 1.
+The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<zedseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdbgen and mdbgen[i] is 1.
 
 The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by sdbgen when mdbgen[i] is 0. In the event of sdbgen being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
 
@@ -70,7 +70,7 @@ The extension requires that trace availability from each hart is constrained by 
 For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the halted signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the halted signal cannot be cleared when the hart operates in machine mode.
 
 ==== Submachine Mode Trace Control 
-The halted signal for hart i in submachine mode is determined by the strcen field of CSR mseccfg within hart i, alongside mtrcen[i]. When the logical-OR of strcen and mtrcen[i] is 1, the halted signal is cleared while the hart runs in submachine mode.
+The halted signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of strcen and mtrcen[i] is 1, the halted signal is cleared while the hart runs in submachine mode.
 
 When both strcen and mtrcen[i] are set to 0, the halted signal cannot be cleared at all.
 
@@ -86,7 +86,7 @@ When both strcen and mtrcen[i] are set to 0, the halted signal cannot be cleared
 
 === Trigger 
 
-The trigger configured to enter Debug Mode is checked by zedsec extension. The trigger can fire or match in privilege modes outlined in <<dbgpriv>>. 
+The trigger configured to enter Debug Mode is checked by Zedsec extension. The trigger can fire or match in privilege modes outlined in <<dbgpriv>>. 
 
 The extension requires that all pending triggers intending to enter Debug Mode must match or fire before any hart mode switch to prevent privilege escalation.
 
@@ -191,44 +191,8 @@ The `intctl` and `sselect` field within tmexttrigger are redifined as follows.
 | select | Selects any combination of up to 16 TM external trigger inputs that cause this trigger to fire The legal value must be constrained by `mdbgen` and `sdbgen` according to trigger input type.                                         | WLRL    | 0     
 |========================================================================================================================================================================================================================================================================
 
+[[zedseccsr]]
 ==== Zedsec CSR
 
-===== Machine Security Configuration (mseccfg, at 0x747 on RV64, 0x747(low 32 bits) and 0x757(high 32 bits) on RV32) 
+The CSR control knobs in `msdcfg` for submachine mode debug and submachine mode trace are specified in Smsdedbg and Smsdetrc extension respectively in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extension must be implemented to activate security enforcement for debugging and/or tracing.
 
-The fields `sdbgen` and `strcen` are introduce in mseccfg to control debug and trace capbility in submachine modes.
-
-[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="The `sdbgen` and `strcen` fields in mseccfg on RV32"]
-[id=mseccfg-edsec-32]
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:   3, name: 'defined in Smepmp'},
-  {bits:   1, name: 'WPRI'},
-  {bits:   1, name: 'strcen'},
-  {bits:   1, name: 'sdbgen'},
-  {bits:   26, name: 'WPRI'},
-], config:{lanes: 2, hspace:1024}}
-....
-[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="The `sdbgen` and `strcen` fields in mseccfg on RV64"]
-[id=mseccfg-edsec-64]
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:   3, name: 'defined in Smepmp'},
-  {bits:   1, name: 'WPRI'},
-  {bits:   1, name: 'strcen'},
-  {bits:   1, name: 'sdbgen'},
-  {bits:   58, name: 'WPRI'},
-], config:{lanes: 3, hspace:1024}}
-....
-
-[options="header"]
-|==========================================================================================================================================================================================================================
-| Field  | Description                                                                                                                                                                                   | Access  | Reset 
-| sdbgen | 0(disabled): The external debug capbility in submachine mode is solely determined by machine mode control `mdbgen`.  
-1(enable): The external debug capbility in submachine mode is activated. | WARL    | 0     
-| strcen | 0(disabled): The sideband signal halted to trace encoder is determined solely by `mtrcen`.  
-1(enable): The sideband signal halted to trace encoder is set to 0.                               | WARL    | 0     
-|==========================================================================================================================================================================================================================
