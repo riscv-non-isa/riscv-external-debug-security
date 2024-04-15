@@ -64,24 +64,24 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of `
 
 
 === Trace
-The extension requires that trace availability from each hart is constrained by default. When Zedsec is supported, the optional sideband signal to trace encoder, sec_check cite:[etrace], must be implemented for each hart, and this signal must be reset to 1. The sec_check signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
+The extension requires that trace availability from each hart is constrained by default. When Zedsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1. The sec_check[i] signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
 
 ==== Machine Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the sec_check signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check signal cannot be cleared when the hart operates in machine mode.
+For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart operates in machine mode.
 
 ==== Submachine Mode Trace Control 
-The sec_check signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check signal is cleared while the hart runs in submachine mode.
+The sec_check[i] signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in submachine mode.
 
-When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check signal cannot be cleared at all.
+When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot be cleared at all.
 
 [[trcctl]]
 [options="header"]
-.The status of the sec_check sideband signal across privilege levels
+.The status of the sec_check[i] sideband signal across privilege levels
 |===========================================================
 | mtrcen| sdetrcalw| Machine mode | Submachine mode
-| 1     | x     | sec_check = 0   | sec_check = 0     
-| 0     | 1     | sec_check = 1   | sec_check = 0     
-| 0     | 0     | sec_check = 1   | sec_check = 1     
+| 1     | x     | sec_check[i] = 0   | sec_check[i] = 0     
+| 0     | 1     | sec_check[i] = 1   | sec_check[i] = 0     
+| 0     | 0     | sec_check[i] = 1   | sec_check[i] = 1     
 |===========================================================
 
 [NOTE]
