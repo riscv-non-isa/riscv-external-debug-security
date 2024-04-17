@@ -55,9 +55,12 @@ Trusted entities like RoT should configure IOPMP or equivalent protection before
 
 === Security Fault Error Reporting
 
-A dedicated error code, security fault error (cmderr 6), is included in cmderr of abstractcs (at 0x16) to signal any breaches of security enforcement by abstract commands. Additionally, the bus security fault error (sberror 6) is introduced in sberror of sbcs (at 0x38) to denote errors related to system bus access. The error raised by other debug operations which could be applied to multiple harts such as resethaltreq, reset and keepalive can be determined by the fields allsecfault/anysecfault in dmstatus. 
+A dedicated error code, security fault error (cmderr 6), is included in cmderr of abstractcs (at 0x16) to signal any breaches of security enforcement by abstract commands. Additionally, the bus security fault error (sberror 6) is introduced in sberror of sbcs (at 0x38) to denote errors related to system bus access. 
 
-The cmderr and sberror are defined as W1C (writing 1 to every bit clears the field) in RISC-V Debug Specification. Furthermore, any error indicated by allsecfault/anysecfault remains until updated through a successful resethaltreq, reset or keepalive operation. 
+The error raised by other debug operations which could be applied to selected harts such as resethaltreq, reset and keepalive can be identified through the fields allsecfault/anysecfault in dmstatus.  The security fault errors must be detectable prior to any subsequent read of the register responsible for reporting the error. Error statuses are internally maintained for each hart, with the allsecfault/anysecfault fields indicating the error status of the currently selected harts. Any error indicated by allsecfault/anysecfault remains until updated through a successful resethaltreq, reset or keepalive operation. 
+
+[NOTE]
+While the resethaltreq, reset, and keepalive operations can potentially take a significant amount of time to complete depending on the implementation, the error status can be immediately reported via following read of allsecfault/anysecfault if the operation is prohibited. Therefore, if a read of allsecfault/anysecfault indicates no error, it suggests that the operation is allowed and either currently in progress or has been successfully executed.
 
 === Update of Debug Module Status (dmstatus, at 0x11)
 
