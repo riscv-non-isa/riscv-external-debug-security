@@ -1,7 +1,5 @@
 == Contributors
 
-This RISC-V specification has been contributed to directly or indirectly by:
-
 [%hardbreaks]
-* Aote Jin<aotej@nvidia.com>
-* Joe Xie<joxie@nvidia.com>
+
+This RISC-V specification has been contributed to directly or indirectly by (in alphabetical order): Aote Jin (editor), Beeman Strong, Gokhan Kaplayan, Greg Favor, Iain Robertson, Joe Xie (editor), Ravi Sahita, Robert Chyla, Ved Shanbhogue, Vicky Goode
