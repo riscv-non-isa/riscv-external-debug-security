@@ -42,6 +42,9 @@ An input port, named mdbgen[i], is introduced to control the debuggability of ma
 
 When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for hart i. Any attempt to halt the hart and bring it into Debug Mode will remain pending, and triggers configured to enter Debug Mode will neither fire nor match in machine mode.
 
+[NOTE]
+For the homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce unified debug policy across all harts.
+
 [[submdbgctl]]
 ==== Submachine Mode Debug Control
 The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<zedseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
@@ -68,6 +71,9 @@ The extension requires that trace availability from each hart is constrained by 
 
 ==== Machine Mode Trace Control 
 For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart operates in machine mode.
+
+[NOTE]
+For the homogeneous computing system, similarly to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
 
 ==== Submachine Mode Trace Control 
 The sec_check[i] signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in submachine mode.
