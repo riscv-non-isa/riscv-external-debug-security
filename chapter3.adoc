@@ -48,7 +48,7 @@ The field `aamvirtual` in command (at 0x17) determines whether physical or virtu
 System Bus Access enables direct reading/writing of memory space without involving the hart. However, it must always be checked by bus initiator protection mechanisms such as IOPMP, WorldGuard, etc. If these protections are not implemented or not deployed for Debug Module, System Bus Access must not be Supported. Failed system bus access attempts result in a bus security fault error (sberror 6).
 
 [NOTE]
-In scenarios where a Debug Module lacks System Bus Access, memory access by the debugger can be achieved through the use of abstract commands. These commands provide a secure means of accessing memory.
+In scenarios where a Debug Module lacks System Bus Access, memory access by the debugger can be achieved through the use of abstract commands. These commands provide secure means of accessing memory.
 
 [NOTE]
 Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling submachine mode debug. 
