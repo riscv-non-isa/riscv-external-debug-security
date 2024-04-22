@@ -18,6 +18,7 @@ To build the document, you'll need the following tools installed on your system:
 
 * Make
 * asciiDoctor-pdf, asciidoctor-bibtex, asciidoctor-diagram and asciidoctor-mathematical
+* wavedrom
 * Docker
 
 === Cloning the Repository
