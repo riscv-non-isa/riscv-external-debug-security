@@ -1,34 +1,16 @@
 [[threatmodel]]
 == External Debug Security Threat model
 
-RISC-V defines several privilege levels that are referred to as machine mode (M-mode), supervisor mode (S-mode), user mode (U-mode). Additionally, hypervisor extension changes the supervisor mode into hypervisor-extended supervisor mode (HS-mode) and further introduces virtual supervisor mode (VS-mode) as well as virtual user mode (VU-mode). The availability of privilege levels may vary cross different RISC-V implementations
+The growing complexity of modern System-on-Chip (SoC) designs has led to a corresponding increase in the need for effective debugging capabilities. However, the use of debugging functions also introduces potential security vulnerabilities that can be exploited by attackers to gain unauthorized access to sensitive information or perform malicious actions on the system. 
 
-Numerous Trusted Execution Environment (TEE) architectures leverage the RISC-V privileged software stack. The following <<opmodel>> serves as an illustrative operating model. Within this model, the Trusted Computing Base (TCB) consists of the M-mode secure monitor, and secured partitions, which are prohibited from debugging.
+Modern SoC development consists of several different actors who may not trust each other, resulting in the need to isolate actors’ assets during the development and debugging phases. The current RISC-V Debug specification grants external debuggers the highest privilege in the system regardless of the privilege level at which the target system is running. This leads to privilege escalation issues when multiple actors are present. 
 
-[[opmodel]]
-image::riscv_privilege_modes.png[title="The operating model of RISC-V privilege software stack",align="center"]
+For example, the owner of a SoC, who needs to debug their M-mode firmware, may be able to use the external debugger to bypass PMP.L and attack Boot ROM (the SoC creator’s asset).
 
-The Debug Module and trace module are identified as potential attackers within the scope of this extension. The STRIDE threat model, presented in the <<stridetb>>, illustrates the attack vectors associated with each module. The considered attack scenarios include debuggable partitions targeting the M-mode secure monitor and other secured, non-debuggable partitions. Given that the Debug Module's capabilities is beyond M-mode, it can potentially execute attacks including:
+Additionally, RISC-V privilege architecture supports multiple software entities or "supervisor domains" that do not trust each other. The supervisor domains are managed by secure monitor running in M-mode, they are isolated from each other by PMP/IOPMP and they may need different debug policies. The entity that owns secure monitor wants to disable external debug when shipping the secure monitor, however, the entity that owns the supervisor domain needs to enable external debug to develop the supervisor domain. Since the external debugger will be the granted highest privilege in the system, a malicious supervisor domain will be able to compromise M-mode secure monitor with the external debugger.
 
-- Spoofing 
-- Tampering
-- Repudiation
-- Information Disclosure
-- Denial of Service
-- Elevation of Privilege
+This specification defines non-ISA extensions and ISA extensions to address the above security issues in the current RISC-V Debug specification. 
 
-Additionally, the trace module poses a risk of disclosing confidential information. However, the extension outlined in this specification aims to mitigate these attack vectors.
-
-
-[[stridetb]]
-[options="header"]
-.STRIDE threat modeling for debug and trace
-|====================================================================================================
-|            6+^h| Partition -> Secure Monitor   6+^h| Partition -> Partition  
-|              ^h| S ^h| T ^h| R ^h| I ^h| D ^h| E ^h|  S ^h| T ^h| R ^h| I ^h| D ^h| E
-| Debug Module  ^| Y  ^| Y  ^|  Y ^| Y  ^| Y  ^| Y  ^|  Y  ^| Y  ^|  Y ^| Y  ^| Y  ^| 
-| Trace Module  ^|    ^|    ^|    ^| Y  ^|    ^|    ^|     ^|    ^|    ^| Y  ^|    ^| 
-|====================================================================================================
 
 
 
