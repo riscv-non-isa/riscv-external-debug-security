@@ -71,11 +71,11 @@ While the resethaltreq, reset, and keepalive operations can potentially take a s
 ....
 {reg: [
   {bits:   20, name: 'defined in Debug Module'},
-  {bits:   1, name: 'allsecured'},
   {bits:   1, name: 'anysecured'},
+  {bits:   1, name: 'allsecured'},
   {bits:   3, name: 'defined in Debug Module'},
-  {bits:   1, name: 'allsecfault'},
   {bits:   1, name: 'anysecfault'},
+  {bits:   1, name: 'allsecfault'},
   {bits:   5, name: '0'},
 ], config:{lanes: 3, hspace:1024}}
 ....
