@@ -85,8 +85,8 @@ While the resethaltreq, reset, and keepalive operations can potentially take a s
 [options="header"]
 |================================================================================================================================================
 | Field       | Description                                                                                                      | Access | Reset
-| allsecured  | The field is 1 when all currently selected harts implement Zedsec extension                                      | R      | -    
-| anysecured  | The field is 1 when any currently selected hart implements Zedsec extension                                      | R      | -    
+| allsecured  | The field is 1 when all currently selected harts implement Sdsec extension                                      | R      | -    
+| anysecured  | The field is 1 when any currently selected hart implements Sdsec extension                                      | R      | -    
 | allsecfault | The field is 1 when all currently selected harts have raised security fault due to reset or keepalive operation. | R      | -    
 | anysecfault | The field is 1 when any currently selected hart has raised security fault due to reset or keepalive operation.   | R      | -    
 |================================================================================================================================================
