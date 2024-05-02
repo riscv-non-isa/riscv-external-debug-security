@@ -1,14 +1,14 @@
-[[zedsec]]
-== Zedsec (ISA extension)
+[[Sdsec]]
+== Sdsec (ISA extension)
 
-This chapter introduces the Zedsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement all features to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output undergoing check based on hart privilege levels.
+This chapter introduces the Sdsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement all features to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output undergoing check based on hart privilege levels.
 
 === External Debug
 
 By default, the extension forbids the following debug operation in <<dbops>> unless they are explicitly granted to the external debugger.
 	
 [[dbops]]
-.The debug operations affected by Zedsec extension
+.The debug operations affected by Sdsec extension
 * Entering Debug Mode                                                     
 * Executing Program buffer                                                
 * Serving abstract commands (Access Register, Quick Access, Access Memory)
@@ -47,7 +47,7 @@ For the homogeneous computing system, the implementation can consolidate all mdb
 
 [[submdbgctl]]
 ==== Submachine Mode Debug Control
-The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<zedseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
+The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
 The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
 
@@ -67,7 +67,7 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of `
 
 
 === Trace
-The extension requires that trace availability from each hart is constrained by default. When Zedsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1. The sec_check[i] signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
+The extension requires that trace availability from each hart is constrained by default. When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1. The sec_check[i] signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
 
 ==== Machine Mode Trace Control 
 For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart operates in machine mode.
@@ -76,7 +76,7 @@ For each hart i, an input port, mtrcen[i], controls machine mode trace availabil
 For the homogeneous computing system, similarly to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
 
 ==== Submachine Mode Trace Control 
-The sec_check[i] signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<zedseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in submachine mode.
+The sec_check[i] signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<Sdseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in submachine mode.
 
 When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot be cleared at all.
 
@@ -96,7 +96,7 @@ The sec_check signal serves as an additional signal for the trace module, indica
 
 === Trigger 
 
-The trigger configured to enter Debug Mode is checked by Zedsec extension. The trigger can fire or match in privilege modes outlined in <<dbgpriv>>. 
+The trigger configured to enter Debug Mode is checked by Sdsec extension. The trigger can fire or match in privilege modes outlined in <<dbgpriv>>. 
 
 The extension requires that all pending triggers intending to enter Debug Mode must match or fire before any hart mode switch to prevent privilege escalation.
 
@@ -162,7 +162,7 @@ The extension enforces access control in Debug Mode, which complicates trigger u
 [options="header"]
 .Trigger CSR accessibility in Debug Mode
 |================================================================
-| Register         | w/o Zedsec | w/ Zedsec                      
+| Register         | w/o Sdsec | w/ Sdsec                      
 | tselect(0x7a0)   | Always     | No change                      
 | tdata1(0x7a1)    | Always     | No change                      
 | tdata2(0x7a2)    | Always     | No change                      
@@ -201,8 +201,8 @@ The `intctl` and `sselect` field within tmexttrigger are redifined as follows.
 | select | Selects any combination of up to 16 TM external trigger inputs that cause this trigger to fire The legal value must be constrained by mdbgen[i] and `sdedbgalw` according to trigger input type.                                         | WLRL    | 0     
 |========================================================================================================================================================================================================================================================================
 
-[[zedseccsr]]
-==== Zedsec CSR
+[[Sdseccsr]]
+==== Sdsec CSR
 
 The CSR control knobs in `msdcfg` for submachine mode debug and submachine mode trace are specified in Smsdedbg and Smsdetrc extension respectively in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extension must be implemented to activate security enforcement for debugging and/or tracing.
 
