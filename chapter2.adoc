@@ -65,6 +65,9 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of `
 | 0      | 0      | n/a                      
 |============================================
 
+==== Privilege Changing Instructions
+
+The RISC-V Debug Specification defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the ebreak instruction. In Sdsec, those instructions such as mret, sret, uret, ecall, must either act as NOP or trigger an exception, stopping execution and setting `cmderr` to 3. Notably, these instructions retain their normal functionality during single stepping.
 
 === Trace
 The extension requires that trace availability from each hart is constrained by default. When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1. The sec_check[i] signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
