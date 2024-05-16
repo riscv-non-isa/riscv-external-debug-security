@@ -49,7 +49,10 @@ For the homogeneous computing system, the implementation can consolidate all mdb
 ==== Submachine Mode Debug Control
 The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
-The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will result in a security fault error (cmderr 6).
+The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will either result in an legal sub-machine mode privilege level or trigger a security fault error (cmderr 6).
+
+[NOTE]
+As the `prv` and `v` fields in dcsr are Write Any Read Legal (WARL) fields, the debugger has two options to confirm the success of a prior write: either by reading back the attempted written value or by checking the `cmderr`, depending on the hardware implementation choice.
 
 If register access without halting the hart is supported, this access bears the privilege of supervisor/hypervisor mode to access the hart when mdbgen[i] is 0 and `sdedbgalw` is 1.
 
