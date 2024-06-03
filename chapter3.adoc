@@ -51,7 +51,7 @@ System Bus Access enables direct reading/writing of memory space without involvi
 In scenarios where a Debug Module lacks System Bus Access, memory access by the debugger can be achieved through the use of abstract commands. These commands provide secure means of accessing memory.
 
 [NOTE]
-Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling submachine mode debug. 
+Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling supervisor domain debug. 
 
 === Security Fault Error Reporting
 

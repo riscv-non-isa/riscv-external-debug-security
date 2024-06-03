@@ -29,8 +29,8 @@ When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for 
 For the homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce unified debug policy across all harts.
 
 [[submdbgctl]]
-==== Submachine Mode Debug Control
-The submachine mode debug of hart i is determined by the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in submachine mode only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
+==== Supervisor Domain Debug Control
+The supervisor domain debug of hart i is determined by the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
 The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will either result in an legal sub-machine mode privilege level or trigger a security fault error (cmderr 6).
 
@@ -73,16 +73,16 @@ In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug
 The RISC-V Debug Specification defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the ebreak instruction. In Sdsec, those instructions such as mret, sret, uret, ecall, must either act as NOP or trigger an exception, stopping execution and setting `cmderr` to 3. Notably, these instructions retain their normal functionality during single stepping.
 
 === Trace
-The extension requires that trace availability from each hart is constrained by default. When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1. The sec_check[i] signal is only cleared when trace is permitted by machine mode trace control or submachine mode trace control.
+The extension requires that trace availability from each hart is constrained by default. When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1. The sec_check[i] signal is only cleared when trace is permitted by machine mode trace control or supervisor domain trace control.
 
 ==== Machine Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and submachine mode trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart operates in machine mode.
+For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart operates in machine mode.
 
 [NOTE]
 For the homogeneous computing system, similarly to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
 
-==== Submachine Mode Trace Control 
-The sec_check[i] signal for hart i in submachine mode is determined by the `sdetrcalw` field of CSR <<Sdseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in submachine mode.
+==== Supervisor Domain Mode Trace Control 
+The sec_check[i] signal for hart i in supervisor domain is determined by the `sdetrcalw` field of CSR <<Sdseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in supervisor domain.
 
 When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot be cleared at all.
 
@@ -90,7 +90,7 @@ When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot
 [options="header"]
 .The status of the sec_check[i] sideband signal across privilege levels
 |===========================================================
-| mtrcen| sdetrcalw| Machine mode | Submachine mode
+| mtrcen| sdetrcalw| Machine mode | Supervisor domain
 | 1     | x     | sec_check[i] = 0   | sec_check[i] = 0     
 | 0     | 1     | sec_check[i] = 1   | sec_check[i] = 0     
 | 0     | 0     | sec_check[i] = 1   | sec_check[i] = 1     
@@ -108,10 +108,10 @@ The extension requires that all pending triggers intending to enter Debug Mode m
 
 ==== Machine mode accessibility to `dmode` accessibility
  
-The RISC-V Debug Specification defines that the `dmode` field is accessible only in Debug Mode. When this field is set, the trigger is allocated exclusively to Debug Mode, and any write access from the hart are disregarded. However, the Debug Mode exclusive trigger could potentially serve as an attack surface for unauthorized submachine mode software where debugging is forbidden. The extension relaxes the constrain to the `dmode`, allowing it to be R/W in machine mode when mdbgen[i] is set to 0. When mdbgen[i] is set to 1, it remains exclusively accessible within Debug Mode.
+The RISC-V Debug Specification defines that the `dmode` field is accessible only in Debug Mode. When this field is set, the trigger is allocated exclusively to Debug Mode, and any write access from the hart are disregarded. However, the Debug Mode exclusive trigger could potentially serve as an attack surface for unauthorized supervisor domains where debugging is forbidden. The extension relaxes the constrain to the `dmode`, allowing it to be R/W in machine mode when mdbgen[i] is set to 0. When mdbgen[i] is set to 1, it remains exclusively accessible within Debug Mode.
 
 [NOTE]
-In this definition, machine mode software assumes responsibility for switching the trigger context according to the debug policy enforced for the submachine mode. As a result, it maintains a clean trigger context for the submachine mode.
+In this definition, machine mode software assumes responsibility for switching the trigger context according to the debug policy enforced for the supervisor domain. As a result, it maintains a clean trigger context for the supervisor domain.
 
 ==== External triggers
 
@@ -210,5 +210,5 @@ The `intctl` and `sselect` field within tmexttrigger are redifined as follows.
 [[Sdseccsr]]
 ==== Sdsec CSR
 
-The Sdsec extension does not introduce any new CSR. The CSR control knobs in `msdcfg` for submachine mode debug and submachine mode trace are specified in Smsdedbg and Smsdetrc extension respectively in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extension must be implemented to activate security enforcement for debugging and/or tracing.
+The Sdsec extension does not introduce any new CSR. The CSR control knobs in `msdcfg` for supervisor domain debug and trace are specified in Smsdedbg and Smsdetrc extension respectively in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extension must be implemented to activate security enforcement for debugging and/or tracing.
 
