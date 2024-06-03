@@ -14,7 +14,7 @@ Will be addressed as follows.
 
 === Debug Module Security Extension Discovery 
 
-The Debug Module Security Extension imposes security constraints and introduces non-backward-compatible changes. The presence of the Debug Module Security Extension can be determined by polling the `allsecured/anysecured` bits in dmstatus.
+The Debug Module Security Extension imposes security constraints and introduces non-backward-compatible changes. The presence of the Debug Module Security Extension can be determined by polling the `allsecured/anysecured` bits in dmstatus <<regdmstatus>>.
 
 === Halt
 
@@ -62,7 +62,7 @@ The error raised by other debug operations which could be applied to selected ha
 [NOTE]
 While the resethaltreq, reset, and keepalive operations can potentially take a significant amount of time to complete depending on the implementation, the error status can be immediately reported via following read of `allsecfault/anysecfault` if the operation is prohibited. Therefore, if a read of `allsecfault/anysecfault` indicates no error, it suggests that the operation is allowed and either currently in progress or has been successfully executed.
 
-=== Update of Debug Module Status (dmstatus, at 0x11)
+=== Update of Debug Module Status (dmstatus)
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="The `allsecured` and `anysecured` fields in dmstatus"]

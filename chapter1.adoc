@@ -9,7 +9,7 @@ For example, the owner of a SoC, who needs to debug their M-mode firmware, may b
 
 Additionally, RISC-V privilege architecture supports multiple software entities or "supervisor domains" that do not trust each other. The supervisor domains are managed by secure monitor running in M-mode, they are isolated from each other by PMP/IOPMP and they may need different debug policies. The entity that owns secure monitor wants to disable external debug when shipping the secure monitor, however, the entity that owns the supervisor domain needs to enable external debug to develop the supervisor domain. Since the external debugger will be the granted highest privilege in the system, a malicious supervisor domain will be able to compromise M-mode secure monitor with the external debugger.
 
-This specification defines non-ISA extensions and ISA extensions to address the above security issues in the current RISC-V Debug specification. 
+This specification defines ISA extensions and non-ISA extensions to address the above security issues in the current RISC-V Debug Specification and trace specifications. 
 
 
 

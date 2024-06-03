@@ -1,6 +1,6 @@
-= RISC-V External Debug Security Extension 
+= RISC-V External Debug Security Specification
 :docgroup: RISC-V Task Group
-:description: RISC-V External Eebug Security Extension
+:description: RISC-V External Eebug Security Specification
 :company: RISC-V.org
 :revdate: 1/2023
 :revnumber: 1.0
@@ -52,7 +52,7 @@ Attribution 4.0 International License (CC-BY 4.0). The full
 license text is available at
 https://creativecommons.org/licenses/by/4.0/.
 
-Copyright 2022 by RISC-V International.
+Copyright 2023-2024 by RISC-V International.
 
 [preface]
 include::contributors.adoc[]
