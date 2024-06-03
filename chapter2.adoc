@@ -26,11 +26,11 @@ An input port, named mdbgen[i], is introduced to control the debuggability of ma
 When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for hart i. Any attempt to halt the hart and bring it into Debug Mode will remain pending, and triggers configured to enter Debug Mode will neither fire nor match in machine mode.
 
 [NOTE]
-For the homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce unified debug policy across all harts.
+For a homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce unified debug policy across all harts.
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The supervisor domain debug of hart i is determined by the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i and mdbgen[i]. Debug operations listed in <<dbops>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
+The supervisor domain debug of hart i is determined by both mdbgen[i] and the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i. Debug operations listed in <<dbops>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
 The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will either result in an legal sub-machine mode privilege level or trigger a security fault error (cmderr 6).
 
@@ -43,7 +43,7 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of `
 
 [[dbgpriv]]
 [options="header"]
-.The debuggable privilege levels per debug controls 
+.Debuggable privilege levels per debug controls 
 |============================================
 | mdbgen[i] | sdedbgalw | Debuggable privilege levels 
 | 1      | x      | All                      
@@ -79,7 +79,7 @@ The extension requires that trace availability from each hart is constrained by 
 For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart operates in machine mode.
 
 [NOTE]
-For the homogeneous computing system, similarly to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
+For a homogeneous computing system, similarly to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
 
 ==== Supervisor Domain Mode Trace Control 
 The sec_check[i] signal for hart i in supervisor domain is determined by the `sdetrcalw` field of CSR <<Sdseccsr, msdcfg>> within hart i, alongside mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in supervisor domain.
@@ -88,7 +88,7 @@ When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot
 
 [[trcctl]]
 [options="header"]
-.The status of the sec_check[i] sideband signal across privilege levels
+.Status of the sec_check[i] sideband signal across privilege levels
 |===========================================================
 | mtrcen| sdetrcalw| Machine mode | Supervisor domain
 | 1     | x     | sec_check[i] = 0   | sec_check[i] = 0     
@@ -175,8 +175,8 @@ The extension enforces access control in Debug Mode, which complicates trigger u
 | tdata3(0x7a3)    | Always     | No change                      
 | tinfo(0x7a4)     | Always     | No change                      
 | tcontrol(0x7a5)  | Always     | Debug access privilege = M     
-| scontext(0x5a8)  | Always     | Debug access privilege >= Sub-M
-| hcontext(0x6a8)  | Always     | Debug access privilege >= Sub-M
+| scontext(0x5a8)  | Always     | Debug access privilege >= S
+| hcontext(0x6a8)  | Always     | Debug access privilege >= S
 | mcontext(0x7a8)  | Always     | Debug access privilege = M     
 | mscontext(0x7aa) | Always     | Debug access privilege = M     
 |================================================================
@@ -199,8 +199,9 @@ The textra32, textra64 provides additional filtering capability for triggers. Th
 The `intctl` and `sselect` field within tmexttrigger are redifined as follows. 
 
 [[redtmext]]
-.The redefinition of field `intctl` and `sselect` within tmexttrigger
+.Redefinition of field `intctl` and `sselect` within tmexttrigger
 [options="header"]
+[cols="10%,70%,10%,10%"]
 |========================================================================================================================================================================================================================================================================
 | Field  | Description                                                                                                                                                                                                                                 | Access  | Reset 
 | intctl | This optional bit, when set, causes this trigger to fire whenever an attached interrupt controller signals a trigger.  the field is only configurable when mdbgen[i] is set to 1. | WLRL    | 0     

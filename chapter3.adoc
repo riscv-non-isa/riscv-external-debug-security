@@ -33,7 +33,7 @@ The ndmreset operation is a system-level reset not tied to hart privilege levels
 The keepalive operation serves as an optional request for the hart to remain available for debugger. It is only allowed when machine mode is permitted to debug. Otherwise, it causes a security fault error when mdbgen[i] is 0, indicated by `allsecfault/anysecfault` bits in dmstatus.
 
 === Abstract Commands 
-The hart's response to abstract commands is details in <<mdbgctl>> and <<submdbgctl>>. The following subsection delineates the constrains when the Debug Module issues the abstract commands. 
+The hart's response to abstract commands is detailed in <<mdbgctl>> and <<submdbgctl>>. The following subsection delineates the constraints when the Debug Module issues the abstract commands. 
 
 ==== Relaxed Permission Check `relaxedpriv`
 
@@ -65,7 +65,7 @@ While the resethaltreq, reset, and keepalive operations can potentially take a s
 === Update of Debug Module Status (dmstatus)
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="The `allsecured` and `anysecured` fields in dmstatus"]
+[title="Newly introduced fields in dmstatus"]
 [id=dmstatus]
 [wavedrom, ,svg]
 ....
@@ -81,7 +81,8 @@ While the resethaltreq, reset, and keepalive operations can potentially take a s
 ....
 
 [[regdmstatus]]
-.The updates in dmstatus 
+.Details of newly introduced fields in dmstatus 
+[cols="20%,60%,10%,10%"]
 [options="header"]
 |================================================================================================================================================
 | Field       | Description                                                                                                      | Access | Reset
