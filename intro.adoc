@@ -1,5 +1,21 @@
 [[intro]]
 == Introduction
-Debugging and tracing are essential tools utilized by developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development and testing phases. However, ensuring the security of this interface is of paramount importance to prevent unauthorized access and potential security breaches. Without adequate security measures, these functions can be exploited by malicious actors to gain unauthorized access, compromise system integrity, and extract sensitive information. 
+Debugging and tracing are essential tools utilized by developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing and production phases. However, ensuring the security of this interface is of paramount importance to prevent unauthorized access and potential security breaches. Without adequate security measures, these functions can be exploited by malicious actors to gain unauthorized access, compromise system integrity, and extract sensitive information. 
 
-The extension is complementary to RISC-V Debug Specification and Efficient Trace for RISC-V, ensuring robust security. It comprises of ISA part and non-ISA part. The ISA part defines the enhancement inside the hart while the non-ISA part enforces the security rules on Debug Module.
+The extension is complementary to RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace], ensuring robust security. It comprises of <<Sdsec, Sdsec (ISA extension)>> and <<dmsext, Debug Module Security Extension (non-ISA extension)>>. The Sdsec defines the enhancement inside the hart while the Debug Module Security Extension enforces the security rules on Debug Module and the trace encoder.
+
+
+The following enforcements are applied to the debug specification:
+
+    - *Per-Hart Debug Control Knobs:* Separate control knobs are introduced for each hart, specifically for machine mode and supervisor domains cite:[smmtt].
+    - *Debugging Restrictions:* The external debugger is restricted to halting the hart only when it is in a debug-allowed machine mode program or supervisor domain.
+    - *Operations Constraints:* All debug operations, such as memory accesses and CSR accesses, are constrained by the per-hart control knobs.
+    - *Memory Protection:* The external debugger cannot bypass the memory translation or protection mechanisms enforced on the hart.
+    - *Trigger Constraints:* The firing or matching of triggers is constrained by the per-hart control knobs.
+    - *System Bus Access Protection (Optional):* If implemented, System Bus Access must be protected by a bus initiator protection mechanism, such as IOPMP or WorldGuard.
+
+The following enforcements are applied to the trace specifications:
+
+    - *Per-Hart Trace Control Knobs:* Dedicated per-hart control knobs are introduced for tracing, specifically for machine mode and supervisor domains.
+    - *Trace Encoder Control:* The trace encoder is enabled or disabled by a sideband signal from the hart to the trace encoder, controlled according to the per-hart knobs.
+
