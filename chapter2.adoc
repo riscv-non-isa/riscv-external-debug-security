@@ -1,7 +1,7 @@
 [[Sdsec]]
 == Sdsec (ISA extension)
 
-This chapter introduces the Sdsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement all features to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output constrained based on hart privilege levels.
+This chapter introduces the Sdsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement the features in this chapter to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output constrained based on hart privilege levels.
 
 === External Debug
 
@@ -30,7 +30,7 @@ For a homogeneous computing system, the implementation can consolidate all mdbge
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The supervisor domain debug of hart i is determined by both mdbgen[i] and the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i. Debug operations listed in <<dbops>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
+The supervisor domain cite:[smmtt] debug of hart i is determined by both mdbgen[i] and the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i. Debug operations listed in <<dbops>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
 The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will either result in an legal sub-machine mode privilege level or trigger a security fault error (cmderr 6).
 
@@ -40,9 +40,9 @@ Debug operations in all modes are prohibited for hart i when the logical-OR of `
 
 [[dbgpriv]]
 [options="header"]
-.Debuggable privilege levels per debug controls 
+.Debug allowed privilege levels per debug controls 
 |============================================
-| mdbgen[i] | sdedbgalw | Debuggable privilege levels 
+| mdbgen[i] | sdedbgalw | Debug allowed privilege levels 
 | 1      | x      | All                      
 | 0      | 1      | All except M             
 | 0      | 0      | None                      
@@ -59,7 +59,7 @@ In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug
 [options="header"]
 .Determining maximum debug access privilege with mdbgen[i] and sdedbgalw
 |=========================================
-| mdbgen[i] | sdedbgalw | Maximum debug privilege 
+| mdbgen[i] | sdedbgalw | Maximum debug privilege allowed 
 | 1      | x      | M                 
 | 0      | 1      | S(HS)             
 | 0      | 0      | None               
@@ -74,7 +74,7 @@ As the `prv` and `v` fields in dcsr are Write Any Read Legal (WARL) fields, the 
 
 Memory and CSR accesses initiated by abstract commands or from the program buffer will be treated as if they are at the privilege level held in `prv` and `v`. These accesses will undergo protections of PMA, PMP, MMU, and other mechanisms, triggering traps if they violate corresponding rules. 
  
-==== Privilege Changing Instructions
+==== Privilege Level Changing Instructions
 
 The RISC-V Debug Specification defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the ebreak instruction. In Sdsec, those instructions such as mret, sret, uret, ecall, must either act as NOP or trigger an exception, stopping execution and setting `cmderr` to 3. Notably, these instructions retain their normal functionality during single stepping.
 
@@ -137,17 +137,18 @@ This represents a balance between usability and hardware complexity. The integri
 The extension enforces access control in Debug Mode, which complicates trigger usage within Debug Mode. To mitigate these complications, certain trigger CSRs, tselect, tdata1, tdata2, tdata3, and tinfo are always permitted in Debug Mode, irrespective of the privileges granted to external debuggers. However, the remaining CSRs, tcontrol, scontext, hcontext, mcontext, and mscontext continue to adhere to the debug privileges granted.
 
 [options="header"]
+[cols="20%,20%,60%"]
 .Trigger CSR accessibility in Debug Mode
 |================================================================
 | Register         | without Sdsec | with Sdsec                      
-| tselect(0x7a0)   | Always     | No change                      
-| tdata1(0x7a1)    | Always     | No change                      
-| tdata2(0x7a2)    | Always     | No change                      
-| tdata3(0x7a3)    | Always     | No change                      
-| tinfo(0x7a4)     | Always     | No change                      
+| tselect(0x7a0)   | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
+| tdata1(0x7a1)    | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
+| tdata2(0x7a2)    | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
+| tdata3(0x7a3)    | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
+| tinfo(0x7a4)     | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
 | tcontrol(0x7a5)  | Always     | mdbgen[i] == 1   
-| scontext(0x5a8)  | Always     | No change
-| hcontext(0x6a8)  | Always     | No change
+| scontext(0x5a8)  | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
+| hcontext(0x6a8)  | Always     | mdbgen[i] == 1 \|\| sdedbgalw == 1
 | mcontext(0x7a8)  | Always     | mdbgen[i] == 1 
 | mscontext(0x7aa) | Always     | mdbgen[i] == 1     
 |================================================================
@@ -155,14 +156,15 @@ The extension enforces access control in Debug Mode, which complicates trigger u
 Beyond CSR-level accessibility adjustments, the fields within mcontrol, mcontrol6, icount, itrigger, etrigger, and tmexttrigger—variants of tdata1 located at 0x7a1—are redefined to limit the effective scope of triggers as follows.
 
 [options="header"]
+[cols="40%,60%"]
 .Tdata1 fields accessibility against privilege granted to external debugger
 |====================================
 | Field | Accessibility
 | m     | mdbgen[i] == 1                           
-| s     | No change                       
-| u     | No change                      
-| vs    | No change                     
-| vu    | No change                  
+| s     | mdbgen[i] == 1 \|\| sdedbgalw == 1    
+| u     | mdbgen[i] == 1 \|\| sdedbgalw == 1   
+| vs    | mdbgen[i] == 1 \|\| sdedbgalw == 1  
+| vu    | mdbgen[i] == 1 \|\| sdedbgalw == 1
 |====================================
 
 The textra32, textra64 provides additional filtering capability for triggers. They are permitted for access in Debug Mode, as they do not affect the trigger firing/matching as it is constrained by mdbgen[i] and `sdedbgalw`.
@@ -187,13 +189,14 @@ Beside `prv` and `v`, the fields in dcsr are further constrained based on their 
 
 .Dcsr fields accessibility against privilege granted to external debugger
 [options="header"]
+[cols="40%,60%"]
 |============================================
 | Field    |  Accessibility
-| ebreakvs |  No change
-| ebreakvu |  No change 
+| ebreakvs |  mdbgen[i] == 1 \|\| sdedbgalw == 1
+| ebreakvu |  mdbgen[i] == 1 \|\| sdedbgalw == 1
 | ebreakm  |  mdbgen[i] == 1
-| ebreaks  |  No change
-| ebreaku  |  No change
+| ebreaks  |  mdbgen[i] == 1 \|\| sdedbgalw == 1
+| ebreaku  |  mdbgen[i] == 1 \|\| sdedbgalw == 1
 | stepie   |  mdbgen[i] == 1
 | stoptime |  mdbgen[i] == 1
 | mprven   |  mdbgen[i] == 1

@@ -5,17 +5,22 @@ Debugging and tracing are essential tools utilized by developers to identify and
 The extension is complementary to RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace], ensuring robust security. It comprises of <<Sdsec, Sdsec (ISA extension)>> and <<dmsext, Debug Module Security Extension (non-ISA extension)>>. The Sdsec defines the enhancement inside the hart while the Debug Module Security Extension enforces the security rules on Debug Module and the trace encoder.
 
 
-The following enforcements are applied to the debug specification:
+The following enforcements are applied to the sdext extension in debug specification:
 
-    - *Per-Hart Debug Control Knobs:* Separate control knobs are introduced for each hart, specifically for machine mode and supervisor domains cite:[smmtt].
+    - *Per-Hart Debug Control Knobs (Smsdedbg extension cite:[smmtt]):* Separate control knobs are introduced for each hart, specifically for machine mode and supervisor domains cite:[smmtt].
     - *Debugging Restrictions:* The external debugger is restricted to halting the hart only when it is in a debug-allowed machine mode program or supervisor domain.
     - *Operations Constraints:* All debug operations, such as memory accesses and CSR accesses, are constrained by the per-hart control knobs.
     - *Memory Protection:* The external debugger cannot bypass the memory translation or protection mechanisms enforced on the hart.
+
+    - *System Bus Access Protection:* Optional. If implemented, System Bus Access must be protected by a bus initiator protection mechanism, such as IOPMP or WorldGuard.
+
+The sdtrig extension in the debug specification is extended to apply the enforcement:
+
     - *Trigger Constraints:* The firing or matching of triggers is constrained by the per-hart control knobs.
-    - *System Bus Access Protection (Optional):* If implemented, System Bus Access must be protected by a bus initiator protection mechanism, such as IOPMP or WorldGuard.
 
-The following enforcements are applied to the trace specifications:
+Regarding the trace specifications, these constraints are placed :
 
-    - *Per-Hart Trace Control Knobs:* Dedicated per-hart control knobs are introduced for tracing, specifically for machine mode and supervisor domains.
+    - *Per-Hart Trace Control Knobs (Smsdetrc extension cite:[smmtt]):* Dedicated per-hart control knobs are introduced for tracing, specifically for machine mode and supervisor domains.
+
     - *Trace Encoder Control:* The trace encoder is enabled or disabled by a sideband signal from the hart to the trace encoder, controlled according to the per-hart knobs.
 
