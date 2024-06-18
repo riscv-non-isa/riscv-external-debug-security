@@ -4,22 +4,14 @@ Debugging and tracing are essential tools utilized by developers to identify and
 
 This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
-The following enforcements are applied to the sdext extension in debug specification:
+Below list summarizes changes introduced by external debug specification when implemented:
 
-    - *Per-Hart Debug Control Knobs (Smsdedbg extension cite:[smmtt]):* Separate control knobs are introduced for each hart, specifically for machine mode and supervisor domains cite:[smmtt].
+    - *Per-Hart Debug Control (Smsdedbg extension cite:[smmtt]):* Separate control knobs are introduced for each hart, specifically for machine mode and supervisor domains cite:[smmtt].
     - *Debugging Restrictions:* The external debugger is restricted to halting the hart only when it is in a debug-allowed machine mode program or supervisor domain.
     - *Operations Constraints:* All debug operations, such as memory accesses and CSR accesses, are constrained by the per-hart control knobs.
     - *Memory Protection:* The external debugger cannot bypass the memory translation or protection mechanisms enforced on the hart.
-
     - *System Bus Access Protection:* Optional. If implemented, System Bus Access must be protected by a bus initiator protection mechanism, such as IOPMP or WorldGuard.
-
-The sdtrig extension in the debug specification is extended to apply the enforcement:
-
     - *Trigger Constraints:* The firing or matching of triggers is constrained by the per-hart control knobs.
-
-Regarding the trace specifications, these constraints are placed :
-
     - *Per-Hart Trace Control Knobs (Smsdetrc extension cite:[smmtt]):* Dedicated per-hart control knobs are introduced for tracing, specifically for machine mode and supervisor domains.
-
     - *Trace Encoder Control:* The trace encoder is enabled or disabled by a sideband signal from the hart to the trace encoder, controlled according to the per-hart knobs.
 
