@@ -1,9 +1,8 @@
 [[intro]]
 == Introduction
-Debugging and tracing are essential tools utilized by developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing and production phases. However, ensuring the security of this interface is of paramount importance to prevent unauthorized access and potential security breaches. Without adequate security measures, these functions can be exploited by malicious actors to gain unauthorized access, compromise system integrity, and extract sensitive information. 
+Debugging and tracing are essential tools utilized by developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing and production phases. However, the current RISC-V Debug and trace specification grants the external debugger highest privilege in the system, regardless of the privilege level at which the target system is running. It leads to privilege escalation issues when multiple actors are present. 
 
-The extension is complementary to RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace], ensuring robust security. It comprises of <<Sdsec, Sdsec (ISA extension)>> and <<dmsext, Debug Module Security Extension (non-ISA extension)>>. The Sdsec defines the enhancement inside the hart while the Debug Module Security Extension enforces the security rules on Debug Module and the trace encoder.
-
+This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
 The following enforcements are applied to the sdext extension in debug specification:
 
