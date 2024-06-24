@@ -1,16 +1,7 @@
 [[dmsext]]
 == Debug Module Security Extension (non-ISA extension)
 
-This chapter outlines the security enhancements implemented in the Debug Module. The debug operations from external debuggers will be prohibited when the debug capability is not allowed by mdbgen[i] and `sdedbgalw`.
-
-The affected debug operations, including:
-
-    - Halt request
-    - Reset request 
-    - Keepalive request 
-    - Abstract commands 
-
-Will be addressed as follows.
+This chapter outlines the security enhancements implemented in the Debug Module. It explains how the <<dbops, debug operations>> from external debuggers will be impacted when the external debug is disallowed by <<mdbgctl, Machine Mode Debug Control>> and/or <<submdbgctl, Supervisor Domain Debug Control>>.
 
 === Debug Module Security Extension Discovery 
 
@@ -18,7 +9,7 @@ The Debug Module Security Extension imposes security constraints and introduces 
 
 === Halt
 
-The hart can only be halted when it is running in privilege levels specified in <<dbgpriv>>. Otherwise, the halt request will remain pending. Consequently, the response to the external debugger request may take longer than one second, and this constraint must be eliminated.
+The hart can only be halted and enter debug mode when it is running in privilege levels specified in <<dbgpriv>>. Otherwise, the halt request will remain pending. Consequently, the response to the external debugger request may take longer than one second, and this constraint must be eliminated.
 
 When machine mode is not permitted (mdbgen[i] set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and raise security fault error. The debugger could check the error by polling `allsecfault/anysecfault` bits in dmstatus as specified in <<regdmstatus>>. 
 

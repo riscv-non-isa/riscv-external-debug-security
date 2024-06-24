@@ -1,36 +1,40 @@
 [[Sdsec]]
 == Sdsec (ISA extension)
 
-This chapter introduces the Sdsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement the features in this chapter to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output constrained based on hart privilege levels.
+This chapter introduces the Sdsec ISA extension, which extends the ISA section of The RISC-V Debug Specification. The RISC-V hart must implement the features in this chapter to ensure external debug security. It is designed to enforce access control over operations initiated by the Debug Module, as well as constraints on trigger behaviors cite:[dbgspec]. Additionally, it incorporates trace functionality cite:[etrace], with its output constrained based on hart privilege levels. 
+
+The Sdsec extension exclusively defines the machine mode external debug security control. The Smsdedbg and Smsdetrc extensions cite:[smmtt] comprise the security control for the supervisor domain, expanded by the Sdsec extension with additional details.  
 
 === External Debug
 
-By default, the extension forbids the following debug operation in following table unless they are explicitly granted to the external debugger.
+The debug operations listed below are affected by external debug security specification. Within this context, *debug operations* refer specifically to those listed, while other operations are excluded from this specification. Both ISA extension and non-ISA extension impact those operations. The influence of the Sdsec extension will be detailed in the following and the non-ISA extension <<dmsext>> describes the enforcement within Debug Module.
 	
 [[dbops]]
-.The debug operations affected by Sdsec extension
-* Entering Debug Mode                                                     
+.The debug operations affected by external debug security specification
+* Entering debug mode
 * Executing Program buffer                                                
+* Reset 
+* Keepalive request 
 * Serving abstract commands (Access Register, Quick Access, Access Memory)
 
-When the debug operations are not granted, any action to enter debug mode will be pending while abstract commands and requests to execute program buffer will be dropped. The subsequent subsections detail how debug operations are granted. 
+The Sdsec affects the behavior of the hart when it enters debug mode, executes program buffer and services abstract commands. Specifically, when the external debug are not granted, any action to enter debug mode will be pending while abstract commands (without halting) and requests to execute program buffer will be dropped. The subsequent subsections detail how external debug are granted by <<mdbgctl, Machine Mode Debug Control>> and/or <<submdbgctl, Supervisor Domain Debug Control>>. 
 
 [[mdbgctl]]
 ==== Machine Mode Debug Control
 
-An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is transmitted to the hart and its corresponding debug access control logic. When mdbgen[i] is set to 1, the debug operations outlined in <<dbops>> are permitted when hart i executes in machine mode. Moreover the following rules apply:
+An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is transmitted to the hart and its corresponding debug access control logic. When mdbgen[i] is set to 1, the <<dbops, debug operations>> are permitted when hart i executes in machine mode. Moreover the following rules apply:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level 
 - If register access without halting the hart is supported, this access carries the privilege of machine mode.
 
-When mdbgen[i] is set to 0, debug operations in machine mode are prohibited for hart i. Any attempt to halt the hart and bring it into Debug Mode will remain pending, and triggers configured to enter Debug Mode will neither fire nor match in machine mode.
+When mdbgen[i] is set to 0, any attempt to halt the hart and bring it into Debug Mode will remain pending, and triggers configured to enter Debug Mode will neither fire nor match in machine mode.
 
 [NOTE]
 For a homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce unified debug policy across all harts.
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The supervisor domain cite:[smmtt] debug of hart i is determined by both mdbgen[i] and the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i. Debug operations listed in <<dbops>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
+The supervisor domain cite:[smmtt] debug of hart i is determined by both mdbgen[i] and the `sdedbgalw` field of CSR <<Sdseccsr,msdcfg>> within hart i. The <<dbops, debug operations>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in sdedbgalw and mdbgen[i] is 1.
 
 The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will either result in an legal sub-machine mode privilege level or trigger a security fault error (cmderr 6).
 
