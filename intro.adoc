@@ -4,14 +4,14 @@ Debugging and tracing are essential tools utilized by developers to identify and
 
 This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
-Below list summarizes changes introduced by external debug specification when implemented:
+Below list summarizes changes introduced by external debug specification:
 
-    - *Per-Hart Debug Control (Smsdedbg extension cite:[smmtt]):* Separate control knobs are introduced for each hart, specifically for machine mode and supervisor domains cite:[smmtt].
-    - *Debugging Restrictions:* The external debugger is restricted to halting the hart only when it is in a debug-allowed machine mode program or supervisor domain.
+    - *Per-Hart Debug Controls (Smsdedbg extension cite:[smmtt]):* Introduce per-hart control nobs to control whether external debug is allowed in machine mode and supervisor domains cite:[smmtt]
+    - *Debug Mode:* External debugger can only halt the hart and enter debug mode when the running privilege mode is allowed to be debugged; All operations are executed with <<dbgaccpriv, debug privilege>> instead of machine mode privilege
     - *Operations Constraints:* All debug operations, such as memory accesses and CSR accesses, are constrained by the per-hart control knobs.
-    - *Memory Protection:* The external debugger cannot bypass the memory translation or protection mechanisms enforced on the hart.
-    - *System Bus Access Protection:* Optional. If implemented, System Bus Access must be protected by a bus initiator protection mechanism, such as IOPMP or WorldGuard.
-    - *Trigger Constraints:* The firing or matching of triggers is constrained by the per-hart control knobs.
-    - *Per-Hart Trace Control Knobs (Smsdetrc extension cite:[smmtt]):* Dedicated per-hart control knobs are introduced for tracing, specifically for machine mode and supervisor domains.
+    - *Memory Access:* Memory access from a hart’s point of view using a Program Buffer or the Abstract Access Memory command must be checked by the hart's memory protection mechanisms such as MMU and PMP against <<dbgaccpriv, debug access privilege>>; Memory access from Debug Module using System Bus Access block without involving a hart must be checked by system memory protection mechanism, such as IOPMP or WorldGuard
+    - *Register Access:* Register access using Program Buffer or the Abstract Access Register command works as if the hart is running in <<dbgaccpriv, debug privilege>> instead of machine mode 
+    - *Triggers:* Triggers can only fire or match when external debug is allowed in current privilege
+    - *Per-Hart Trace Control Knobs (Smsdetrc extension cite:[smmtt]):* Introduce per-hart knobs to control whether tracing is allowed in machine mode and supervisor domains cite:[smmtt]
     - *Trace Encoder Control:* The trace encoder is enabled or disabled by a sideband signal from the hart to the trace encoder, controlled according to the per-hart knobs.
 
