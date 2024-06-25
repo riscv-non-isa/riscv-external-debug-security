@@ -2,13 +2,32 @@
 == Introduction
 Debugging and tracing are essential tools utilized by developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing and production phases. However, the current RISC-V Debug and trace specification grants the external debugger highest privilege in the system, regardless of the privilege level at which the target system is running. It leads to privilege escalation issues when multiple actors are present. 
 
-This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current RISC-V Debug Specification cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
-Below list summarizes changes introduced by external debug specification:
+This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
-    - *Per-Hart Debug Control:* Introduce per-hart control nobs to control whether external debug is allowed in machine mode or supervisor domains cite:[smmtt]
-    - *Debug Mode:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; All operations are executed with <<dbgaccpriv, debug privilege>> instead of machine mode privilege
-    - *Memory Access:* Memory access from a hart’s point of view using a Program Buffer or the Abstract Access Memory command must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug privilege>>; Memory access from Debug Module using System Bus Access block without involving a hart must be checked by system memory protection mechanism, such as IOPMP or WorldGuard
-    - *Register Access:* Register access using Program Buffer or the Abstract Access Register command works as if the hart is running in <<dbgaccpriv, debug privilege>> instead of machine mode privilege
-    - *Triggers:* Triggers can only fire or match when external debug is allowed in current privilege
-    - *Per-Hart Trace Control:* Introduce per-hart knobs to control whether tracing is allowed in machine mode and supervisor domains cite:[smmtt]
+Below list summarizes changes introduced by _RISC-V External Debug Security Specification_:
+
+    - *Per-Hart Debug Control:* Introduce per-hart control knobs to control whether external debug is allowed in machine mode and/or supervisor domains cite:[smmtt]
+    - *Debug Mode:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; all operations are executed with <<dbgaccpriv, debug access privilege>> instead of machine mode privilege
+    - *Memory Access:* Memory access from a hart’s point of view using a Program Buffer or the Abstract Command must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege>>; memory access from Debug Module using System Bus Access block without involving a hart must be checked by system memory protection mechanism, such as IOPMP or WorldGuard
+    - *Register Access:* Register access using Program Buffer or the Abstract Command works as if the hart is running in <<dbgaccpriv, debug access privilege>> instead of machine mode privilege
+    - *Triggers:* Triggers (with action=1) can only fire or match when external debug is allowed in current privilege
+    - *Per-Hart Trace Control:* Introduce per-hart knobs to control whether tracing is allowed in machine mode and supervisor domains
+
+=== Terminology
+
+[cols="2*"]
+[cols="20%,80%"]
+|=====================================================================================================================================================
+| Abstract command       | A high-level command in Debug Module used to interact with and control harts                                               
+| Debug Access Privilege | The privilege with which abstract commands or instructions in program buffers access hardware resources                    
+| Debug Mode             | An additional privilege mode to support off-chip debugging                                                                 
+| Hart                   | A RISC-V hardware thread                                                                                                   
+| IOPMP                  | Input-Output Physical Memory Protection unit                                                                               
+| Machine mode           | The highest privileged mode in the RISC-V privilege model                                                                  
+| PMA                    | Physical Memory Attributes                                                                                                 
+| PMP                    | Physical Memory Protection unit                                                                                            
+| Program buffer         | A buffer in Debug Module to execute arbitrary instructions on a hart                                                       
+| Supervisor domain      | A isolated supervisor execution context defined in RISC-V Supervisor Domains Access Protection cite:[smmtt]                
+| Trace encoder          | A piece of hardware that takes in instruction execution information from a RISC-V hart and transforms it into trace packets
+|=====================================================================================================================================================
