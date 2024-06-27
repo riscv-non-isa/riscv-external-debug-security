@@ -8,7 +8,7 @@ The Sdsec extension exclusively defines the machine mode external debug security
 [[sdsecextdbg]]
 === External Debug
 
-The debug operations listed below are affected by Sdsec extension. Within the context of this chapter, *debug operations* refer specifically to those listed, while other operations are excluded.
+Chapter 3 of _The RISC-V Debug Specification_ lists all mandatory and optional debug operations. The operations listed below are affected by Sdsec extension. Within the context of this chapter, *debug operations* refer specifically to those listed, while other operations are excluded.
 	
 [[dbops]]
 .Debug operations affected by Sdsec extension
@@ -27,14 +27,16 @@ When the external debug are disallowed in the RISC-V privilege level, the RISC-V
 The subsequent subsections explains how external debug are granted by <<mdbgctl, machine mode debug control>> and/or <<submdbgctl, supervisor domain debug control>> with respect to hart privilege level. 
 
 [NOTE]
-A pending request to enter debug mode might be dynamically changed from disallowed state to allowed state due to the update of debug controls. For example, the software finished the confidential code and grants external debugger to debug. Afterwards, it spins in a while(1) loop, waiting for debugger to take control and jump out of the loop. 
+A pending request to enter debug mode can dynamically change from a disallowed state to an allowed state due to updates in debug controls. For example, once the software completes executing confidential code, it can grant debuggability for an external debugger. Afterwards , the software can enter a while(1) loop, waiting for the debugger to take control and break out of the loop.
 
 [[mdbgctl]]
 ==== Machine Mode Debug Control
 
-An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to the hart i and Debug Module. When mdbgen[i] is set to 1, the <<dbops, debug operations>> are permitted when hart i executes in all modes. Moreover the following rules apply:
+An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to the hart i and Debug Module. When mdbgen[i] is set to 1, the following rules apply:
+
 
 - The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level 
+- The <<dbops, debug operations>> are permitted when hart i executes in all modes. 
 - If register access without halting the hart is supported, this access carries the privilege of machine mode.
 
 when mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviros>> applies when the hart runs in machine mode. 
@@ -44,16 +46,11 @@ For a homogeneous computing system, the implementation can consolidate all mdbge
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> within hart i to control debuggability of supervisor domains cite:[smmtt]. The <<dbops, debug operations>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in `sdedbgalw` and mdbgen[i] is 1.
-
-The legal value of <<dbgaccpriv, debug access privilege>> for hart i is solely determined by `sdedbgalw` when mdbgen[i] is 0. In the event of `sdedbgalw` being 1 while mdbgen[i] is 0, the debug access privilege can be configured to privilege levels other than machine mode. Any attempt to set debug access privilege to machine mode will either result in an legal sub-machine mode privilege level or trigger a security fault error (cmderr 6).
-
-If register access without halting is supported, this access bears the privilege of supervisor mode to access the hart when mdbgen[i] is 0 and `sdedbgalw` is 1.
-
-The <<dbops, debug operations>>  are always disallowed for hart i when the logical-OR of `sdedbgalw` and mdbgen[i] is 0. In this case, the hart follows the <<dbgdisallowed, behaviros>> in all modes. 
+The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> to control debuggability of supervisor domains cite:[smmtt]. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. It is implementation-specific whether to retain a legal value or trigger a security fault error (cmderr 6) when the <<dbgaccpriv, debug access privilege>> is set to a disallowed privilege level. 
 
 [[dbgpriv]]
 [options="header"]
+[cols="25%,25%,50%"]
 .External debug allowed privilege levels per debug controls 
 |============================================
 | mdbgen[i] | sdedbgalw | Debug allowed privilege levels 
@@ -62,12 +59,21 @@ The <<dbops, debug operations>>  are always disallowed for hart i when the logic
 | 0      | 0      | None                      
 |============================================
 
+The <<dbops, debug operations>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in `sdedbgalw` and mdbgen[i] is 1. Otherwise, the <<dbops, debug operations>> and the hart follows the <<dbgdisallowed, behaviros>> in all modes.
+
+If register access without halting is supported, this access bears the privilege of supervisor mode to access the hart when mdbgen[i] is 0 and `sdedbgalw` is 1.
+
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
 The *debug access privilege* is defined as the privilege with which abstract commands or instructions in program buffers access hardware resources such as registers and memory. This privilege operates independently of hart privilege levels and exclusively affects operations within Debug Mode. Memory and register access within Debug Mode are subject to the *debug access privilege*, with all hardware protections, including MMU, PMP, and PMA, checked against it. This privilege is represented by the `prv` and `v` fields in `dcsr`. The permissible privilege levels programmable to `dcsr` in Debug Mode are elaborated in subsequent sections.
 
 In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug access privilege* is machine mode.
+
+[[prvvacc]]
+===== Configuring dcsr for External Debugger Access Privileges
+
+The `prv` and `v` fields in the dcsr (at 0x7b0) have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, the `prv` and `v` fields are updated to the privilege level the hart was previously operating in. The dcsr is always accessible in Debug Mode, and the fields `prv` and `v` are configurable. The maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. It is an implementation choice whether to retain a legal value or trigger a security fault error (cmderr 6) when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege.
 
 [[maxdbgpriv]]
 [options="header"]
@@ -78,11 +84,6 @@ In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug
 | 0      | 1      | S(HS)             
 | 0      | 0      | None               
 |=========================================
-
-[[prvvacc]]
-===== Configuring dcsr for External Debugger Access Privileges
-
-The `prv` and `v` fields in the dcsr (at 0x7b0) have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, the `prv` and `v` fields are updated to the privilege level the hart was previously operating in. The dcsr is always accessible in Debug Mode, and the fields `prv` and `v` are configurable. The maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. It will generate a security fault error (cmderr 6) if the external debugger attempts to configure `prv` and `v` with a privilege higher than the maximum debug privilege level.
 
 [NOTE]
 As the `prv` and `v` fields in dcsr are Write Any Read Legal (WARL) fields, the debugger has two options to confirm the success of a prior write: either by reading back the attempted written value or by checking the `cmderr`, depending on the hardware implementation choice. The external debugger is able to read back the written value to determine the maximum debug privilege level.  
