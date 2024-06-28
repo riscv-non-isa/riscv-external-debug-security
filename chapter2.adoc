@@ -6,7 +6,7 @@ This chapter introduces Sdsec ISA extension, which enhances the Sdext of _The RI
 [[sdsecextdbg]]
 === External Debug
 
-Chapter 3 of _The RISC-V Debug Specification_ outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension. In the context of this chapter, *debug operations* refer exclusively to those listed, and other operations remain unaffected by this specification.
+Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension. In the context of this chapter, *debug operations* refer exclusively to those listed, and other operations remain unaffected by this specification.
 
 [[dbops]]
 .Debug operations affected by Sdsec extension
@@ -17,7 +17,7 @@ Chapter 3 of _The RISC-V Debug Specification_ outlines all mandatory and optiona
 When the external debug is disallowed in running privilege level, the hart behaves as the following: 
 
 [[dbgdisallowed]]
-.Behaviors of the hart when debug disallowed
+.Behaviors when external debug is disallowed
 * Halt request (haltreq), single step into disallowed privilege or halt group that causes the hart to enter debug mode will be pending
 //Note - pending until ...? 
 * Triggers (with action=1) will not match or fire 
@@ -53,7 +53,7 @@ The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> t
 .External debug allowed privilege levels per debug controls 
 |============================================
 | mdbgen[i] | sdedbgalw | Debug allowed privilege levels 
-| 1      | x      | All                      
+| 1      | Don't care      | All                      
 | 0      | 1      | All except M             
 | 0      | 0      | None                      
 |============================================
@@ -72,7 +72,9 @@ In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug
 [[prvvacc]]
 ===== Configuring dcsr for External Debugger Access Privileges
 
-The `prv` and `v` fields in the dcsr (at 0x7b0) have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, the `prv` and `v` fields are updated to the privilege level the hart was previously operating in. The dcsr is always accessible in Debug Mode, and the fields `prv` and `v` are configurable. The maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. It is an implementation choice whether to retain a legal value or trigger a security fault error (cmderr 6) when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege.
+The `prv` and `v` fields in the dcsr CSR have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, hardware updates `prv` and `v` to the privilege level that the hart is currently running. The external debugger can still configure `prv` and `v`, however, the maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. It is an implementation choice whether to ignore or raise a security fault error (cmderr 6) when the `prv` and `v` are configured to an illegal value. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege.
+
+//If DCSR is WARL then should not raise error?
 
 [[maxdbgpriv]]
 [options="header"]
