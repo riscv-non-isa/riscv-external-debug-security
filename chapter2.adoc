@@ -17,7 +17,7 @@ Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandat
 When the external debug is disallowed in running privilege level, the hart behaves as the following: 
 
 [[dbgdisallowed]]
-* Halt request (haltreq), single step into disallowed privilege or halt group that causes the hart to enter debug mode will be pending
+* Halt request (haltreq), single step into disallowed privilege or halt group that causes the hart to enter debug mode will be pending until debug is allowed again
 //Note - pending until ...? 
 * Triggers (with action=1) will not match or fire 
 * Abstract commands without halting (register access and quick access) will be dropped and set `cmderr` to 6 
@@ -37,7 +37,7 @@ An input port, named mdbgen[i], is introduced to control the debuggability of ma
 - The <<dbops, debug operations>> are permitted when hart i executes in all modes. 
 - If register access without halting the hart is supported, this access carries the privilege of machine mode.
 
-when mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviros>> applies when the hart runs in machine mode. 
+When mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviros>> applies when the hart runs in machine mode. 
 
 [NOTE]
 For a homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce unified debug policy across all harts.
