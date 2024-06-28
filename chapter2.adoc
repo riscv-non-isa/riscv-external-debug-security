@@ -18,7 +18,6 @@ When the external debug is disallowed in running privilege level, the hart behav
 
 [[dbgdisallowed]]
 * Halt request (haltreq), single step into disallowed privilege or halt group that causes the hart to enter debug mode will be pending until debug is allowed again
-//Note - pending until ...? 
 * Triggers (with action=1) will not match or fire 
 * Abstract commands without halting (register access and quick access) will be dropped and set `cmderr` to 6 
 
@@ -31,7 +30,6 @@ A pending request to enter debug mode can dynamically change from a disallowed s
 ==== Machine Mode Debug Control
 
 An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to the hart i and Debug Module. When mdbgen[i] is set to 1, the following rules apply:
-
 
 - The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level 
 - The <<dbops, debug operations>> are permitted when hart i executes in all modes. 
