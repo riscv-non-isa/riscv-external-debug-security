@@ -1,7 +1,7 @@
 [[threatmodel]]
 == External Debug Security Threat model
 
-Modern SoC development consists of several different actors who may not trust each other, resulting in the need to isolate actors’ assets during the development and debugging phases. The current RISC-V Debug specification grants external debuggers the highest privilege in the system regardless of the privilege level at which the target system is running. This leads to privilege escalation issues when multiple actors are present. 
+Modern SoC development consists of several different actors who may not trust each other, resulting in the need to isolate actors’ assets during the development and debugging phases. The current RISC-V Debug specification cite:[dbgspec] grants external debuggers the highest privilege in the system regardless of the privilege level at which the target system is running. This leads to privilege escalation issues when multiple actors are present. 
 
 For example, the owner of a SoC, who needs to debug their machine mode firmware, may be able to use the external debugger to bypass PMP lock (pmpcfg.L=1) and attack Boot ROM (the SoC creator’s asset).
 
