@@ -17,7 +17,6 @@ Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandat
 When the external debug is disallowed in running privilege level, the hart behaves as the following: 
 
 [[dbgdisallowed]]
-.Behaviors when external debug is disallowed
 * Halt request (haltreq), single step into disallowed privilege or halt group that causes the hart to enter debug mode will be pending
 //Note - pending until ...? 
 * Triggers (with action=1) will not match or fire 
