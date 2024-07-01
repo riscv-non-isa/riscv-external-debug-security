@@ -1,12 +1,12 @@
 [[Sdsec]]
 == Sdsec (ISA extension)
 
-This chapter introduces Sdsec ISA extension, which enhances the Sdext of _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege based protection for debug operations and trigger behaviors cite:[dbgspec]. furthermore, it constrains trace functionality cite:[etrace] according to RISC-V privilege levels. 
+This chapter introduces Sdsec ISA extension, which enhances the Sdext of _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege based protection for debug operations and trigger behaviors cite:[dbgspec]. Furthermore, it constrains trace functionality cite:[etrace] according to RISC-V privilege levels. 
 
 [[sdsecextdbg]]
 === External Debug
 
-Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension. In the context of this chapter, *debug operations* refer to behaviors listed below, other operations remain unaffected.
+Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension, other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
 
 [[dbops]]
 .Debug operations affected by Sdsec extension
