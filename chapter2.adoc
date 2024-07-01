@@ -28,10 +28,8 @@ A pending request to enter debug mode can dynamically change from a disallowed s
 
 [[mdbgctl]]
 ==== Machine Mode Debug Control
-//The control logic is inside DM or hart?
-//Refer to the figure for implementation to help ppl understand why propagated to hart and debug module
-//Add a section to explain the port should be controlled by root-of-trust
-An input port mdbgen[i] is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to every hart and Debug Module. When mdbgen[i] is set to 1, the following rules apply: 
+
+An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to the hart i and Debug Module. When mdbgen[i] is set to 1, the following rules apply:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level 
 - The <<dbops, debug operations>> are permitted when hart i executes in all modes. 
@@ -44,7 +42,7 @@ For a homogeneous computing system, the implementation can consolidate all mdbge
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> to control debuggability of supervisor domains cite:[smmtt]. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. It is implementation-specific whether to retain a legal value or trigger a security fault error (cmderr 6) when the <<dbgaccpriv, debug access privilege>> is set to a disallowed privilege level. 
+The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> to control debuggability of supervisor domains cite:[smmtt]. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
 
 [[dbgpriv]]
 [options="header"]
@@ -57,23 +55,21 @@ The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> t
 | 0      | 0      | None                      
 |============================================
 
-The <<dbops, debug operations>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in `sdedbgalw` and mdbgen[i] is 1. Otherwise, the <<dbops, debug operations>> and the hart follows the <<dbgdisallowed, behaviros>> in all modes.
+The <<dbops, debug operations>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in `sdedbgalw` and mdbgen[i] is 1. Otherwise, the <<dbops, debug operations>> are disallowed and the hart follows the <<dbgdisallowed, behaviros>> in all modes.
 
 If register access without halting is supported, this access bears the privilege of supervisor mode to access the hart when mdbgen[i] is 0 and `sdedbgalw` is 1.
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege with which abstract commands or instructions in program buffers access hardware resources such as registers and memory. This privilege operates independently of hart privilege levels and exclusively affects operations within Debug Mode. Memory and register access within Debug Mode are subject to the *debug access privilege*, with all hardware protections, including MMU, PMP, and PMA, checked against it. This privilege is represented by the `prv` and `v` fields in `dcsr`. The permissible privilege levels programmable to `dcsr` in Debug Mode are elaborated in subsequent sections.
+The *debug access privilege* is defined as the privilege with which abstract commands or instructions in program buffers access hardware resources such as registers and memory. This privilege operates independently of hart privilege levels and exclusively affects operations within Debug Mode. Memory and register access within Debug Mode are subject to the *debug access privilege*, with all hardware protections, including MMU, PMP, and PMA, checked against it. This privilege is represented by the `prv` and `v` fields in `dcsr`. The legal privilege levels programmable to `dcsr` in Debug Mode are elaborated in <<prvvacc>>.
 
 In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug access privilege* is machine mode.
 
 [[prvvacc]]
 ===== Configuring dcsr for External Debugger Access Privileges
 
-The `prv` and `v` fields in the dcsr CSR have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, hardware updates `prv` and `v` to the privilege level that the hart is currently running. The external debugger can still configure `prv` and `v`, however, the maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. It is an implementation choice whether to ignore or raise a security fault error (cmderr 6) when the `prv` and `v` are configured to an illegal value. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege.
-
-//If DCSR is WARL then should not raise error?
+The `prv` and `v` fields in the dcsr (at 0x7b0) have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, the `prv` and `v` fields are updated to the privilege level the hart was previously operating in. The dcsr is always accessible in Debug Mode, and the fields `prv` and `v` are configurable. The maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. When the hart resumes from debug mode, the current privilege mode and virtualization mode are changed to that specified by `prv` and `v`.
 
 [[maxdbgpriv]]
 [options="header"]
