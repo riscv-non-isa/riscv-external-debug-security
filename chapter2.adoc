@@ -6,7 +6,7 @@ This chapter introduces Sdsec ISA extension, which enhances the Sdext of _The RI
 [[sdsecextdbg]]
 === External Debug
 
-Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension. In the context of this chapter, *debug operations* refer exclusively to those listed, and other operations remain unaffected by this specification.
+Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension. In the context of this chapter, *debug operations* refer to behaviors listed below, other operations remain unaffected.
 
 [[dbops]]
 .Debug operations affected by Sdsec extension
@@ -31,9 +31,9 @@ A pending request to enter debug mode can dynamically change from a disallowed s
 
 An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to the hart i and Debug Module. When mdbgen[i] is set to 1, the following rules apply:
 
-- The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level 
-- The <<dbops, debug operations>> are permitted when hart i executes in all modes. 
-- If register access without halting the hart is supported, this access carries the privilege of machine mode.
+- The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any privilege level
+- The <<dbops, debug operations>> are permitted when hart i executes in all modes
+- Register access without halting the hart carries M-mode privilege if supported
 
 When mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviros>> applies when the hart runs in machine mode. 
 
@@ -42,7 +42,7 @@ For a homogeneous computing system, the implementation can consolidate all mdbge
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> to control debuggability of supervisor domains cite:[smmtt]. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
+The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
 
 [[dbgpriv]]
 [options="header"]
@@ -55,16 +55,12 @@ The Smsdedbg extension introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> t
 | 0      | 0      | None                      
 |============================================
 
-The <<dbops, debug operations>> are allowed when hart i executes in the supervisor domain only if the logical-OR of values in `sdedbgalw` and mdbgen[i] is 1. Otherwise, the <<dbops, debug operations>> are disallowed and the hart follows the <<dbgdisallowed, behaviros>> in all modes.
-
-If register access without halting is supported, this access bears the privilege of supervisor mode to access the hart when mdbgen[i] is 0 and `sdedbgalw` is 1.
+When debug is allowed in supervisor domain, <<dbops, debug operations>> are allowed in current privilege mode, register access without halting the hart carries supervisor mode privilege if supported.
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege with which abstract commands or instructions in program buffers access hardware resources such as registers and memory. This privilege operates independently of hart privilege levels and exclusively affects operations within Debug Mode. Memory and register access within Debug Mode are subject to the *debug access privilege*, with all hardware protections, including MMU, PMP, and PMA, checked against it. This privilege is represented by the `prv` and `v` fields in `dcsr`. The legal privilege levels programmable to `dcsr` in Debug Mode are elaborated in <<prvvacc>>.
-
-In addition, the `mprv` and `mpp` fields take effect exclusively when the *debug access privilege* is machine mode.
+The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode are also subject to the *debug access privilege*. Debug access privilege is represented by the `prv` and `v` fields in `dcsr`. The legal privilege levels programmable to `dcsr` in Debug Mode are elaborated in <<prvvacc>>, debugger access to registers and memory will checked by permission check mechanisms against debug access privilege.
 
 [[prvvacc]]
 ===== Configuring dcsr for External Debugger Access Privileges
@@ -76,7 +72,7 @@ The `prv` and `v` fields in the dcsr (at 0x7b0) have been modified to authorize 
 .Determining maximum debug access privilege with mdbgen[i] and sdedbgalw
 |=========================================
 | mdbgen[i] | sdedbgalw | Maximum debug privilege allowed 
-| 1      | x      | M                 
+| 1      | Don't care      | M                 
 | 0      | 1      | S(HS)             
 | 0      | 0      | None               
 |=========================================
@@ -94,11 +90,11 @@ The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that
 When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1 (disabled). The sec_check[i] signal is only cleared when trace is allowed by <<mtrcctl, machine mode trace control>> and/or <<sdtrcctl, supervisor domain trace control>>.
 
 [mtrcctl]
-==== Machine Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls machine mode trace availability. Setting mtrcen[i] to 1 enables machine mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart runs in machine mode.
+==== M-Mode Trace Control 
+For each hart i, an input port, mtrcen[i], controls M-mode trace availability. Setting mtrcen[i] to 1 enables machine mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart runs in machine mode.
 
 [NOTE]
-For a homogeneous computing system, similarly to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
+For a homogeneous computing system, similar to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
 
 [sdtrcctl]
 ==== Supervisor Domain Trace Control 
@@ -126,20 +122,22 @@ Triggers configured to enter Debug Mode can only fire or match when external deb
 [NOTE]
 Implementations shall make sure that pending triggers intending to enter Debug Mode match or fire before the privilege mode switch, thus the hart will never enter Debug Mode in higher privilege mode with debug disallowed  
 
-==== Machine mode accessibility to `dmode` 
+==== M-mode accessibility to `dmode` 
  
-The RISC-V Debug Specification cite:[dbgspec] defines that the `dmode` field is accessible only in Debug Mode. When this field is set, the trigger is allocated exclusively to Debug Mode, and any write access from the hart is disregarded. The Sdsec extension relaxes the constraint to the `dmode`, allowing it to be R/W in machine mode when mdbgen[i] is set to 0. When mdbgen[i] is set to 1, it remains exclusively accessible within Debug Mode.
-//What does this mean? What is Debug Mode exclusive trigger?
-//New proposal is to add another nob to clear trigger registers
+When Sdsec extension is implemented, `dmode` can be accessible by both M-mode and Debug Mode when mdbgen[i] is 0 and remains only accessible to Debug Mode when mdbgen[i] is 1
 
 [NOTE]
-The Debug Mode exclusive trigger could potentially serve as an attack surface for unauthorized supervisor domains where debugging is forbidden. With Sdsec extension, machine mode software assumes responsibility for switching the trigger context according to the debug policy enforced for the supervisor domain. As a result, it maintains a clean trigger context for the supervisor domain.
+Although triggers will not fire or match when debug is disallowed in a supervisor domain, a malicious external debugger can still set action bits to other values such as exception in one domain with debug allowed, and the trigger context is not cleared... then interpret the execution information of a supervisor domain that is disallowed to be debugged. M-mode firmware shall context switch trigger context to ensure that 
+
+//Needs to put more thoughts
+//action = enter debug mode -> will not fire
+//action = exception -> side channel
 
 ==== External triggers
 
 The external trigger outputs will not fire or match when the privilege level of the hart exceeds the ones specified in <<dbgpriv>>.
 
-The sources of external trigger input (such as machine mode performance counter overflow, interrupts, etc.) require protection to prevent information leakage. The external trigger inputs supported are platform-specific. Therefore, the platform is responsible for enforcing limitations on input sources. As a result, tmexttrigger.intctl and tmexttrigger.select should be restricted to legal values based on mdbgen[i] and `sdedbgalw`. Their definitions are provided in the <<redtmext>> below.
+The sources of external trigger input (such as M-mode performance counter overflow, interrupts, etc.) require protection to prevent information leakage. The external trigger inputs supported are platform-specific. Therefore, the platform is responsible for enforcing limitations on input sources. As a result, tmexttrigger.intctl and tmexttrigger.select should be restricted to legal values based on mdbgen[i] and `sdedbgalw`. Their definitions are provided in the <<redtmext>> below.
 
 //What is the difference between input and output?
 //If a hart has external trigger outputs to TM, the external trigger output signals will not be asserted if ....
@@ -204,7 +202,7 @@ The `intctl` and `sselect` fields in tmexttrigger are redifined as follows.
 
 ==== Debug Control and Status (dcsr)
 
-The access rule for field `prv` and `v` are addressed in subsection <<prvvacc>>. Beside `prv` and `v`, the fields in dcsr are further constrained based on their sphere of action. When a field is effective in machine mode, it is accessible only to debugger which is granted with machine mode privilege. The detailed accessibility is listed in the following table.
+The access rules for field `prv` and `v` are addressed in subsection <<prvvacc>>. Beside `prv` and `v`, the fields in dcsr are further constrained based on their sphere of action. When a field is effective in machine mode, it is accessible only to the debugger which is granted with machine mode privilege. The detailed accessibility is listed in the following table.
 
 .Dcsr fields accessibility against privilege granted to external debugger
 [options="header"]
@@ -224,7 +222,7 @@ The access rule for field `prv` and `v` are addressed in subsection <<prvvacc>>.
 
 ==== Debug PC (dpc) and Debug Scratch Register (dscratch0 and dscratch1)
 
-Debug PC (at 0x7b1) and Debug Scratch Register (at 0x7b2 and 0x7b3) are not restricted by <<dbgaccpriv, debug access privilege>> and are always accesible in debug mode.
+Debug PC (at 0x7b1) and Debug Scratch Register (at 0x7b2 and 0x7b3) are not restricted by <<dbgaccpriv, debug access privilege>>, they are always accessible in debug mode.
 
 [[Sdseccsr]]
 ==== Sdsec CSR
