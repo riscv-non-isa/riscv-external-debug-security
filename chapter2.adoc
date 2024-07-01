@@ -60,7 +60,7 @@ When debug is allowed in supervisor domain, <<dbops, debug operations>> are allo
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode are also subject to the *debug access privilege*. Debug access privilege is represented by the `prv` and `v` fields in `dcsr`. The legal privilege levels programmable to `dcsr` in Debug Mode are elaborated in <<prvvacc>>, debugger access to registers and memory will checked by permission check mechanisms against debug access privilege.
+The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode also carry *debug access privilege* instead of always with M-mode. Debug access privilege is represented by the `prv` and `v` fields in `dcsr`. The legal privilege levels programmable to `dcsr` in Debug Mode are elaborated in <<prvvacc>>, debugger access to registers and memory will checked by permission check mechanisms against debug access privilege.
 
 [[prvvacc]]
 ===== Configuring dcsr for External Debugger Access Privileges
