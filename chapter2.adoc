@@ -134,6 +134,7 @@ Implementations shall make sure that pending triggers intending to enter Debug M
  
 The RISC-V Debug Specification cite:[dbgspec] defines that the `dmode` field is accessible only in Debug Mode. When this field is set, the trigger is allocated exclusively to Debug Mode, and any write access from the hart is disregarded. The Sdsec extension relaxes the constraint to the `dmode`, allowing it to be R/W in machine mode when mdbgen[i] is set to 0. When mdbgen[i] is set to 1, it remains exclusively accessible within Debug Mode.
 //What does this mean? What is Debug Mode exclusive trigger?
+//New proposal is to add another nob to clear trigger registers
 
 [NOTE]
 The Debug Mode exclusive trigger could potentially serve as an attack surface for unauthorized supervisor domains where debugging is forbidden. With Sdsec extension, machine mode software assumes responsibility for switching the trigger context according to the debug policy enforced for the supervisor domain. As a result, it maintains a clean trigger context for the supervisor domain.
@@ -145,6 +146,9 @@ The external trigger outputs will not fire or match when the privilege level of 
 The sources of external trigger input (such as machine mode performance counter overflow, interrupts, etc.) require protection to prevent information leakage. The external trigger inputs supported are platform-specific. Therefore, the platform is responsible for enforcing limitations on input sources. As a result, tmexttrigger.intctl and tmexttrigger.select should be restricted to legal values based on mdbgen[i] and `sdedbgalw`. Their definitions are provided in the <<redtmext>> below.
 
 //What is the difference between input and output?
+//If a hart has external trigger outputs to TM, the external trigger output signals will not be asserted if ....
+//In other words, the external trigger can only fire when both source and dest are both allowed to be debugged
+//If the source of external trigger is a system component then the system component is responsible of source control (out of scope for this spec)
 
 ==== Trigger chain
 
@@ -155,10 +159,7 @@ This represents a balance between usability and hardware complexity. The integri
 
 ==== Sdtrig CSR
 
-Some trigger CSRs, tselect, tdata1, tdata2, tdata3, and tinfo are always accessible in Debug Mode, remaining CSRs, tcontrol, scontext, hcontext, mcontext, and mscontext continue to adhere to the <<dbgaccpriv, debug access privilege>>.
-
-//what does permitted mean?
-//ahdere => requires M mode privilege? Need to reword this line, or be explicit?
+tcontrol, scontext, hcontext, mcontext, and mscontext CSR must follow access rules defined in <<dbgaccpriv, debug access privilege>>, illustrated in below table.
 
 [options="header"]
 [cols="20%,20%,60%"]
@@ -177,7 +178,7 @@ Some trigger CSRs, tselect, tdata1, tdata2, tdata3, and tinfo are always accessi
 | mscontext(0x7aa) | Always     | mdbgen[i] == 1     
 |================================================================
 
-Beyond CSR level accessibility adjustments, the fields within mcontrol, mcontrol6, icount, itrigger, etrigger, and tmexttrigger (variants of tdata1 located at 0x7a1) are redefined to limit the effective scope of triggers as follows.
+Below fields in mcontrol, mcontrol6, icount, itrigger, etrigger, and tmexttrigger must follow <<dbgaccpriv, debug access privilege>>.
 
 [options="header"]
 [cols="40%,60%"]
@@ -191,7 +192,7 @@ Beyond CSR level accessibility adjustments, the fields within mcontrol, mcontrol
 | vu    | mdbgen[i] == 1 \|\| sdedbgalw == 1
 |====================================
 
-The `intctl` and `sselect` field within tmexttrigger are redifined as follows. 
+The `intctl` and `sselect` fields in tmexttrigger are redifined as follows. 
 
 [[redtmext]]
 .Redefinition of field `intctl` and `sselect` within tmexttrigger
