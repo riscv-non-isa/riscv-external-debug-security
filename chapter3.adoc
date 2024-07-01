@@ -5,8 +5,8 @@ This chapter outlines the security enhancements defined for the Debug Module as 
 
 * Halt
 * Reset 
-* Keepalive request 
-* Issuing abstract commands (Access Register, Quick Access, Access Memory)
+* Keepalive 
+* Abstract commands (Access Register, Quick Access, Access Memory)
 * System bus access
 
 === External Debug Security Extensions Discovery 
@@ -15,7 +15,7 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_,  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when machine mode is not permitted (mdbgen[i] set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and raise security fault error. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when machine mode is not permitted (mdbgen[i] set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and raise security fault error. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
 
 === Reset
 
@@ -32,7 +32,7 @@ The hart response to abstract commands is detailed in <<sdsecextdbg>>. The follo
 
 ==== Relaxed Permission Check `relaxedpriv`
 
-The field `relaxedpriv` in abstractcs (at 0x16 in Debug Module) allows for relaxed permission checks, such as bypassing PMA, PMP, MMU, etc. However, this relaxation violates security requirements, and the extension mandates that `relaxedpriv` be hardwired to 0.
+`relaxedpriv` is hardwired to 0
 
 ==== Address Translation `aamvirtual`  
 
@@ -40,10 +40,7 @@ The field `aamvirtual` in command (at 0x17 in Debug Module) determines whether p
 
 === System Bus Access 
 
-System Bus Access enables direct reading/writing of memory space without involving the hart. It must always be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard], etc. If these protections are not implemented or not deployed for Debug Module, System Bus Access must not be supported. Failed system bus access attempts result in a bus security fault error (sberror 6).
-
-[NOTE]
-In scenarios where a Debug Module lacks System Bus Access, memory access by the debugger can be achieved through the use of abstract commands. These commands provide secure means to access memory.
+System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. Bus protection unit may return error to Debug Module on illegal access, in that case, Debug Module will set xyz.sberror to 6 (security fault).
 
 [NOTE]
 Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling supervisor domain debug. 
