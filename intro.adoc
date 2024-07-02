@@ -7,12 +7,12 @@ This specification defines non-ISA extension <<dmsext, Debug Module Security Ext
 
 Below list summarizes changes introduced by _RISC-V External Debug Security Specification_:
 
-    - *Per-Hart Debug Control:* Introduce per-hart control knobs to control whether external debug is allowed in machine mode and/or supervisor domains cite:[smmtt]
-    - *Debug Mode:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; all operations are executed with <<dbgaccpriv, debug access privilege>> instead of machine mode privilege
+    - *Per-Hart Debug Control:* Introduce per-hart control knobs to control whether external debug is allowed in M-mode and/or supervisor domains cite:[smmtt]
+    - *Debug Mode:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; all operations are executed with <<dbgaccpriv, debug access privilege>> instead of M-mode privilege
     - *Memory Access:* Memory access from a hart’s point of view using a Program Buffer or the Abstract Command must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege>>; memory access from Debug Module using System Bus Access block without involving a hart must be checked by system memory protection mechanism, such as IOPMP or WorldGuard
-    - *Register Access:* Register access using Program Buffer or the Abstract Command works as if the hart is running in <<dbgaccpriv, debug access privilege>> instead of machine mode privilege
+    - *Register Access:* Register access using Program Buffer or the Abstract Command works as if the hart is running in <<dbgaccpriv, debug access privilege>> instead of M-mode privilege
     - *Triggers:* Triggers (with action=1) can only fire or match when external debug is allowed in current privilege
-    - *Per-Hart Trace Control:* Introduce per-hart knobs to control whether tracing is allowed in machine mode and supervisor domains
+    - *Per-Hart Trace Control:* Introduce per-hart knobs to control whether tracing is allowed in M-mode and supervisor domains
 
 === Terminology
 
@@ -24,7 +24,7 @@ Below list summarizes changes introduced by _RISC-V External Debug Security Spec
 | Debug Mode             | An additional privilege mode to support off-chip debugging                                                                 
 | Hart                   | A RISC-V hardware thread                                                                                                   
 | IOPMP                  | Input-Output Physical Memory Protection unit                                                                               
-| Machine mode           | The highest privileged mode in the RISC-V privilege model                                                                  
+| M-mode                 | The highest privileged mode in the RISC-V privilege model                                                                  
 | PMA                    | Physical Memory Attributes                                                                                                 
 | PMP                    | Physical Memory Protection unit                                                                                            
 | Program buffer         | A buffer in Debug Module to execute arbitrary instructions on a hart                                                       

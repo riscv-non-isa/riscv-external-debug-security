@@ -15,17 +15,17 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when machine mode is not permitted (mdbgen[i] set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and raise security fault error. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when M-mode is not permitted (mdbgen[i] set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and raise security fault error. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
 
 === Reset
 
-The hartreset operation resets selected harts. This operation must be prohibited when machine mode is not allowed to be debugged. The security fault error will be raised if the operation is issued when mdbgen[i] is 0. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in dmstatus. 
+The hartreset operation resets selected harts. This operation must be prohibited when M-mode is not allowed to be debugged. The security fault error will be raised if the operation is issued when mdbgen[i] is 0. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in dmstatus. 
 
 The ndmreset operation is a system-level reset not tied to hart privilege levels and reset the entire system (excluding the Debug Module). It can only be secured by the system. Thus, it must be de-featured. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
-The keepalive operation serves as an optional request for the hart to remain available for debugger. It is only allowed when machine mode is permitted to debug. Otherwise, it causes a security fault error when mdbgen[i] is 0, indicated by `allsecfault` or/and `anysecfault` bits in dmstatus.
+The keepalive operation serves as an optional request for the hart to remain available for debugger. It is only allowed when M-mode is permitted to debug. Otherwise, it causes a security fault error when mdbgen[i] is 0, indicated by `allsecfault` or/and `anysecfault` bits in dmstatus.
 
 === Abstract Commands 
 The hart response to abstract commands is detailed in <<sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues the abstract commands. 
@@ -43,7 +43,7 @@ The field `aamvirtual` in command (at 0x17 in Debug Module) determines whether p
 The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return error to Debug Module on illegal access, in that case, Debug Module will set `sberror` to 6 (security fault error).
 
 [NOTE]
-Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling supervisor domain debug. 
+Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to M-mode. Similarly, M-mode should apply the protection before enabling supervisor domain debug. 
 
 === Security Fault Error Reporting
 

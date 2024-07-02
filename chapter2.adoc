@@ -21,21 +21,21 @@ When the external debug is disallowed in running privilege level, the hart behav
 * Triggers (with `action`=1) will not match or fire 
 * Abstract commands without halting (Access Register and Quick Access) will be dropped and set `cmderr` to 6 
 
-The subsequent subsections describe how external debug is authorized by <<mdbgctl, machine mode debug control>> and <<submdbgctl, supervisor domain debug control>>.
+The subsequent subsections describe how external debug is authorized by <<mdbgctl, M-mode debug control>> and <<submdbgctl, supervisor domain debug control>>.
 
 [NOTE]
 A pending request to enter Debug Mode can dynamically change from a disallowed state to an allowed state due to updates in debug controls. For example, once the software completes executing confidential code, it can grant debuggability for an external debugger. Afterwards, the software can enter a while(1) loop, waiting for the debugger to take control and break out of the loop.
 
 [[mdbgctl]]
-==== Machine Mode Debug Control
+==== M-mode Debug Control
 
-An input port, named mdbgen[i], is introduced to control the debuggability of machine mode for each hart i. This signal is propagated to the hart i and Debug Module as depicted in <<extdbg>>. When mdbgen[i] is set to 1, the following rules apply:
+An input port, named mdbgen[i], is introduced to control the debuggability of M-mode for each hart i. This signal is propagated to the hart i and Debug Module as depicted in <<extdbg>>. When mdbgen[i] is set to 1, the following rules apply:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any legal privilege level
 - The <<dbops, debug operations>> are permitted when hart i executes in all modes
 - Register access without halting the hart carries M-mode privilege if supported
 
-When mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviros>> applies when the hart runs in machine mode. 
+When mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviros>> applies when the hart runs in M-mode. 
 
 [NOTE]
 For a homogeneous computing system, the implementation can consolidate all mdbgen[i] into a single port to enforce a unified debug policy across all harts.
@@ -85,14 +85,14 @@ As the `prv` and `v` fields in dcsr are Write Any Read Legal (WARL) fields, the 
 The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the ebreak instruction. In Sdsec, those instructions including mret, sret, uret, ecall, must either act as NOP or trigger an exception (stopping execution and setting `cmderr` to 3) in Program Buffer. Notably, these instructions retain their normal functionality during single stepping.
 
 === Trace
-When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1 (disabled). The sec_check[i] signal is only cleared when trace is allowed by <<mtrcctl, machine mode trace control>> and/or <<sdtrcctl, supervisor domain trace control>>.
+When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i, and this signal must be reset to 1 (disabled). The sec_check[i] signal is only cleared when trace is allowed by <<mtrcctl, M-mode trace control>> and/or <<sdtrcctl, supervisor domain trace control>>.
 
 [mtrcctl]
 ==== M-Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls M-mode trace availability. Setting mtrcen[i] to 1 enables machine mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart runs in machine mode.
+For each hart i, an input port, mtrcen[i], controls M-mode trace availability. Setting mtrcen[i] to 1 enables M-mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart runs in M-mode.
 
 [NOTE]
-For a homogeneous computing system, similar to machine mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
+For a homogeneous computing system, similar to M-mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
 
 [sdtrcctl]
 ==== Supervisor Domain Trace Control 
@@ -104,7 +104,7 @@ When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot
 [options="header"]
 .Status of the sec_check[i] sideband signal across privilege levels
 |===========================================================
-| mtrcen| sdetrcalw| Machine mode | Supervisor domain
+| mtrcen| sdetrcalw| M-mode | Supervisor domain
 | 1     | x     | sec_check[i] = 0   | sec_check[i] = 0     
 | 0     | 1     | sec_check[i] = 1   | sec_check[i] = 0     
 | 0     | 0     | sec_check[i] = 1   | sec_check[i] = 1     
