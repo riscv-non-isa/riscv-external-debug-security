@@ -13,6 +13,7 @@ When the external debugger is stepping through an instruction that triggers a tr
 
 Application-level debugging is primarily accomplished through self-hosted debugging, allowing the management of debug policies at the supervisor/hypervisor level. As a result, user-level debugging management is not addressed within this extension.
 
+[[extdbg]]
 image::external_debug_dm.png[title="The security control on Debug Module",align="center"]
 
 === Trace Encoder security control 
