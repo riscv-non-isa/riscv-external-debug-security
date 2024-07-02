@@ -40,7 +40,7 @@ The field `aamvirtual` in command (at 0x17 in Debug Module) determines whether p
 
 === System Bus Access 
 
-System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. Bus protection unit may return error to Debug Module on illegal access, in that case, Debug Module will set xyz.sberror to 6 (security fault).
+System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. Bus protection unit may return error to Debug Module on illegal access, in that case, Debug Module will set `sberror` to 6 (security fault).
 
 [NOTE]
 Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to machine mode. Similarly, machine mode should apply the protection before enabling supervisor domain debug. 
