@@ -42,7 +42,7 @@ For a homogeneous computing system, the implementation can consolidate all mdbge
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
+The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
 
 [[dbgpriv]]
 [options="header"]
@@ -96,7 +96,7 @@ For a homogeneous computing system, similar to machine mode debug control, the i
 
 [sdtrcctl]
 ==== Supervisor Domain Trace Control 
-The Smsdetrc extension introduces `sdetrcalw` field in CSR <<Sdseccsr,msdcfg>> within hart i. The sec_check[i] signal for hart i in supervisor domain is determined by the `sdetrcalw` field and mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in supervisor domain.
+The Smsdetrc extension introduces `sdetrcalw` field (bit8) in CSR <<Sdseccsr,msdcfg>> within hart i. The sec_check[i] signal for hart i in supervisor domain is determined by the `sdetrcalw` field and mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart runs in supervisor domain.
 
 When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot be cleared at all.
 
