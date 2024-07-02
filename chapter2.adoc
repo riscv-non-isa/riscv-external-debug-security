@@ -174,18 +174,6 @@ Below fields in mcontrol, mcontrol6, icount, itrigger, etrigger, and tmexttrigge
 | vu    | mdbgen[i] == 1 \|\| sdedbgalw == 1
 |====================================
 
-The `intctl` and `sselect` fields in tmexttrigger are redifined as follows. 
-
-[[redtmext]]
-.Redefinition of field `intctl` and `sselect` within tmexttrigger
-[options="header"]
-[cols="10%,70%,10%,10%"]
-|========================================================================================================================================================================================================================================================================
-| Field  | Description                                                                                                                                                                                                                                 | Access  | Reset 
-| intctl | This optional bit, when set, causes this trigger to fire whenever an attached interrupt controller signals a trigger.  the field is only configurable when mdbgen[i] is set to 1. | WLRL    | 0     
-| sselect | Selects any combination of up to 16 Trigger Module external trigger inputs that cause this trigger to fire The legal value must be constrained by mdbgen[i] and `sdedbgalw` according to trigger input type.                                         | WLRL    | 0     
-|========================================================================================================================================================================================================================================================================
-
 === Other CSR updates
 
 ==== Debug Control and Status (dcsr)
