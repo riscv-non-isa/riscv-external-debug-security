@@ -5,7 +5,7 @@ Debugging and tracing are essential tools utilized by developers to identify and
 
 This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
-Below list summarizes changes introduced by _RISC-V External Debug Security Specification_:
+A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.:
 
     - *Per-Hart Debug Control:* Introduce per-hart control knobs to control whether external debug is allowed in M-mode and/or supervisor domains cite:[smmtt]
     - *Debug Mode:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; all operations are executed with <<dbgaccpriv, debug access privilege>> instead of M-mode privilege

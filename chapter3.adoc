@@ -1,7 +1,7 @@
 [[dmsext]]
 == Debug Module Security Extension (non-ISA extension)
 
-This chapter outlines the security enhancements defined for the Debug Module as non-ISA extension. The debug operations listed below are modified by the non-ISA extension. All features in this chapter must be implemented in Debug Module to achieve external debug security. If any hart in the system implements the Sdec extension, the Debug Module must also implement the non-ISA extension.  
+This chapter outlines the security enhancements defined for the Debug Module as non-ISA extension. The debug operations listed below are modified by the non-ISA extension. All features in this chapter must be implemented in Debug Module to achieve external debug security. If any hart in the system implements the Sdsec extension, the Debug Module must also implement the non-ISA extension. The debug operation affected by the non-ISA extension include: 
 
 * Halt
 * Reset 
@@ -15,28 +15,28 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when M-mode is not permitted (mdbgen[i] set to 0) to engage in debugging, the halt-on-reset (resethaltreq) operation must fail and raise security fault error. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when M-mode is not permitted to engage in debugging for hart i (mdbgen[i] set to 0), the hart raises a security fault error upon reset deassertion if the halt-on-reset request bit is set for hart i. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
 
 === Reset
 
-The hartreset operation resets selected harts. This operation must be prohibited when M-mode is not allowed to be debugged. The security fault error will be raised if the operation is issued when mdbgen[i] is 0. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in dmstatus. 
+The hartreset operation resets selected harts. When M-mode is not allowed to be debugged, the hart will raise a security fault error to Debug Module. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in dmstatus. 
 
 The ndmreset operation is a system-level reset not tied to hart privilege levels and reset the entire system (excluding the Debug Module). It can only be secured by the system. Thus, it must be de-featured. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
-The keepalive operation serves as an optional request for the hart to remain available for debugger. It is only allowed when M-mode is permitted to debug. Otherwise, it causes a security fault error when mdbgen[i] is 0, indicated by `allsecfault` or/and `anysecfault` bits in dmstatus.
+The keepalive bit serves as an optional request for the hart to remain available for debugging. This bit only takes effect when M-mode is allowed to be debugged; otherwise, the hart behaves as if the bit is not set.
 
 === Abstract Commands 
-The hart response to abstract commands is detailed in <<sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues the abstract commands. 
+The hart's response to abstract commands is detailed in <<sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues the abstract commands. 
 
 ==== Relaxed Permission Check `relaxedpriv`
 
-`relaxedpriv` is hardwired to 0
+`relaxedpriv` is hardwired to 0.
 
 ==== Address Translation `aamvirtual`  
 
-The field `aamvirtual` in command (at 0x17 in Debug Module) determines whether physical or virtual address translation is employed. When mdbgen[i] is 0, the extension mandates that `aamvirtual` is hardwire to 1 and memory access addresses are processed as if initiated by the hart in <<dbgaccpriv, debug access privilege>>.
+The field `aamvirtual` in command (at 0x17 in Debug Module) determines whether physical or virtual address translation is employed. The extension mandates that `aamvirtual` is hardwire to 1 and memory access addresses are processed as if initiated by the hart i in <<dbgaccpriv, debug access privilege>>.
 
 === System Bus Access 
 
@@ -49,12 +49,9 @@ Trusted entities like RoT should configure IOPMP or equivalent protection before
 
 A dedicated error code, security fault error (cmderr 6), is included in `cmderr` of abstractcs (at 0x16 in Debug Module). Misconfigurations of the dcsr and issuance of abstract commands under disallowed circumstance can signify such an error. Additionally, the bus security fault error (sberror 6) is introduced in `sberror` of sbcs (at 0x38 in Debug Module) to denote errors related to system bus access. 
 
-The error raised by resethaltreq, reset and keepalive can be identified through the fields `allsecfault` and `anysecfault` in dmstatus.  The security fault errors must be detectable prior to any subsequent read of the register responsible for reporting the error. Error statuses are internally maintained for each hart, with the `allsecfault` and `anysecfault` fields indicating the error status of the currently selected harts. Any error indicated by `allsecfault` and `anysecfault` remains until updated through a successful resethaltreq, reset or keepalive operation. 
+The error raised by resethaltreq, reset can be identified through the fields `allsecfault` and `anysecfault` in dmstatus. Error status bits are internally maintained for each hart, with the `allsecfault` and `anysecfault` fields indicating the error status of the currently selected harts. These error statuses are sticky and can only be cleared by writing 1 to `acksecfault` in dmcs2.
 
-[NOTE]
-While the resethaltreq, reset, and keepalive operations can potentially take a significant amount of time to complete depending on the implementation, the error status can be immediately reported via following read of `allsecfault/anysecfault` if the operation is prohibited. Therefore, if a read of `allsecfault/anysecfault` indicates no error, it suggests that the operation is allowed and either currently in progress or has been successfully executed.
-
-=== Update of Debug Module Status (dmstatus)
+=== Update of Debug Module Registers
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Newly introduced fields in dmstatus"]
@@ -84,4 +81,32 @@ While the resethaltreq, reset, and keepalive operations can potentially take a s
 | anysecfault | The field is 1 when any currently selected hart has raised security fault due to reset or keepalive operation.   | R      | -    
 |================================================================================================================================================
 
+
+[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
+[title="Newly introduced acksecfault in dmcs2"]
+[id=dmcs2]
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:   12, name: 'defined in Debug Module'},
+  {bits:   1, name: 'acksecfault'},
+  {bits:   19, name: '0'},
+], config:{lanes: 2, hspace:1024}}
+....
+
+[[regdmcs2]]
+.Detail of acksecfault in dmcs2
+[cols="20%,60%,10%,10%"]
+[options="header"]
+|================================================================================================================================================
+| Field       | Description                                                                                                      | Access | Reset
+| acksecfault |0 (nop): No effect.
+
+1 (ack): Clears error status bits for any selected harts. 
+
+Writes apply to the new value of hartsel and hasel.                                    
+
+| W1      | -    
+
+|================================================================================================================================================
 
