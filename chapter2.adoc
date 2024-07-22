@@ -79,7 +79,12 @@ The dcsr (at 0x7b0) is always accessible in Debug Mode and the `prv` and `v` fie
 
 [NOTE]
 As the `prv` and `v` fields in dcsr are Write Any Read Legal (WARL) fields, the external debugger is able to read back the written value to determine the maximum debug privilege level.  
- 
+
+[[phyaddr]]
+==== Physical Memory Access
+
+The external debugger can issue physical memory access command to the hart. However, there are cases where physical addresses are not allowed to access memory when M-mode is not permitted to debug, `tvm` (in mstatus) is set to 1, and `mode` (in satp) enables any kind of virtual translation. In these situations, the hart must respond with an exception to the command.
+
 ==== Privilege Level Changing Instructions
 
 The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the ebreak instruction. In Sdsec, those instructions including mret, sret, uret, ecall, must either act as NOP or trigger an exception (stopping execution and setting `cmderr` to 3) in Program Buffer. Notably, these instructions retain their normal functionality during single stepping.

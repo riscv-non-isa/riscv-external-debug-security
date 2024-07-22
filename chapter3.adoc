@@ -15,7 +15,10 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. Additionally, when M-mode is not permitted to engage in debugging for hart i (mdbgen[i] set to 0), the hart raises a security fault error upon reset deassertion if the halt-on-reset request bit is set for hart i. The debugger could check the error by polling `allsecfault` or/and `anysecfault` fields in dmstatus for selected harts, as specified in <<regdmstatus>>. 
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset requests, the requests are only acknowledged by the harts when they are permitted to debug after the deassertion of reset. Besides, when a Quick Access abstract command is issued to a hart while the hart is not yet allowed to debug, the Quick Access cannot halt the hart, and the Debug Module will receive a security error fault (`cmderr`=6).
+
+[NOTE]
+The halt action in Quick Access is handled differently because other types of halts can be canceled by external debugger when debugging is disallowed, while the Quick Access command can only complete successfully or respond with an error. Otherwise, the debug interface to the selected hart will appear to be hung. Additionally, reset is not always applicable to the hart to recover from a hang situation. To avoid such situations, the halt action in Quick Access must be handled separately by the hart.
 
 === Reset
 
@@ -32,11 +35,11 @@ The hart's response to abstract commands is detailed in <<sdsecextdbg>>. The fol
 
 ==== Relaxed Permission Check `relaxedpriv`
 
-`relaxedpriv` is hardwired to 0.
+The `relaxedpriv` field is hardwired to 0.
 
 ==== Address Translation `aamvirtual`  
 
-The field `aamvirtual` in command (at 0x17 in Debug Module) determines whether physical or virtual address translation is employed. The extension mandates that `aamvirtual` is hardwire to 1 and memory access addresses are processed as if initiated by the hart i in <<dbgaccpriv, debug access privilege>>.
+The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines whether the Access Memory uses a physical or virtual address. When a physical memory access is issued (`aamvirtual`=0), the hart must check whether it is permitted to conduct such access as described in <<phyaddr>>. If it is not allowed, the hart responds with an exception, and the Debug Module will set `cmderr` to 3 and clear the data registers to 0.
 
 === System Bus Access 
 
