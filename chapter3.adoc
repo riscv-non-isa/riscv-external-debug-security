@@ -1,7 +1,7 @@
 [[dmsext]]
 == Debug Module Security Extension (non-ISA extension)
 
-This chapter outlines the security enhancements defined for the Debug Module as non-ISA extension. The debug operations listed below are modified by the non-ISA extension. All features in this chapter must be implemented in Debug Module to achieve external debug security. If any hart in the system implements the Sdsec extension, the Debug Module must also implement the non-ISA extension. The debug operation affected by the non-ISA extension include: 
+This chapter outlines the security enhancements defined for the Debug Module as non-ISA extension. The debug operations listed below are modified by the non-ISA extension. All features in this chapter must be implemented in Debug Module to achieve external debug security. If any hart in the system implements the Sdsec extension, the Debug Module must also implement the non-ISA extension. The debug operations affected by the non-ISA extension include: 
 
 * Halt
 * Reset 
@@ -15,7 +15,7 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be eliminated as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset requests, the requests are only acknowledged by the harts when they are permitted to debug after the deassertion of reset. Besides, when a Quick Access abstract command is issued to a hart while the hart is not yet allowed to debug, the Quick Access cannot halt the hart, and the Debug Module will receive a security error fault (`cmderr`=6).
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be removed as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset request, the request is only acknowledged by the hart when it is permitted to debug after the deassertion of reset. Besides, when a Quick Access abstract command is issued to a hart while the hart is not yet allowed to debug, the Quick Access cannot halt the hart, and the Debug Module will receive a security error fault (`cmderr`=6).
 
 [NOTE]
 The halt action in Quick Access is handled differently because other types of halts can be canceled by external debugger when debugging is disallowed, while the Quick Access command can only complete successfully or respond with an error. Otherwise, the debug interface to the selected hart will appear to be hung. Additionally, reset is not always applicable to the hart to recover from a hang situation. To avoid such situations, the halt action in Quick Access must be handled separately by the hart.
@@ -39,7 +39,7 @@ The `relaxedpriv` field is hardwired to 0.
 
 ==== Address Translation `aamvirtual`  
 
-The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines whether the Access Memory uses a physical or virtual address. When a physical memory access is issued (`aamvirtual`=0), the hart must check whether it is permitted to conduct such access as described in <<phyaddr>>. If it is not allowed, the hart responds with an exception, and the Debug Module will set `cmderr` to 3 and clear the data registers to 0.
+The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines whether the Access Memory command uses a physical or virtual address. When an Access Memory command is issued with `aamvirtual`=0, the hart must check whether the physical access is allowed to access memory. The hart responds with an exception to the Debug Module when M-mode is not permitted to debug, `tvm` (in mstatus) is set to 1, and `mode` (in satp) enables any kind of virtual translation. In the event of an exception, the Debug Module set `cmderr` to 3 and clear the data registers to 0.
 
 === System Bus Access 
 
