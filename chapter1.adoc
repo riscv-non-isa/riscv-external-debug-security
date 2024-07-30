@@ -1,15 +1,11 @@
 [[threatmodel]]
 == External Debug Security Threat model
 
-The growing complexity of modern System-on-Chip (SoC) designs has led to a corresponding increase in the need for effective debugging capabilities. However, the use of debugging functions also introduces potential security vulnerabilities that can be exploited by attackers to gain unauthorized access to sensitive information or perform malicious actions on the system. 
+Modern SoC development consists of several different actors who may not trust each other, resulting in the need to isolate actors’ assets during the development and debugging phases. The current RISC-V Debug specification cite:[dbgspec] grants external debuggers the highest privilege in the system regardless of the privilege level at which the target system is running. This leads to privilege escalation issues when multiple actors are present. 
 
-Modern SoC development consists of several different actors who may not trust each other, resulting in the need to isolate actors’ assets during the development and debugging phases. The current RISC-V Debug specification grants external debuggers the highest privilege in the system regardless of the privilege level at which the target system is running. This leads to privilege escalation issues when multiple actors are present. 
-
-For example, the owner of a SoC, who needs to debug their M-mode firmware, may be able to use the external debugger to bypass PMP.L and attack Boot ROM (the SoC creator’s asset).
+For example, the owner of a SoC, who needs to debug their M-mode firmware, may be able to use the external debugger to bypass PMP lock (pmpcfg.L=1) and attack Boot ROM (the SoC creator’s asset).
 
 Additionally, RISC-V privilege architecture supports multiple software entities or "supervisor domains" that do not trust each other. The supervisor domains are managed by secure monitor running in M-mode, they are isolated from each other by PMP/IOPMP and they may need different debug policies. The entity that owns secure monitor wants to disable external debug when shipping the secure monitor, however, the entity that owns the supervisor domain needs to enable external debug to develop the supervisor domain. Since the external debugger will be the granted highest privilege in the system, a malicious supervisor domain will be able to compromise M-mode secure monitor with the external debugger.
-
-This specification defines non-ISA extensions and ISA extensions to address the above security issues in the current RISC-V Debug specification. 
 
 
 
