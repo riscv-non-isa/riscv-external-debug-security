@@ -107,7 +107,6 @@ The error raised by resethaltreq, reset can be identified through the fields `al
 
 1 (ack): Clears error status bits for any selected harts. 
 
-Writes apply to the new value of hartsel and hasel.                                    
 
 | W1      | -    
 
