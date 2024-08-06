@@ -92,33 +92,20 @@ The interrupt can be disabled by `stepie` in the dcsr during single stepping. Wh
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For example, if a context switch for the supervisor domain triggered by a timer interrupt is suppressed, some real-time workloads might not be completed on time, resulting in unexpected errors.
 
 === Trace
-When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i. The sec_check[i] signal is only cleared when trace is allowed by <<mtrcctl, M-mode trace control>> and/or <<sdtrcctl, supervisor domain trace control>>.
+When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the interface defined in <<<_reference to the trace interface doc_>>> to trace module. 
 
 [mtrcctl]
 ==== M-Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls M-mode trace availability. Setting mtrcen[i] to 1 enables M-mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart i runs in M-mode.
+For each hart i, the input port mtrcen[i] controls the availability M-mode tracing. Setting mtrcen[i] to 1 enables trace for both M-mode and the supervisor domain. Conversely, setting mtrcen[i] to 0 disables trace output when hart i is running in M-mode.
 
 [NOTE]
-For a homogeneous computing system, similar to M-mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
+Similar to M-mode debug control, the implementation can choose to group several harts together and use one signal to drive their mtrcen ports or assign each hart a dedicated signal. 
 
 [sdtrcctl]
 ==== Supervisor Domain Trace Control 
-The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within hart i. The sec_check[i] signal for hart i in supervisor domain is determined by the `sdetrcalw` field and mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart i runs in supervisor domain.
+The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within hart i. The trace availability for hart i in supervisor domain is determined by the `sdetrcalw` field and mtrcen[i]. If either `sdetrcalw` or mtrcen[i] is set to 1, the trace output is allowed when hart i runs in the supervisor domain. 
 
-When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot be cleared at all.
-
-[[trcctl]]
-[options="header"]
-.Status of the sec_check[i] sideband signal across privilege levels
-|===========================================================
-| mtrcen| sdetrcalw| M-mode | Supervisor domain
-| 1     | x     | sec_check[i] = 0   | sec_check[i] = 0     
-| 0     | 1     | sec_check[i] = 1   | sec_check[i] = 0     
-| 0     | 0     | sec_check[i] = 1   | sec_check[i] = 1     
-|===========================================================
-
-[NOTE]
-The sec_check signal serves as an additional signal for the trace module, indicating that trace output is prohibited due to security controls. Functionally, sec_check behaves identically to the halted signal. Both sec_check and halted signals cannot be active simultaneously. Reserved for future applications, the combined state of [sec_check, halted] as 0b11 remains unutilized. In cases where a trace module lacks support for the sec_check signal, the hart may alternatively toggle the halted signal to restrict trace output.
+When both `sdetrcalw` and mtrcen[i] are set to 0, trace output is inhibited at all privilege levels. 
 
 === Trigger (Sdtrig)
 
