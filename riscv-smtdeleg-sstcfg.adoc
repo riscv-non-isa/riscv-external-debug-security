@@ -1,0 +1,113 @@
+[[intro]]
+== Introduction
+
+For a Machine-level environment, extension *Smtdeleg* (‘Sm’ for Privileged architecture and Machine-level extension, ‘tdeleg’ for Trigger Delegation) encompasses all added CSRs and all behavior modifications for a hart, over all privilege levels. For a
+Supervisor-level environment, extension *Sstcfg* (‘Ss’ for Privileged architecture and Supervisor-level extension, ‘tcfg’ for Trigger Configuration) provides access to delegated triggers. These extensions depend on the Sdtrig and Sscsrind extensions.
+
+[[body]]
+== CSRs
+
+=== Machine Trigger Delegation Register (`tdeleg`)
+
+`tdeleg` is a 64-bit register, accessible only in M-mode, that allows M-mode to delegate select triggers to S-mode.  For each bit _i_ in `tdeleg`, when `tdeleg`[_i_] = 1, the trigger with index _i_ (accessible via tdata* when tselect=_i_) is delegated to S-mode.
+
+For RV32, bits 63:32 of `tdeleg` can be accessed via the `tdelegh` CSR.
+
+[NOTE]
+====
+_Sdtrig allows up to 2^32^ triggers to be implemented.  Only the lower 64 triggers can be delegated._
+====
+
+[WARN]
+====
+_It is an open question whether selective trigger delegation is needed, or whether a single bit to delegate all triggers will suffice.  The latter has the benefit of saving CSRs, and does not impose a limit on the number of triggers that can be delegated.  Selective delegation is only needed if we believe that M-mode may either want to preserve some triggers for its own use, or want to block exposure of some triggers to S-mode._
+
+_If selective triggering is preferred, the next question is how many to support.  We could add additional `tdeleg` CSRs if more than 64 are desired._
+====
+
+=== Hypervisor Trigger Delegation Register (`htdeleg`)
+
+`htdeleg` is a 64-bit register that allows HS-mode to further delegate triggers delegated to S-mode to VS-mode.  For each bit _i_ in `htdeleg`, when `tdeleg`[_i_] = 1 and `htdeleg`[_i_] = 1, the trigger with index _i_ (accessible via tdata* when tselect=_i_) is delegated to VS-mode.
+
+For RV32, bits 63:32 of `htdeleg` can be accessed via the `htdelegh` CSR.
+
+== Trigger Delegation
+
+The `siselect` (and `vsiselect`) index range 0x300-0x33F (_actual range TBD_) is reserved for delegated trigger access. When a trigger _i_ is delegated (`tdeleg`[_i_]=1), the Sdtrig registers associated with trigger _i_ can be read or written via `sireg*`, while `siselect` holds 0x300+__i__.  If the H extension is also implemented, the registers associated with trigger _i_ can also be read or written via `vsireg*` while `vsiselect` holds 0x300+__i__.  The mapping of sireg* and vsireg* registers to Sdtrig trigger registers is shown below.
+
+.Indirect Trigger Register Mappings
+[width="50%",options="header"]
+|===
+| Sdtrig CSR | Indirect CSR
+| tdata1 | sireg/vsireg
+| tdata2 | sireg2/vsireg2
+| tdata3 | sireg3/vsireg3
+| tinfo | sireg4/vsireg4
+|===
+
+[WARN]
+====
+_The use of Sscsrind for trigger access again limits the number of triggers that can be delegated, since siselect is only required to hold values up to 0xfff, and that value space is shared with other extensions that depend on Sscsrind.  That said, it is expected that a sufficient range of siselect values can be applied to cover the number of triggers implemented in any practical implementation (256?)._
+
+_Alternatives have been discussed that would provide S-mode access to tselect, bypassing any limitations imposed by siselect.  However, that would require either having sireg* depend on tselect, or defining additional S-mode CSRs to access tdata*/tinfo.  In the interest of simplicity and consistency, this proposal uses Sscsrind in a natural manner._
+====
+
+If extension Smstateen is implemented, refer to extension Sscsrind (upon which this extension depends) for how setting bit 60 of CSR mstateen0 to zero prevents access to registers `siselect`, `sireg*`, `vsiselect`, and `vsireg*` from privileged modes less privileged than M-mode, and likewise how setting bit 60 of hstateen0 to zero prevents access to `siselect` and `sireg*` (really `vsiselect` and `vsireg*`) from VS-mode.
+
+The remaining rules of this section apply only when access to a CSR is not blocked by mstateen0[60] = 0 or hstateen0[60] = 0.
+
+While the privilege mode is M or S and `siselect` holds a value in the range 0x300-0x33F, illegal instruction exceptions are raised for the following cases:
+
+* attempts to access `sireg5`, `sireg6`, `vsireg5`, or `vsireg6`;
+* attempts to access `sireg*` when the trigger selected by `siselect` is not delegated to S-mode (the corresponding bit in `tdeleg` = 0);
+* attempts to access `vsireg*` when the trigger selected by `vsiselect` is not delegated to S-mode.
+
+While the privilege mode is VS and `vsiselect` holds a value in the range 0x300-0x33F, virtual instruction exceptions are raised for the following cases:
+
+* attempts to access `sireg5` (really `vsireg5`) or `sireg6` (really `vsireg6`);
+* attempts to access `sireg*` (really `vsireg*`) when the trigger selected by `vsiselect` is not delegated to VS-mode (the corresponding bit in `tdeleg` or `htdeleg` = 0).
+
+=== Trigger State Access
+
+For delegated triggers, `sireg*` and `vsireg*` provide access to a subset of the fields in the native trigger CSRs, and in some cases field behavior is modified.  The modifications and restrictions are documented below.
+
+.Delegated Trigger CSR Field Modifications
+[options="header", cols="20%,30%,50%"]
+|===
+| Sdtrig Register | `sireg*` Modifications | `vsireg*` Modifications
+| `tdata1` | `m` is read-only 0 | `m` is read-only 0
+
+`s` enables trigger match in VS-mode
+
+`u` enables trigger match in VU-mode
+
+`vs` and `vu` are read-only 0
+| `tdata2` | none | none
+| `tdata3` | none | `mhvalue` and `mhselect` are read-only 0
+| `tinfo` | none | none
+|===
+
+[NOTE]
+====
+_It is assumed that a hypervisor will not delegate triggers to a nested hypervisor running in VS-mode.  In such cases an SBI interface will be preferred, allowing the L0 hypervisor, running in HS-mode, to emulate the behavior of fields like `vs`, `vu`, and `mhvalue`/`mhselect`._
+====
+
+When `tdata1.dmode` = 1 for the trigger with index _i_, the trigger is reserved for Debug Mode use.  In that case, when not in Debug Mode, writes to `sireg` and `sireg[234]` are dropped when `siselect` holds 0x300+_i_, while writes to `vsireg` and `vsireg[234]` are dropped when `vsiselect` holds 0x300+_i_.
+
+== Enumeration
+
+S-mode software can discover the capabilities of triggers delegated to S-mode as follows:
+
+1. Write 0x300 to `siselect`
+2. Read `tinfo` (`sireg4`)  
+* If the read returns 0, tinfo is either not implemented or the trigger is not delegated, go to #3
+* If `tinfo.info`=1, the trigger is not implemented, exit the loop
+* Otherwise record the supported types found in `tinfo.info`, then go to #4
+3. Read `tdata1` (`sireg`)
+* If the read returns 0, the trigger is either not implemented or not delegated, go to #4
+* Otherwise record the type in `tdata1.type`, then go to #4
+4. If `siselect` < 0x33F, increment `siselect` and go to #2, else exit the loop
+
+VS-mode software can use the same algorithm to discover the capabilities of triggers delegated to VS-mode.
+
+
