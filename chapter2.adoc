@@ -29,27 +29,27 @@ A pending request to enter Debug Mode can dynamically change from a disallowed s
 [[mdbgctl]]
 ==== M-mode Debug Control
 
-An input port, named mdbgen[i], is introduced to control the debuggability of M-mode for each hart i as depicted in <<extdbg>>. When mdbgen[i] is set to 1, the following rules apply:
+A state element in each hart, named `mdbgen`, is introduced to control the debuggability of M-mode for each hart as depicted in <<extdbg>>. When `mdbgen` is set to 1, the following rules apply:
 
-- The <<dbgaccpriv, debug access privilege>> for the hart i can be configured to any legal privilege level
-- The <<dbops, debug operations>> are permitted when hart i executes in all modes
-- Abstract commands without halting the hart i carries M-mode privilege if supported
+- The <<dbgaccpriv, debug access privilege>> for the hart can be configured to any legal privilege level
+- The <<dbops, debug operations>> are permitted when the hart executes in all modes
+- Abstract commands without halting the hart carries M-mode privilege if supported
 
-When mdbgen[i] is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviors>> applies when the hart i runs in M-mode. 
+When `mdbgen` is set to 0, the <<dbops, debug operations>> are disallowed and the <<dbgdisallowed, behaviors>> applies when the hart runs in M-mode. 
 
 [NOTE]
-Since each hart has an input port for mdbgen, the implementation can choose to group several harts together and use one signal to drive their ports or assign each hart a dedicated signal. For example, a homogeneous computing system can consolidate all mdbgen[i] into a single port to enforce a unified debug policy across all harts.
+`Mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` state to enforce a unified debug policy across all harts.
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. The `sdedbgalw` along with mdbgen[i] determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
+The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. The `sdedbgalw` along with `mdbgen` determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
 
 [[dbgpriv]]
 [options="header"]
 [cols="25%,25%,50%"]
 .External debug allowed privilege levels per debug controls 
 |============================================
-| mdbgen[i] | sdedbgalw | Debug allowed privilege levels 
+| mdbgen | sdedbgalw | Debug allowed privilege levels 
 | 1      | Don't care      | All                      
 | 0      | 1      | All except M             
 | 0      | 0      | None                      
@@ -69,9 +69,9 @@ The dcsr (at 0x7b0) is always accessible in Debug Mode and the `prv` and `v` fie
 
 [[maxdbgpriv]]
 [options="header"]
-.Determining maximum debug access privilege with mdbgen[i] and sdedbgalw
+.Determining maximum debug access privilege with mdbgen and sdedbgalw
 |=========================================
-| mdbgen[i] | sdedbgalw | Maximum debug privilege allowed 
+| mdbgen | sdedbgalw | Maximum debug privilege allowed 
 | 1      | Don't care      | M                 
 | 0      | 1      | S(HS)             
 | 0      | 0      | None               
@@ -86,39 +86,26 @@ The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that
 
 ==== Interrupt during Single Stepping
 
-The interrupt can be disabled by `stepie` in the dcsr during single stepping. When mdbgen[i] is 1, `stepie` disables interrupts in all privilege modes for hart i. When mdbgen[i] is 0 and `sdedbgalw` is 1, only interrupts delegated to the supervisor domain are disabled, while interrupts that trap to M-mode are not affected.
+The interrupt can be disabled by `stepie` in the dcsr during single stepping. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only interrupts delegated to the supervisor domain are disabled, while interrupts that trap to M-mode are not affected.
 
 [NOTE]
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For example, if a context switch for the supervisor domain triggered by a timer interrupt is suppressed, some real-time workloads might not be completed on time, resulting in unexpected errors.
 
 === Trace
-When Sdsec is supported, the optional sideband signal to trace encoder, sec_check[i] cite:[etrace], must be implemented for each hart i. The sec_check[i] signal is only cleared when trace is allowed by <<mtrcctl, M-mode trace control>> and/or <<sdtrcctl, supervisor domain trace control>>.
+When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the interface defined in <<<_reference to the trace interface doc_>>> to trace module. 
 
 [mtrcctl]
 ==== M-Mode Trace Control 
-For each hart i, an input port, mtrcen[i], controls M-mode trace availability. Setting mtrcen[i] to 1 enables M-mode and supervisor domain trace by clearing the sec_check[i] signal to 0 across all privilege levels. Conversely, if mtrcen[i] is set to 0, the sec_check[i] signal cannot be cleared when the hart i runs in M-mode.
+Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain; setting `mtrcen` to 0 disables trace output when the hart is running in M-mode.
 
 [NOTE]
-For a homogeneous computing system, similar to M-mode debug control, the implementation can consolidate all mtrcen[i] into a single port to constrain trace capability across all harts.
+Similar to M-mode debug control, `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation may group several harts together and use one signal to drive their `mtrcen` state or assign each hart its own dedicated state. 
 
 [sdtrcctl]
 ==== Supervisor Domain Trace Control 
-The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within hart i. The sec_check[i] signal for hart i in supervisor domain is determined by the `sdetrcalw` field and mtrcen[i]. When the logical-OR of `sdetrcalw` and mtrcen[i] is 1, the sec_check[i] signal is cleared while the hart i runs in supervisor domain.
+The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1, the trace output is allowed when the hart runs in the supervisor domain. 
 
-When both `sdetrcalw` and mtrcen[i] are set to 0, the sec_check[i] signal cannot be cleared at all.
-
-[[trcctl]]
-[options="header"]
-.Status of the sec_check[i] sideband signal across privilege levels
-|===========================================================
-| mtrcen| sdetrcalw| M-mode | Supervisor domain
-| 1     | x     | sec_check[i] = 0   | sec_check[i] = 0     
-| 0     | 1     | sec_check[i] = 1   | sec_check[i] = 0     
-| 0     | 0     | sec_check[i] = 1   | sec_check[i] = 1     
-|===========================================================
-
-[NOTE]
-The sec_check signal serves as an additional signal for the trace module, indicating that trace output is prohibited due to security controls. Functionally, sec_check behaves identically to the halted signal. Both sec_check and halted signals cannot be active simultaneously. Reserved for future applications, the combined state of [sec_check, halted] as 0b11 remains unutilized. In cases where a trace module lacks support for the sec_check signal, the hart may alternatively toggle the halted signal to restrict trace output.
+When both `sdetrcalw` and `mtrcen` are set to 0, trace output is inhibited at all privilege levels. 
 
 === Trigger (Sdtrig)
 
@@ -129,10 +116,10 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 
 ==== M-mode accessibility to `dmode` 
  
-When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when mdbgen[i] is 0 and remains only accessible to Debug Mode when mdbgen[i] is 1.
+When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0 and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-The `dmode` being read/write allows M-mode to switch trigger context. The trigger can form a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain if the trigger context is not switched. Although the trigger cannot fire or match in disallowed supervisor domain to enter Debug Mode, the malicious debugger can exploit it by setting a trigger to raise breakpoint exception (`action` = 0) when it is in debug allowed supervisor domain. If the trigger hits in debug disallowed supervisor domain, the external debugger can indirectly observe the executed PC, accessed memory address or read/write data in debug disallowed supervisor domain by the checking value in `hit0`/`hit1`. As the `dmode` is accessible when mdbgen[i] is 0, such attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+The `dmode` being read/write allows M-mode to switch trigger context. The trigger can form a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain if the trigger context is not switched. Although the trigger cannot fire or match in disallowed supervisor domain to enter Debug Mode, the malicious debugger can exploit it by setting a trigger to raise breakpoint exception (`action` = 0) when it is in debug allowed supervisor domain. If the trigger hits in debug disallowed supervisor domain, the external debugger can indirectly observe the executed PC, accessed memory address or read/write data in debug disallowed supervisor domain by the checking value in `hit0`/`hit1`. As the `dmode` is accessible when `mdbgen` is 0, such attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
 ==== External triggers
 
@@ -156,11 +143,11 @@ The CSRs tcontrol, scontext, hcontext, mcontext, and mscontext must follow acces
 .Tselect, tdata1, tdata2, tdata3 CSR access condition in Debug Mode
 |================================================================
 | Register         |  Access condition
-| tselect(0x7a0)   |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| tdata1(0x7a1)    |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| tdata2(0x7a2)    |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| tdata3(0x7a3)    |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| tinfo(0x7a4)     |  mdbgen[i] == 1 \|\| sdedbgalw == 1
+| tselect(0x7a0)   |  mdbgen == 1 \|\| sdedbgalw == 1
+| tdata1(0x7a1)    |  mdbgen == 1 \|\| sdedbgalw == 1
+| tdata2(0x7a2)    |  mdbgen == 1 \|\| sdedbgalw == 1
+| tdata3(0x7a3)    |  mdbgen == 1 \|\| sdedbgalw == 1
+| tinfo(0x7a4)     |  mdbgen == 1 \|\| sdedbgalw == 1
 |================================================================
 
 The fields in mcontrol, mcontrol6, icount, itrigger, etrigger, and tmexttrigger are read/write accessible only when the access conditions are met. When access is disallowed, writes to these fields are ignored, and reads return zero.
@@ -170,11 +157,11 @@ The fields in mcontrol, mcontrol6, icount, itrigger, etrigger, and tmexttrigger 
 .Tdata1 fields access condtion against privilege granted to external debugger
 |====================================
 | Field | Access condition
-| m     | mdbgen[i] == 1                           
-| s     | mdbgen[i] == 1 \|\| sdedbgalw == 1    
-| u     | mdbgen[i] == 1 \|\| sdedbgalw == 1   
-| vs    | mdbgen[i] == 1 \|\| sdedbgalw == 1  
-| vu    | mdbgen[i] == 1 \|\| sdedbgalw == 1
+| m     | mdbgen == 1                           
+| s     | mdbgen == 1 \|\| sdedbgalw == 1    
+| u     | mdbgen == 1 \|\| sdedbgalw == 1   
+| vs    | mdbgen == 1 \|\| sdedbgalw == 1  
+| vu    | mdbgen == 1 \|\| sdedbgalw == 1
 |====================================
 
 === Other CSR updates
@@ -189,18 +176,18 @@ When the access conditions are met, they are read/write accessible. When access 
 [cols="40%,60%"]
 |============================================
 | Field    |  Access condition
-| debugver |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| extcause |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| cetrig   |  mdbgen[i] == 1 
-| ebreakvs |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| ebreakvu |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| ebreakm  |  mdbgen[i] == 1
-| ebreaks  |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| ebreaku  |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| stepie   |  mdbgen[i] == 1 \|\| sdedbgalw == 1
-| stoptime |  mdbgen[i] == 1
-| mprven   |  mdbgen[i] == 1
-| nmip     |  mdbgen[i] == 1
+| debugver |  mdbgen == 1 \|\| sdedbgalw == 1
+| extcause |  mdbgen == 1 \|\| sdedbgalw == 1
+| cetrig   |  mdbgen == 1 
+| ebreakvs |  mdbgen == 1 \|\| sdedbgalw == 1
+| ebreakvu |  mdbgen == 1 \|\| sdedbgalw == 1
+| ebreakm  |  mdbgen == 1
+| ebreaks  |  mdbgen == 1 \|\| sdedbgalw == 1
+| ebreaku  |  mdbgen == 1 \|\| sdedbgalw == 1
+| stepie   |  mdbgen == 1 \|\| sdedbgalw == 1
+| stoptime |  mdbgen == 1
+| mprven   |  mdbgen == 1
+| nmip     |  mdbgen == 1
 |============================================
 
 ==== Debug PC (dpc) and Debug Scratch Register (dscratch0 and dscratch1)
