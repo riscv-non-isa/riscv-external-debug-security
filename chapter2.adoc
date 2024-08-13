@@ -86,7 +86,7 @@ The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that
 
 ==== Interrupt during Single Stepping
 
-The interrupt can be disabled by `stepie` in the dcsr during single stepping. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for hart i. When `mdbgen` is 0 and `sdedbgalw` is 1, only interrupts delegated to the supervisor domain are disabled, while interrupts that trap to M-mode are not affected.
+The interrupt can be disabled by `stepie` in the dcsr during single stepping. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only interrupts delegated to the supervisor domain are disabled, while interrupts that trap to M-mode are not affected.
 
 [NOTE]
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For example, if a context switch for the supervisor domain triggered by a timer interrupt is suppressed, some real-time workloads might not be completed on time, resulting in unexpected errors.
@@ -96,14 +96,14 @@ When Sdsec is supported, trace, as a non-intrusive debug method, will be constra
 
 [mtrcctl]
 ==== M-Mode Trace Control 
-Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain. Conversely, setting `mtrcen` to 0 disables trace output when hart i is running in M-mode.
+Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain. Conversely, setting `mtrcen` to 0 disables trace output when the hart is running in M-mode.
 
 [NOTE]
 Similar to M-mode debug control, `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation may group several harts together and use one signal to drive their `mtrcen` state or assign each hart its own dedicated state. 
 
 [sdtrcctl]
 ==== Supervisor Domain Trace Control 
-The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within hart i. The trace availability for hart i in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1, the trace output is allowed when hart i runs in the supervisor domain. 
+The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1, the trace output is allowed when the hart runs in the supervisor domain. 
 
 When both `sdetrcalw` and `mtrcen` are set to 0, trace output is inhibited at all privilege levels. 
 
