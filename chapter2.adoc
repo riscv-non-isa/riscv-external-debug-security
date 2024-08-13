@@ -96,7 +96,7 @@ When Sdsec is supported, trace, as a non-intrusive debug method, will be constra
 
 [mtrcctl]
 ==== M-Mode Trace Control 
-Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain. Conversely, setting `mtrcen` to 0 disables trace output when the hart is running in M-mode.
+Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain; setting `mtrcen` to 0 disables trace output when the hart is running in M-mode.
 
 [NOTE]
 Similar to M-mode debug control, `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation may group several harts together and use one signal to drive their `mtrcen` state or assign each hart its own dedicated state. 
