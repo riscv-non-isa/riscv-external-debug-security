@@ -66,10 +66,15 @@ VS and VU are read-only 0
 
 [NOTE]
 ====
+_For a given `tselect` value, the bit positions for the `tdata1` fields listed above vary based on the value of `tdata1`.TYPE._
+====
+
+[NOTE]
+====
 _A hypervisor enabling trigger match in VS-mode or VU-mode must be done through `vsiselect`/`vsireg*`.  This simplifies support for nested virtualization.  A nested hypervisor (running in VS-mode) that wishes to configure triggers to match in a true guest will attempt to access `vsiselect`/`vsireg*`, which will naturally trap to HS-mode, thereby allowing the L0 hypervisor (running in HS-mode) to emulate the desired behavior._
 ====
 
-When `tdata1.dmode` = 1 for the trigger with index _i_, the trigger is reserved for Debug Mode use.  In that case, when `tselect` holds _i_ and the hart is not in Debug Mode, `sireg` and `sireg[234]` are read-only 0 while `siselect` holds XXX, and `vsireg` and `vsireg[234]` are read-only 0 while `vsiselect` holds XXX.
+When `tdata1`.DMODE = 1 for the trigger with index _i_, the trigger is reserved for Debug Mode use.  In that case, when `tselect` holds _i_ and the hart is not in Debug Mode, `sireg` and `sireg[234]` are read-only 0 while `siselect` holds XXX, and `vsireg` and `vsireg[234]` are read-only 0 while `vsiselect` holds XXX.
 
 == Supervisor and Virtual Supervisor Trigger State Access Control
 
