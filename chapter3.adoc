@@ -54,6 +54,17 @@ A dedicated error code, security fault error (cmderr 6), is included in `cmderr`
 
 The error raised by resethaltreq, reset can be identified through the fields `allsecfault` and `anysecfault` in dmstatus. Error status bits are internally maintained for each hart, with the `allsecfault` and `anysecfault` fields indicating the error status of the currently selected harts. These error statuses are sticky and can only be cleared by writing 1 to `acksecfault` in dmcs2.
 
+=== Non-secure Debug control
+
+The state element `nsecdbg` is introduced to retain full debugging capabilities, as if the extensions in this specification were not implemented. When `nsecdbg` is set to 1:
+
+* The Debug Module gains M-mode debug privilege for all harts in the system.
+* The ndmreset operation is allowed.
+* The `relaxedpriv` field becomes configurable.
+* System Bus Access bypasses the bus initiator protections.
+
+[NOTE] During the early stages of a chip's lifecycle, such as when developing the boot process, it is desirable to debug from the initial system state. The `nsecdbg` should only be set to 1 when the entire system is authorized for unrestricted debugging.
+
 === Update of Debug Module Registers
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
