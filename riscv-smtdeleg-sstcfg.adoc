@@ -1,8 +1,13 @@
 [[intro]]
 == Introduction
 
-For a Machine-level environment, extension *Smtdeleg* (‘Sm’ for Privileged architecture and Machine-level extension, ‘tdeleg’ for Trigger Delegation) encompasses all added CSRs and all behavior modifications for a hart, over all privilege levels. For a
-Supervisor-level environment, extension *Sstcfg* (‘Ss’ for Privileged architecture and Supervisor-level extension, ‘tcfg’ for Trigger Configuration) provides access to delegated triggers. These extensions depend on the Sdtrig and Sscsrind extensions.
+Sdtrig triggers allow both self-hosted and external debuggers to debug target software by transferring control to the debugger at points of interest.  However, Sdtrig CSRs are accessible only with M-mode privilege.  As a result, a debugger must have M-mode privilege, or be able to invoke M-mode, in order to access them.  
+
+For a self-hosted debugger with less than M-mode privilege, this requires an SBI (Supervisor Binary Interface).  This results in traps on all trigger accesses, which can add latency to critical context switch flows.
+
+For an external debugger, if Sdsec is implemented and the hart is configured such that Debug Mode has less than M-mode privilege, the debugger is unable to access triggers.  There is no SBI that can be called from Debug Mode.
+
+The Smtdeleg extension provides a means for Sdtrig triggers to be accessed from S-mode and VS-mode, using the indirect CSR interface (Sscsrind).  It also defines a means to control S-mode and VS-mode access to triggers using the State Enable extensions (Smstateen/Ssstateen).  Sstcfg comprises the supervisor components of Smtdeleg.
 
 [[body]]
 == CSRs
