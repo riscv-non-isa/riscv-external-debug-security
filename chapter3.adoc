@@ -41,6 +41,12 @@ The `relaxedpriv` field is hardwired to 0.
 
 The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines whether the Access Memory command uses a physical or virtual address. When an Access Memory command is issued with `aamvirtual`=0, the hart must check whether the physical access is allowed to access memory. The hart responds with an exception to the Debug Module when M-mode is not permitted to debug, `tvm` (in mstatus) is set to 1, and `mode` (in satp) enables any kind of virtual translation. In the event of an exception, the Debug Module set `cmderr` to 3 and clear the data registers to 0.
 
+==== Quick Access 
+
+When M-mode debugging is not allowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded, causing `cmderr` being set to 6.
+
+[NOTE] Disallowing the Quick Access command for M-mode simplifies the implementation, as it avoids the need for special handling of Quick Access. Consequently, Quick Access is inhibited for debuggers that are only allowed to debug supervisor domains. 
+
 === System Bus Access 
 
 The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return error to Debug Module on illegal access, in that case, Debug Module will set `sberror` to 6 (security fault error).
@@ -58,7 +64,7 @@ The error raised by resethaltreq, reset can be identified through the fields `al
 
 The state element `nsecdbg` is introduced to retain full debugging capabilities, as if the extensions in this specification were not implemented. When `nsecdbg` is set to 1:
 
-* The Debug Module gains M-mode debug privilege for all harts in the system.
+* All debug operations are executed with M-mode privilege (equivalent to having `mdbgen` set to 1) for all harts in the system.
 * The ndmreset operation is allowed.
 * The `relaxedpriv` field becomes configurable.
 * System Bus Access bypasses the bus initiator protections.
