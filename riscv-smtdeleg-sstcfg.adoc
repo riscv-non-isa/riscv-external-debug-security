@@ -89,11 +89,11 @@ While the privilege mode is VS and `vsiselect` holds XXX, virtual instruction ex
 
 === State Enable Access Control
 
-When Smstateen is implemented, the `mstateen0`.TR bit controls access to Sdtrig register state from privilege modes less privileged than M-mode.  When `mstateen0`.TR=1, accesses to Sdtrig register state behave as described in <<Supervisor and Virtual Supervisor Trigger Access>> above.  When `mstateen0`.TR=0 and the privilege mode is less privileged than M-mode, attempts to access `sireg` or `sireg[234]` while `siselect` holds XXX, or to access `vsireg` or `vsireg[234]` while `vsiselect` holds XXX, raise an illegal-instruction exception.
+When Smstateen is implemented, the `mstateen0`.TR bit controls access to Sdtrig register state from privilege modes less privileged than M-mode.  When `mstateen0`.TR=1, accesses to Sdtrig register state behave as described in <<Supervisor and Virtual Supervisor Trigger Access>> above.  When `mstateen0`.TR=0 and the privilege mode is less privileged than M-mode, attempts to access `stselect`, `sireg` or `sireg[234]` while `siselect` holds XXX, or `vsireg` or `vsireg[234]` while `vsiselect` holds XXX, raise an illegal-instruction exception.
 
 If the H extension is implemented and `mstateen0`.TR=1, the `hstateen0`.TR bit controls access to Sdtrig state when V=1.  `hstateen0`.TR is read-only 0 when `mstateen0`.TR=0.
 
-When `mstateen0`.TR=1 and `hstateen0`.TR=1, VS-mode accesses to supervisor TR state behave as described in <<Supervisor and Virtual Supervisor Trigger Access>> above.  When `mstateen0`.TR=1 and `hstateen0`.TR=0, attempts from VS-mode to access `sireg` (really `vsireg`) or `sireg[234]` (really `vsireg[234]`) while `vsiselect` holds XXX raise a virtual-instruction exception.
+When `mstateen0`.TR=1 and `hstateen0`.TR=1, VS-mode accesses to supervisor TR state behave as described in <<Supervisor and Virtual Supervisor Trigger Access>> above.  When `mstateen0`.TR=1 and `hstateen0`.TR=0, attempts from VS-mode to access `stselect`, or `sireg` (really `vsireg`) or `sireg[234]` (really `vsireg[234]`) while `vsiselect` holds XXX, raise a virtual-instruction exception.
 
 The TR bit is bit YYY in `mstateen0` and `hstateen0`.
 
