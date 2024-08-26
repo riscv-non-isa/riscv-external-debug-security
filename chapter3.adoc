@@ -45,7 +45,7 @@ The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines w
 
 When M-mode debugging is not allowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded, causing `cmderr` being set to 6.
 
-[NOTE] Disallowing the Quick Access command for M-mode simplifies the implementation, as it avoids the need for special handling of Quick Access. Consequently, Quick Access is inhibited for debuggers that are only allowed to debug supervisor domains. 
+[NOTE] Quick Access abstract commands effect a halt, execution of Program Buffer, and resuming on the selected hart. However, it is undesirable for these Quick Access halts to remain pending until debug is allowed, since the debugger blocks while waiting for the Quick Access to complete. Returning an error only for Quick Access commands received when debug is not allowed would require the hart to distinguish between Quick Access halt requests and other halt requests. Because Quick Access is merely an optimized flow and not required for any usage models, it was decided to avoid burdening the hart with extra hardware. Therefore, Quick Access is forbiden when `mdbgen` is 0.
 
 === System Bus Access 
 
@@ -66,8 +66,8 @@ The state element `nsecdbg` is introduced to retain full debugging capabilities,
 
 * All debug operations are executed with M-mode privilege (equivalent to having `mdbgen` set to 1) for all harts in the system.
 * The ndmreset operation is allowed.
-* The `relaxedpriv` field becomes configurable.
-* System Bus Access bypasses the bus initiator protections.
+* The `relaxedpriv` field may be configurable.
+* System Bus Access may bypass the bus initiator protections.
 
 [NOTE] During the early stages of a chip's lifecycle, such as when developing the boot process, it is desirable to debug from the initial system state. The `nsecdbg` should only be set to 1 when the entire system is authorized for unrestricted debugging.
 
