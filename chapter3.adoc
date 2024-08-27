@@ -45,7 +45,7 @@ The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines w
 
 When M-mode debugging is not allowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded, causing `cmderr` being set to 6.
 
-[NOTE] Quick Access abstract commands effect a halt, execution of Program Buffer, and resuming on the selected hart. However, it is undesirable for these Quick Access halts to remain pending until debug is allowed, since the debugger blocks while waiting for the Quick Access to complete. Returning an error only for Quick Access commands received when debug is not allowed would require the hart to distinguish between Quick Access halt requests and other halt requests. Because Quick Access is merely an optimized flow and not required for any usage models, it was decided to avoid burdening the hart with extra hardware. Therefore, Quick Access is forbiden when `mdbgen` is 0.
+[NOTE] Quick Access abstract commands effect a halt, execution of Program Buffer, and resume of the selected hart. However, it is undesirable for these Quick Access halts to remain pending until debug is allowed, since the debugger blocks while waiting for the Quick Access to complete. Returning an error only for Quick Access commands received when debug is not allowed would require the hart to distinguish between Quick Access halt requests and other halt requests. Because Quick Access is merely an optimized flow and not required for any usage models, it was decided to avoid burdening the hart with extra hardware. Therefore, Quick Access is forbiden when `mdbgen` is 0.
 
 === System Bus Access 
 
