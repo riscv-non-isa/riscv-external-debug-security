@@ -32,15 +32,13 @@ While `siselect` holds XXX, the `sireg*` registers provide access to the `tdata*
 
 [WARN]
 ====
-_There has been much discussion of the best way to access counters in S-mode.  This method requires 1 new CSR (`stselect`), and creates a scenario where there are 2 levels of indirection (siselect routes sireg* to t*, and tselect routes t* to the state associated with the selected trigger)._
+_There was much discussion of the best way to access counters in S-mode.  This method requires 1 new CSR (`stselect`), and creates a scenario where there are 2 levels of indirection (siselect routes sireg* to t*, and tselect routes t* to the state associated with the selected trigger)._
 
 _Also proposed was to simply allocate a range of `siselect` values that serve to select the trigger, bypassing `tselect` when accessing trigger state through `sireg*`.  This avoids the 2nd level of indirection, but artificially limits the number of triggers accessible in S-mode.  `tselect` supports up to 2^MXLEN^ triggers, while `siselect` would likely allocate only enough values to cover practical implementations (256?)._
 
 _Other approaches considered:
-* _Define new `stdata[123]` and `stinfo` registers, which provide S-mode access to `tdata[123]` and `tinfo`.  Costs 4 more CSR addresses, and avoids dependence on Sscsrind altogether._
+* _Define new `stdata[123]` and `stinfo` registers, which provide S-mode access to `tdata[123]` and `tinfo`.  Avoids dependence on Sscsrind altogether, but costs 4 more CSR addresses._
 * _Access `tselect` via `sireg5` instead of through a new `stselect` CSR (access to `tdata*` and `tinfo` is the same as spec'd above).  While saving a CSR, this approach would require `sireg5` to continue to access `tselect` while the other `sireg*` registers shift the state they acccess based on the `tselect` value.  This approach seems more awkward for implementation._
-
-_Feedback on these options, or others, is welcome._
 ====
 
 Similarly, when `vsiselect` holds XXX, the `vsireg*` registers provide access to `tdata*` and `tinfo` in the same manner as described above for `sireg*`.
@@ -107,7 +105,7 @@ _See the Sscsrind spec for how bit 60 in mstateen0 and hstateen0 can also restri
 ====
 _Utilizing Smstateen to control access to trigger state in S-mode and VS-mode results in an "all or none" delegation mechanism.  It is believed that this is sufficient, that software is not accustomed to exposing only select triggers to less privileged modes on other architectures._
 
-_If there is a reason to support selective delegation, new `tdelegX` and `htdelegX` registers could be defined, such that each bit enables delegation of the associated trigger.  However, this would artificially limit the number of triggers that could be delegated._
+_If, in the future, there is a reason to support selective delegation, new `tdelegX` and `htdelegX` registers could be defined, such that each bit enables delegation of the associated trigger.  However, this would artificially limit the number of triggers that could be delegated._
 ====
 
 
