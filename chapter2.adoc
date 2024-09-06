@@ -86,7 +86,7 @@ The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that
 
 ==== Interrupt during Single Stepping
 
-The interrupt can be disabled by `stepie` during single stepping. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only interrupts delegated to the supervisor domain are disabled, while interrupts that trap to M-mode are not affected.
+The interrupt can be disabled by `stepie` in `dcsr` during single stepping. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only interrupts delegated to the supervisor domain are disabled, while interrupts that trap to M-mode are not affected.
 
 [NOTE]
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For example, if a context switch for the supervisor domain triggered by a timer interrupt is suppressed, some real-time workloads might not be completed on time, resulting in unexpected errors.
@@ -150,9 +150,9 @@ The following CSRs are provided for debugging supervisor domain. They are only r
 | 0xaaa    | sdcratch1  | Supervisor debug scratch register 1.
 |============================================================================================
 
-The `sdcsr` register tracks the current debug state of the hart, formatted as shown in <<sdcsr32>> and <<sdcsr64>>. When `mdbgen` is 0 and `sdedbgalw` is set to 1, the `prv` and `v` fields indicate the the privilege level at which the hart was executing before entering Debug Mode. Meanwhile, the `sdpc` is updated with the address of the next instruction to executed upon entry into Debug Mode. When resuming from Debug Mode, the privilege level of the hart is restored to the values in `prv` and `v`, while the hart's PC is updated wth the address in `sdpc`.   
+The `sdcsr` provides supervisor access to `dcsr` and is a subset of it. The accessible fields are formatted as shown in <<sdcsr32>> and <<sdcsr64>>. When `mdbgen` is 0 and `sdedbgalw` is set to 1, the `prv` and `v` fields indicate the the privilege level at which the hart was executing before entering Debug Mode. Meanwhile, the `sdpc` is updated with the address of the next instruction to executed upon entry into Debug Mode. When resuming from Debug Mode, the privilege level of the hart is restored to the values in `prv` and `v`, while the hart's PC is updated wth the address in `sdpc`.   
 
-The `sdscratch0` and `sdscratch1` are optional scratch registers.
+The `sdscratch0` and `sdscratch1` are optional scratch registers are only required if dscratch0 and dscratch1 are implemented.
 
 [NOTE]
 In a straightforward implementation, reading or writing any field in `sdcsr` is equivalent to reading or writing the corresponding field in `dcsr`, much like how it works for `sstatus`.
