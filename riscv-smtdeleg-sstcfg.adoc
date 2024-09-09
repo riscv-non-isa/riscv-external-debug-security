@@ -36,8 +36,10 @@ _There was much discussion of the best way to access counters in S-mode.  This m
 
 _Also proposed was to simply allocate a range of `siselect` values that serve to select the trigger, bypassing `tselect` when accessing trigger state through `sireg*`.  This adds no new CSRs, but artificially limits the number of triggers accessible in S-mode.  `tselect` supports up to 2^MXLEN^ triggers, while `siselect` would likely allocate only enough values to cover practical implementations (256?)._
 
-_Other approaches considered:
+_Other approaches considered:_
+
 * _Define new `stdata[123]` and `stinfo` registers, which provide S-mode access to `tdata[123]` and `tinfo`.  Avoids dependence on Sscsrind altogether, but costs 4 more CSR addresses._
+
 * _Access `tselect` via `sireg5` instead of through a new `stselect` CSR (access to `tdata*` and `tinfo` is the same as spec'd above).  While saving a CSR, this approach would require `sireg5` to continue to access `tselect` while the other `sireg*` registers shift the state they acccess based on the `tselect` value.  This approach seems more awkward for implementation._
 ====
 
