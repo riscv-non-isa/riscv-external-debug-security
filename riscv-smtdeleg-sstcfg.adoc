@@ -18,10 +18,10 @@ The Smtdeleg extension provides a means for Sdtrig triggers to be accessed from 
 
 == Supervisor and Virtual Supervisor Trigger Access
 
-While `siselect` holds XXX, the `sireg*` registers provide supervisor access to register state associated with the trigger selected in `tselect`, the same state accessed by M-mode CSRs `tdata*` and `tinfo`. The register mapping is shown below.
+While `siselect` holds XXX, the `sireg*` registers provide supervisor read/write access to register state associated with the trigger selected in `tselect`, the same state accessed by M-mode CSRs `tdata*` and `tinfo`. The register mapping is shown below.
 
-.Indirect Trigger Register Mappings
-[width="50%",options="header"]
+.Indirect Trigger Register Mappings When `siselect` = XXX
+[width="70%",options="header"]
 |===
 | Indirect CSR | State Accessed
 | `sireg` | Same as `tdata1` 
