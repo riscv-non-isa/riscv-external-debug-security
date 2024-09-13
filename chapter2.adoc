@@ -137,7 +137,7 @@ This represents a balance between usability and hardware complexity. There may b
 [[ssdextcsr]]
 ==== Extension of Sdext CSR
 
-The following CSRs are provided for debugging supervisor domain. They are only read/write in Debug Mode and not accessible by hart.  
+The `sdcsr`, `sdpc` provides supervisor read/write access to the `dcsr`, `dpc`. They are only accessible in Debug Mode. 
 
 .Allocated addresses for supervisor shadow of Debug Mode CSR  
 [options="header"]
@@ -146,16 +146,12 @@ The following CSRs are provided for debugging supervisor domain. They are only r
 | Number   | Name       | Descirption
 | 0xaaa    | sdcsr      | Supervisor debug control and status register.
 | 0xaaa    | sdpc       | Supervisor debug program counter. 
-| 0xaaa    | sdcratch0  | Supervisor debug scratch register 0.
-| 0xaaa    | sdcratch1  | Supervisor debug scratch register 1.
 |============================================================================================
 
-The `sdcsr` provides supervisor access to `dcsr` and is a subset of it. The accessible fields are formatted as shown in <<sdcsr32>> and <<sdcsr64>>. When `mdbgen` is 0 and `sdedbgalw` is set to 1, the `prv` and `v` fields indicate the the privilege level at which the hart was executing before entering Debug Mode. Meanwhile, the `sdpc` is updated with the address of the next instruction to executed upon entry into Debug Mode. When resuming from Debug Mode, the privilege level of the hart is restored to the values in `prv` and `v`, while the hart's PC is updated wth the address in `sdpc`.   
-
-The `sdscratch0` and `sdscratch1` are optional scratch registers are only required if dscratch0 and dscratch1 are implemented.
+The `sdcsr` is a subset of the `dcsr` formatted as shown in <<sdcsr32>> and <<sdcsr64>>, while the `sdpc` has full access to the `dpc`.
 
 [NOTE]
-In a straightforward implementation, reading or writing any field in `sdcsr` is equivalent to reading or writing the corresponding field in `dcsr`, much like how it works for `sstatus`.
+Unlike `dcsr` and `dpc`, the scratch registers do not have supervisor access, and external debuggers with S-mode privilege cannot not use them as scratch memory.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug control and status register (sdcsr) for RV32"]
@@ -216,6 +212,9 @@ In a straightforward implementation, reading or writing any field in `sdcsr` is 
 ], config:{lanes: 4, hspace:1024}}
 ....
 
+[NOTE]
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in the `dcsr` are configurable only by M-mode,  masked from the `sdcsr` while the `prv` field is constrained to 1 bit.  
+
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug program counter (sdpc)"]
 [id=sdpc]
@@ -229,38 +228,6 @@ In a straightforward implementation, reading or writing any field in `sdcsr` is 
 (def boxes-per-row 32)
 (draw-column-headers {:height 24 :font-size 24 :labels (reverse ["0" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "DXLEN-1" ""])})
 (draw-box "sdpc" {:span 32:text-anchor "middle" :borders {:left :border-unrelated :top :border-unrelated :bottom :border-unrelated :right :border-unrelated}})
-(draw-box "DXLEN" {:font-size 24 :span 32 :borders {}})
-----
-
-[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="Supervisor debug scratch register 0 (sdscratch0)"]
-[id=sdscratch0]
-[bytefield]
-----
-(defattrs :plain [:plain { :font-size 24}])
-(def row-height 40 )
-(def row-header-fn nil)
-(def left-margin 30)
-(def right-margin 30)
-(def boxes-per-row 32)
-(draw-column-headers {:height 24 :font-size 24 :labels (reverse ["0" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "DXLEN-1" ""])})
-(draw-box "sdscratch0" {:span 32:text-anchor "middle" :borders {:left :border-unrelated :top :border-unrelated :bottom :border-unrelated :right :border-unrelated}})
-(draw-box "DXLEN" {:font-size 24 :span 32 :borders {}})
-----
-
-[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="Supervisor debug scratch register 1 (sdscratch1)"]
-[id=sdscratch1]
-[bytefield]
-----
-(defattrs :plain [:plain { :font-size 24}])
-(def row-height 40 )
-(def row-header-fn nil)
-(def left-margin 30)
-(def right-margin 30)
-(def boxes-per-row 32)
-(draw-column-headers {:height 24 :font-size 24 :labels (reverse ["0" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "" "DXLEN-1" ""])})
-(draw-box "sdscratch0" {:span 32:text-anchor "middle" :borders {:left :border-unrelated :top :border-unrelated :bottom :border-unrelated :right :border-unrelated}})
 (draw-box "DXLEN" {:font-size 24 :span 32 :borders {}})
 ----
 
