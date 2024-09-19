@@ -148,10 +148,10 @@ The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dc
 | 0xaaa    | sdpc       | Supervisor debug program counter. 
 |============================================================================================
 
-The `sdcsr` register exposes a subset of the `dcsr`, formatted as shown in <<sdcsr32>>, while the `sdpc` provides full access to the `dpc`.
+The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32>>, while the `sdpc` register provides full access to `dpc`.
 
 [NOTE]
-Unlike the `dcsr` and `dpc`, the scratch registers do not have supervisor access, and external debuggers with S-mode privilege cannot not use them as scratch memory.
+Unlike `dcsr` and `dpc`, the scratch registers do not have supervisor access, and external debuggers with S-mode privilege cannot not use them as scratch memory.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug control and status register (sdcsr) for RV32"]
@@ -183,7 +183,7 @@ Unlike the `dcsr` and `dpc`, the scratch registers do not have supervisor access
 ....
 
 [NOTE]
-The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in the `dcsr` are configurable only by M-mode,  masked from the `sdcsr` while the `prv` field is constrained to 1 bit.  
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode,  masked from `sdcsr` while the `prv` field is constrained to 1 bit.  
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug program counter (sdpc)"]
