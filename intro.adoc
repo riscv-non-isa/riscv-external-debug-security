@@ -1,18 +1,19 @@
 [[intro]]
 == Introduction
-Debugging and tracing are essential tools utilized by developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing and production phases. However, the current RISC-V Debug and trace specification grants the external debugger highest privilege in the system, regardless of the privilege level at which the target system is running. It leads to privilege escalation issues when multiple actors are present. 
+Debugging and tracing are essential for developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing and production phases. However, the current RISC-V Debug and trace specification grants the external debugger highest privilege in the system, regardless of the privilege level at which the target system is running. It leads to privilege escalation issues when multiple actors are present. 
 
 
 This specification defines non-ISA extension <<dmsext, Debug Module Security Extension (non-ISA extension)>> and ISA extension <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
 A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.:
 
-    - *Per-Hart Debug Control:* Introduce per-hart control knobs to control whether external debug is allowed in M-mode and/or supervisor domains cite:[smmtt]
-    - *Debug Mode:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; all operations are executed with <<dbgaccpriv, debug access privilege>> instead of M-mode privilege
-    - *Memory Access:* Memory access from a hart’s point of view using a Program Buffer or the Abstract Command must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege>>; memory access from Debug Module using System Bus Access block without involving a hart must be checked by system memory protection mechanism, such as IOPMP or WorldGuard
-    - *Register Access:* Register access using Program Buffer or the Abstract Command works as if the hart is running in <<dbgaccpriv, debug access privilege>> instead of M-mode privilege
-    - *Triggers:* Triggers (with action=1) can only fire or match when external debug is allowed in current privilege
-    - *Per-Hart Trace Control:* Introduce per-hart knobs to control whether tracing is allowed in M-mode and supervisor domains
+    - *Per-Hart Debug Control:* Introduce per-hart states to control whether external debug is allowed in M-mode and/or supervisor domains cite:[smmtt].
+    - *Per-Hart Trace Control:* Introduce per-hart states to control whether tracing is allowed in M-mode and/or supervisor domains.
+    - *Non-secure debug:* Add a non-secure debug state to relax security constraints.
+    - *Debug Mode entry:* External debugger can only halt the hart and enter debug mode when debug is allowed in current privilege mode; all operations are executed with <<dbgaccpriv, debug access privilege>> instead of M-mode privilege.
+    - *Memory Access:* Memory access from a hart’s point of view using a Program Buffer or the Abstract Command must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege>>; memory access from Debug Module using System Bus Access block without involving a hart must be checked by system memory protection mechanism, such as IOPMP or WorldGuard.
+    - *Register Access:* Register access using Program Buffer or the Abstract Command works as if the hart is running in <<dbgaccpriv, debug access privilege>> instead of M-mode privilege. The debug CSRs (`dcsr` and `dpc` ) are shadowed in supervisor domains while Smtdeleg/Sstcfg extensions expose the trigger CSRs to supervisor domains through indirect CSR access. 
+    - *Triggers:* Triggers (with action=1) can only fire or match when external debug is allowed in current privilege.
 
 === Terminology
 
