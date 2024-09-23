@@ -22,6 +22,5 @@ Similar to the Debug Module, the trace encoder is controlled by the mtrcen[i] an
 
 image::external_debug_trace.png[title="The security control on trace module",align="center"]
 
-
-
-
+=== Execution Based Implementation with Sdsec
+<TBD>
