@@ -18,7 +18,7 @@ The ISA and non-ISA external debug security extensions impose security constrain
 The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be removed as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset request, the request is only acknowledged by the hart when it is permitted to debug after the deassertion of reset. Besides, when a Quick Access abstract command is issued to a hart while the hart is not yet allowed to debug, the Quick Access cannot halt the hart, and the Debug Module will receive a security error fault (`cmderr`=6).
 
 [NOTE]
-The halt action in Quick Access is handled differently because other types of halts can be canceled by external debugger when debugging is disallowed, while the Quick Access command can only complete successfully or respond with an error. Otherwise, the debug interface to the selected hart will appear to be hung. Additionally, reset is not always applicable to the hart to recover from a hang situation. To avoid such situations, the halt action in Quick Access must be handled separately by the hart.
+The halt action in Quick Access is handled differently because other types of halts can be canceled by external debugger when debugging is disallowed, while the Quick Access command can only complete successfully or respond with an error. Otherwise, the debug interface to the selected hart will appear to be hung. Additionally, reset is not always applicable to the hart to recover from a hang situation. To avoid such situations, the halt action in Quick Access must be handled separately.
 
 === Reset
 
