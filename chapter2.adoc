@@ -154,7 +154,7 @@ The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32
 Unlike `dcsr` and `dpc`, the scratch registers do not have supervisor access, and external debuggers with S-mode privilege cannot not use them as scratch memory.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="Supervisor debug control and status register (sdcsr) for RV32"]
+[title="Supervisor debug control and status register (sdcsr)"]
 [id=sdcsr32]
 [wavedrom, ,svg]
 ....

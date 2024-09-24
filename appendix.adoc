@@ -22,5 +22,9 @@ Similar to the Debug Module, the trace encoder is controlled by the mtrcen[i] an
 
 image::external_debug_trace.png[title="The security control on trace module",align="center"]
 
-=== Execution Based Implementation with Sdsec
-<TBD>
+[appendix]
+== Execution Based Implementation with Sdsec
+
+In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access the memory and CSR. However, once execution is dispatched to an abstract command or the program buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
+
+To achieve this, a Debug Mode only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 by the final instruction of the park loop, right before execution is transferred to an abstract command or the program buffer.
