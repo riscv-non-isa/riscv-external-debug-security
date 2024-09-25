@@ -21,7 +21,7 @@ A summary of the changes introduced by _The RISC-V External Debug Security Speci
 [cols="20%,80%"]
 |=====================================================================================================================================================
 | Abstract command       | A high-level command in Debug Module used to interact with and control harts                                               
-| Debug Access Privilege | The privilege with which abstract commands or instructions in program buffers access hardware resources                    
+| Debug Access Privilege | The privilege with which an Abstract Command or instructions in the Program Buffer access hardware resources                    
 | Debug Mode             | An additional privilege mode to support off-chip debugging                                                                 
 | Hart                   | A RISC-V hardware thread                                                                                                   
 | IOPMP                  | Input-Output Physical Memory Protection unit                                                                               

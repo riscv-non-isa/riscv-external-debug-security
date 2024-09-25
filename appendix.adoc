@@ -5,7 +5,7 @@ This chapter explains the theory of operation for the External Debug Security Ex
 
 === Debug Security Control
 
-As outlined in the specification, the dedicated debug security policy for a hart is enforced by platform state `nsecdbg`, hart's state `mdbgen`, and the `sdedbgalw` field inside the `msdcfg` CSR. Both the `nsecdbg` and `mdbgen` states can be accommodated in MMIO outside the harts, such as in the Debug Module registers, or implemented as fuses.  
+As outlined in the specification, the dedicated debug security policy for a hart is enforced by platform state `nsecdbg`, hart state `mdbgen`, and the `sdedbgalw` field inside the `msdcfg` CSR. Both the `nsecdbg` and `mdbgen` states can be accommodated in MMIO outside the harts, such as in the Debug Module registers, or implemented as fuses.  
 
 The security control logic validates all debug requests and triggers (with action=1) firing/matching based on `nsecdbg`, `mdbgen`, and `sdedbgalw` against the privilege level of the hart. Debug requests that fail validation will either be dropped or kept pending. Additionally, the platform-specific external trigger inputs must obey platform constraints, which must be carefully handled by the platform implementation. 
 
@@ -27,6 +27,6 @@ image::external_debug_trace.png[title="The trace security control",align="center
 [appendix]
 == Execution Based Implementation with Sdsec
 
-In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access the memory and CSR. However, once execution is dispatched to an abstract command or the program buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
+In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access the memory and CSR. However, once execution is dispatched to an Abstract Command or the program buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
 
-To achieve this, a Debug Mode only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 by the final instruction of the park loop, right before execution is transferred to an abstract command or the program buffer.
+To achieve this, a Debug Mode only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 by the final instruction of the park loop, right before execution is transferred to an Abstract Command or the program buffer.
