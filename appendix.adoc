@@ -20,7 +20,7 @@ Application-level debugging is primarily accomplished through self-hosted debugg
 
 === Trace security control 
 
-Similar to the debug security, the trace is controlled by platform state `nsecdbg`, hart's state `mtrcen`  and `sdetrcalw` in CSR `msdcfg` for each hart. The sec_inhibit sideband signal indicates the availability of trace to the trace encoder.
+Similar to debug security, trace is controlled by platform state `nsecdbg`, hart state `mtrcen`, and `sdetrcalw` in CSR `msdcfg` for each hart. The sec_inhibit sideband signal indicates the availability of trace to the trace encoder.
 
 image::external_debug_trace.png[title="The trace security control",align="center"]
 
