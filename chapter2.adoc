@@ -105,7 +105,7 @@ The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,ms
 
 When both `sdetrcalw` and `mtrcen` are set to 0, trace is inhibited in all privilege levels. 
 
-=== Trigger (Sdtrig)
+=== Triggers (Sdtrig)
 
 Triggers configured to enter Debug Mode can only fire or match when external debug is allowed, as outlined in <<dbgpriv>>. 
 
@@ -114,16 +114,16 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 
 ==== M-mode Accessibility to `dmode` 
  
-When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0 and remains only accessible to Debug Mode when `mdbgen` is 1.
+When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-The `dmode` being read/write allows M-mode to switch trigger context. The trigger can form a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain if the trigger context is not switched. Although the trigger cannot fire or match in disallowed supervisor domain to enter Debug Mode, the malicious debugger can exploit it by setting a trigger to raise breakpoint exception (`action` = 0) when it is in debug allowed supervisor domain. If the trigger hits in debug disallowed supervisor domain, the external debugger can indirectly observe the executed PC, accessed memory address or read/write data in debug disallowed supervisor domain by the checking value in `hit0`/`hit1`. As the `dmode` is accessible when `mdbgen` is 0, such attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+Allowing M-mode to have write access to `dmode` allows M-mode to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain. Although the trigger could take action (breakpoint exception or Debug Mode entry) in a disallowed supervisor domain, the action could be pended and taken once a debug allowed supervisor domain is entered.  This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
 ==== External Triggers
 
 The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug allowed privilege as specified in <<dbgpriv>>.
 
-The external trigger input can be driven by any input signals, e.g. the external trigger output from another hart or interrupt signals etc. The input signals cause the trigger (with `action` = 1) to fire only when the hart is allowed to debug. The initiators of these signals are responsible for determining whether the signal is allowed to assert. For example, if the external trigger input of hart i is connected to external trigger output of hart j. The assertion of output signal from hart j is determined by its own allowed privilege level for debug. The output signal of hart j must not assert when debug is disallowed. Similarly, signals from other module in the system are managed by the individual module. When the module is not allowed to debug, the signal connected to external trigger input must not be asserted.
+The external trigger input can be driven by any input signals, e.g. the external trigger output from another hart, interrupt signals, etc. The input signals cause the trigger (with `action` = 1) to fire only when the hart is allowed to debug. The initiators of these signals are responsible for determining whether the signal is allowed to assert. For example, if the external trigger input of hart _i_ is connected to external trigger output of hart _j_, the assertion of output signal from hart _j_ is determined by its own allowed privilege level for debug. The output signal of hart _j_ must not assert when debug is disallowed. Similarly, signals from other modules in the system are managed by the individual module. When the module is not debug allowed, the signal connected to external trigger input must not be asserted.
 
 [NOTE]
 This represents a balance between usability and hardware complexity. There may be instances where the triggers are linked across different privilege levels (e.g., from S-mode to M-mode), while the external debugger may only have access with S-mode privilege. The external debugger should not modify the chain, because it could be suppressed or incorrectly match or fire in M-mode.
