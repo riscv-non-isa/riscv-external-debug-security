@@ -42,39 +42,39 @@ When `mdbgen` is set to 0, the <<dbops, debug operations>> are disallowed and th
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. The `sdedbgalw` along with `mdbgen` determines the debug allowed privilege levels, as illustrated in <<dbgpriv>>. The <<dbgaccpriv, debug access privilege>> can only be configured to debug allowed levels. 
+The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>>, to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
 
 [[dbgpriv]]
 [options="header"]
-[cols="25%,25%,50%"]
-.External debug allowed privilege levels per debug controls 
+[cols="15%,15%,35%,35%"]
+.External Debug Configuration and Privilege
 |============================================
-| mdbgen | sdedbgalw | Debug allowed privilege levels 
-| 1      | Don't care      | All                      
-| 0      | 1      | All except M             
-| 0      | 0      | None                      
+| mdbgen | sdedbgalw | Debug allowed privilege modes | Debug access privilege 
+| 1      | Don't care      | All                      | M-mode
+| 0      | 1      | All except M                      | S-mode
+| 0      | 0      | None                              | N/A
 |============================================
-
-When debug is allowed in supervisor domain, <<dbops, debug operations>> are allowed when hart executes in supervisor domain. The abstract commands without halting the hart carries supervisor mode privilege if supported.
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode also carry *debug access privilege* instead of always with M-mode. The *debug access privilege* is represented by the `prv` and `v` fields in `dcsr` or <<ssdextcsr, sdcsr>>. The legal privilege levels programmable to the fields in Debug Mode are elaborated in <<prvvacc>>. Debugger accesses to registers and memory will be checked by permission check mechanisms against *debug access privilege*, and trap if they violate corresponding rules.
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution.  Any attempt by the debugger to access state inaccessible to *debug access privilege* will return an error.
 
 [[prvvacc]]
 ===== Configuring External Debugger Access Privileges
 
-The `prv` and `v` fields have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, the `prv` and `v` fields are updated to the privilege level the hart was previously operating in. The maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. When the hart resumes from Debug Mode, the current privilege mode and virtualization mode are changed to that specified by `prv` and `v`.
+The `prv` and `v` fields in `dcsr` are updated with the current privilege mode on Debug Mode entry, and are used to set the new privilege mode on resume from Debug Mode.  The debugger may modify the `prv` and `v` fields, to alter the mode of execution upon resume, but the allowed values are constrained by the debugger privilege. 
+
+The maximum debug privilege level that can be configured in `prv` and `v` is shown in <<maxdbgpriv>>. On a write that attempts to write an illegal value to `prv` and/or `v`, the fields retain legal values. Illegal privilege levels include values higher than the maximum allowed debug privilege.
 
 [[maxdbgpriv]]
 [options="header"]
-.Determining maximum debug access privilege with mdbgen and sdedbgalw
+.Maximum Allowed Resume Privilege Mode
 |=========================================
-| mdbgen | sdedbgalw | Maximum debug privilege allowed 
-| 1      | Don't care      | M                 
-| 0      | 1      | S(HS)             
-| 0      | 0      | None               
+| mdbgen | sdedbgalw | Maximum privilege allowed on resume
+| 1      | Don't care      | M
+| 0      | 1      | S(HS)
+| 0      | 0      | N/A
 |=========================================
 
 [NOTE]
