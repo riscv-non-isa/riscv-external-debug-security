@@ -82,7 +82,7 @@ As the `prv` and `v` fields are Write Any Read Legal (WARL) fields, the external
 
 ==== Privilege Level Changing Instructions
 
-The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the ebreak instruction. In Sdsec, those instructions including mret, sret, uret, ecall, must either act as NOP or trigger an exception (stopping execution and setting `cmderr` to 3) in Program Buffer. Notably, these instructions retain their normal functionality during single stepping.
+The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the EBREAK instruction. In Sdsec, privilege changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `cmderr` to 3).
 
 ==== Interrupt during Single Stepping
 
