@@ -1,7 +1,7 @@
 [[dmsext]]
-== Debug Module Security Extension (non-ISA extension)
+== Debug Module Security (non-ISA) Extension
 
-This chapter outlines the security enhancements defined for the Debug Module as non-ISA extension. The debug operations listed below are modified by the non-ISA extension. All features in this chapter must be implemented in Debug Module to achieve external debug security. If any hart in the system implements the Sdsec extension, the Debug Module must also implement the non-ISA extension. The debug operations affected by the non-ISA extension include: 
+This chapter defines the required security enhancements for the Debug Module. The debug operations listed below are modified by the extension. 
 
 * Halt
 * Reset 
@@ -9,29 +9,28 @@ This chapter outlines the security enhancements defined for the Debug Module as 
 * Abstract commands (Access Register, Quick Access, Access Memory)
 * System bus access
 
+Further, all harts in the system must implement Sdsec.
+
 === External Debug Security Extensions Discovery 
 
-The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the `allsecured` or/and `anysecured` bits in dmstatus <<regdmstatus>>.  If the field `allsecured` or `anysecured` is set to 1, it represents that all or any selected harts adopt the Sdsec extension. When any hart adopts the Sdsec extension, it indicates the Debug Module implements Debug Module Security Extension as described in this chapter.
+The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the `allsecured` or/and `anysecured` bits in `dmstatus` <<regdmstatus>>.  If the field `allsecured` or `anysecured` is set to 1, it represents that all or any selected harts adopt the Sdsec extension. When any hart adopts the Sdsec extension, it indicates the Debug Module implements Debug Module Security Extension as described in this chapter.
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be removed as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset request, the request is only acknowledged by the hart when it is permitted to debug after the deassertion of reset. Besides, when a Quick Access abstract command is issued to a hart while the hart is not yet allowed to debug, the Quick Access cannot halt the hart, and the Debug Module will receive a security error fault (`cmderr`=6).
-
-[NOTE]
-The halt action in Quick Access is handled differently because other types of halts can be canceled by external debugger when debugging is disallowed, while the Quick Access command can only complete successfully or respond with an error. Otherwise, the debug interface to the selected hart will appear to be hung. Additionally, reset is not always applicable to the hart to recover from a hang situation. To avoid such situations, the halt action in Quick Access must be handled separately.
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be removed as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset request, the request is only acknowledged by the hart once it has reached a privilege level in which debug is permitted. 
 
 === Reset
 
-The hartreset operation resets selected harts. When M-mode is not allowed to be debugged, the hart will raise a security fault error to Debug Module. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in dmstatus. 
+The hartreset operation resets selected harts. When M-mode is not allowed to be debugged, the hart will raise a security fault error to the Debug Module. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in `dmstatus`. 
 
-The ndmreset operation is a system-level reset not tied to hart privilege levels and reset the entire system (excluding the Debug Module). It can only be secured by the system. Thus, it must be de-featured. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
+The ndmreset operation is a system-level reset not tied to hart privilege levels and reset the entire system (excluding the Debug Module). Debug Module Security makes ndmreset read-only 0. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
 The keepalive bit serves as an optional request for the hart to remain available for debugging. This bit only takes effect when M-mode is allowed to be debugged; otherwise, the hart behaves as if the bit is not set.
 
 === Abstract Commands 
-The hart's response to abstract commands is detailed in <<sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues the abstract commands. 
+The hart's response to abstract commands is detailed in <<sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues an abstract command. 
 
 ==== Relaxed Permission Check `relaxedpriv`
 
@@ -43,7 +42,7 @@ The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines w
 
 ==== Quick Access 
 
-When M-mode debugging is not allowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded, causing `cmderr` being set to 6.
+When M-mode debugging is not allowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded, causing `abstractcs.cmderr` to set to 6.
 
 [NOTE] 
 Quick Access abstract commands effect a halt, execution of Program Buffer, and resume of the selected hart. However, it is undesirable for these Quick Access halts to remain pending until debug is allowed, since the debugger blocks while waiting for the Quick Access to complete. Returning an error only for Quick Access commands received when debug is not allowed would require the hart to distinguish between Quick Access halt requests and other halt requests. Because Quick Access is merely an optimized flow and not required for any usage models, it was decided to avoid burdening the hart with extra hardware. Therefore, Quick Access is forbiden when `mdbgen` is 0.
