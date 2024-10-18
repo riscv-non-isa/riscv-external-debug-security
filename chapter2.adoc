@@ -147,7 +147,7 @@ The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dc
 The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32>>, while the `sdpc` register provides full access to `dpc`.
 
 [NOTE]
-Unlike `dcsr` and `dpc`, the scratch registers do not have supervisor access, and external debuggers with S-mode privilege cannot not use them as scratch memory.
+Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor access mechanism, and external debuggers with S-mode privilege cannot not use them.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug control and status register (sdcsr)"]
@@ -179,7 +179,7 @@ Unlike `dcsr` and `dpc`, the scratch registers do not have supervisor access, an
 ....
 
 [NOTE]
-The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode,  masked from `sdcsr` while the `prv` field is constrained to 1 bit.  
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode,  masked from `sdcsr`, while the `prv` field is constrained to 1 bit.  
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug program counter (sdpc)"]
@@ -207,5 +207,5 @@ When M-mode enables debugging for supervisor domain, it can optionally delegate 
 [[Sdseccsr]]
 ==== Debug Control CSR
 
-The CSR holding  the debug and trace contol knobs for supervisor domain are specified in Smsdedbg and Smsdetrc extension respectively in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extension must be implemented to support security control for debugging and/or tracing in supervisor domain.
+The CSR holding  the debug and trace control knobs for supervisor domain are specified in the Smsdedbg and Smsdetrc extensions, respectively, defined in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for debugging and/or tracing in supervisor domains.
 
