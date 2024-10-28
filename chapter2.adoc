@@ -112,22 +112,18 @@ Triggers configured to enter Debug Mode can only fire or match when external deb
 [NOTE]
 Implementations must ensure that pending triggers intending to enter Debug Mode match or fire only when the hart is in a state where debug is allowed. For example, if an interrupt traps the hart to a debug-disallowed privilege mode, the trigger can only take effect either before the privilege is updated and control flow is transferred to the trap handler, or after the interrupt is completely handled and returns from the trap handler. The implementation must prevent Debug Mode from being entered in an intermediate state where privilege is changed or the PC is updated. This also applies to scenarios where a trigger is configured to enter Debug Mode before instruction execution and an interrupt occurs simultaneously.
 
-==== M-mode accessibility to `dmode` 
+==== M-mode Accessibility to `dmode` 
  
 When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0 and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
 The `dmode` being read/write allows M-mode to switch trigger context. The trigger can form a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain if the trigger context is not switched. Although the trigger cannot fire or match in disallowed supervisor domain to enter Debug Mode, the malicious debugger can exploit it by setting a trigger to raise breakpoint exception (`action` = 0) when it is in debug allowed supervisor domain. If the trigger hits in debug disallowed supervisor domain, the external debugger can indirectly observe the executed PC, accessed memory address or read/write data in debug disallowed supervisor domain by the checking value in `hit0`/`hit1`. As the `dmode` is accessible when `mdbgen` is 0, such attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
-==== External triggers
+==== External Triggers
 
 The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug allowed privilege as specified in <<dbgpriv>>.
 
 The external trigger input can be driven by any input signals, e.g. the external trigger output from another hart or interrupt signals etc. The input signals cause the trigger (with `action` = 1) to fire only when the hart is allowed to debug. The initiators of these signals are responsible for determining whether the signal is allowed to assert. For example, if the external trigger input of hart i is connected to external trigger output of hart j. The assertion of output signal from hart j is determined by its own allowed privilege level for debug. The output signal of hart j must not assert when debug is disallowed. Similarly, signals from other module in the system are managed by the individual module. When the module is not allowed to debug, the signal connected to external trigger input must not be asserted.
-
-==== Trigger chain
-
-The privilege level of the trigger chain is determined by the trigger enabled for the highest privilege level inside the chain. The entire trigger chain cannot be modified if the chain privilege level exceeds debug allowed privilege level.
 
 [NOTE]
 This represents a balance between usability and hardware complexity. There may be instances where the triggers are linked across different privilege levels (e.g., from S-mode to M-mode), while the external debugger may only have access with S-mode privilege. The external debugger should not modify the chain, because it could be suppressed or incorrectly match or fire in M-mode.

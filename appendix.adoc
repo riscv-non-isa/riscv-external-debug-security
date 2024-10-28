@@ -18,7 +18,7 @@ When the external debugger is stepping through an instruction that triggers a tr
 
 Application-level debugging is primarily accomplished through self-hosted debugging, allowing the management of debug policies by supervisor domains. As a result, user-level debugging management is not addressed within this extension.
 
-=== Trace security control 
+=== Trace Security Control 
 
 Similar to debug security, trace is controlled by platform state `nsecdbg`, hart state `mtrcen`, and `sdetrcalw` in CSR `msdcfg` for each hart. The sec_inhibit sideband signal indicates the availability of trace to the trace encoder.
 
