@@ -60,7 +60,12 @@ When debug is allowed in supervisor domain, <<dbops, debug operations>> are allo
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode also carry *debug access privilege* instead of always with M-mode. The *debug access privilege* is represented by the `prv` and `v` fields in `dcsr` or <<ssdextcsr, sdcsr>>. The legal privilege levels programmable to the fields in Debug Mode are elaborated in <<prvvacc>>. Debugger accesses to registers and memory will be checked by permission check mechanisms against *debug access privilege*, and trap if they violate corresponding rules.
+The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode also carry *debug access privilege* instead of always with M-mode. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, and by default, it equals to the maximum debug privilege listed in <<prvvacc>>. The `dmprv` field in `dcsr` modifies the memory load/store privilege level, while the register access privilege remains at the maximum debug privilege. When `dmprv`=1, the memory load and store uses the privilege level represented in `prv` and `v` fields.
+
+Debugger accesses to registers and memory will be checked by permission check mechanisms against *debug access privilege*, and trap if they violate corresponding rules.
+
+[NOTE]
+When `dmprv`=1, the debugger memory access privilege matches the hart's privilege at Debug Mode entry. With `dmprv`, the debugger may modify the memory access privilege to VS/VU/U in Debug Mode when `mdbgen`=0 and `sdedbgalw`=1. However, the `dmprv` is still a debug feature, and it may be proposed to RISC-V Debug specification cite:[dbgspec] in the future to facilitate specific debug use cases. 
 
 [[prvvacc]]
 ===== Configuring External Debugger Access Privileges
@@ -92,7 +97,7 @@ The interrupt can be disabled by `stepie` in `dcsr` during single stepping. When
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For example, if a context switch for the supervisor domain triggered by a timer interrupt is suppressed, some real-time workloads might not be completed on time, resulting in unexpected errors.
 
 === Trace
-When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the interface defined in <<<_reference to the trace interface doc_>>> to trace module. 
+When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the interface defined in RISC-V Efficient Trace for RISC-V cite:[etrace] to trace module. 
 
 ==== M-Mode Trace Control 
 Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain; setting `mtrcen` to 0 disables trace output when the hart is running in M-mode.
@@ -133,6 +138,36 @@ This represents a balance between usability and hardware complexity. There may b
 [[ssdextcsr]]
 ==== Extension of Sdext CSR
 
+===== Extended `dcsr`
+
+The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
+
+[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
+[title="The `dmprv` field in debug control and status register (dcsr)"]
+[id=dmprv]
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:   18, name: ' '},
+  {bits:   1, name: 'mdprv'},
+  {bits:   13, name: ' '},
+], config:{lanes: 3, hspace:1024}}
+....
+
+.Details of the `dmprv` field in `dcsr`
+[options="header"]
+[cols="15%,55%,15%,15%"]
+|=================================================================================================================================================================
+| Field | Description                                                                                                                          | Access | Reset  
+| dmprv | 0 (normal): The privilege level in Debug Mode is not modified.
+
+1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `prv` and `v`.| WARL   | 0      
+|=================================================================================================================================================================
+
+The maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+
+===== `Sdcsr` and `sdpc`
+
 The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. They are only accessible in Debug Mode. 
 
 .Allocated addresses for supervisor shadow of Debug Mode CSR  
@@ -171,7 +206,8 @@ Unlike `dcsr` and `dpc`, the scratch registers do not have supervisor access, an
   {bits:   1, name: '0'},
   {bits:   1, name: 'ebreakvu'},
   {bits:   1, name: 'ebreakvs'},
-  {bits:   6, name: '0'},
+  {bits:   1, name: 'dmprv'},
+  {bits:   5, name: '0'},
   {bits:   3, name: 'extcause'},
   {bits:   1, name: '0'},
   {bits:   4, name: 'debugver'}
