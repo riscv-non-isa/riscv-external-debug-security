@@ -60,17 +60,14 @@ When debug is allowed in supervisor domain, <<dbops, debug operations>> are allo
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege level granted to the external debugger to access hardware resources with abstract commands or program buffers. Memory and register accesses from Debug Mode also carry *debug access privilege* instead of always with M-mode. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, and by default, it equals to the maximum debug privilege listed in <<prvvacc>>. The `dmprv` field in `dcsr` modifies the memory load/store privilege level, while the register access privilege remains at the maximum debug privilege. When `dmprv`=1, the memory load and store uses the privilege level represented in `prv` and `v` fields.
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. Any attempt by the debugger to access state inaccessible to *debug access privilege* will return an error and set `abstractcs.cmderr` to 3.
 
-Debugger accesses to registers and memory will be checked by permission check mechanisms against *debug access privilege*, and trap if they violate corresponding rules.
+[dmprv]
+===== Memory Prvilege in Debug Mode
+The `dmprv` field in `dcsr` modifies the memory load/store privilege level, while the register access privilege remains at the maximum debug privilege. When `dmprv`=1, the memory load and store uses the privilege level represented in `prv` and `v` fields.
 
 [NOTE]
 When `dmprv`=1, the debugger memory access privilege matches the hart's privilege at Debug Mode entry. With `dmprv`, the debugger may modify the memory access privilege to VS/VU/U in Debug Mode when `mdbgen`=0 and `sdedbgalw`=1. However, the `dmprv` is still a debug feature, and it may be proposed to RISC-V Debug specification cite:[dbgspec] in the future to facilitate specific debug use cases. 
-
-[[prvvacc]]
-===== Configuring External Debugger Access Privileges
-
-The `prv` and `v` fields have been modified to authorize privilege for external debug accesses. Upon transitioning into Debug Mode, the `prv` and `v` fields are updated to the privilege level the hart was previously operating in. The maximum debug privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. When the hart resumes from Debug Mode, the current privilege mode and virtualization mode are changed to that specified by `prv` and `v`.
 
 [[maxdbgpriv]]
 [options="header"]
@@ -81,9 +78,6 @@ The `prv` and `v` fields have been modified to authorize privilege for external 
 | 0      | 1      | S(HS)             
 | 0      | 0      | None               
 |=========================================
-
-[NOTE]
-As the `prv` and `v` fields are Write Any Read Legal (WARL) fields, the external debugger is able to read back the written value to determine the maximum debug privilege level.  
 
 ==== Privilege Level Changing Instructions
 
@@ -140,7 +134,7 @@ This represents a balance between usability and hardware complexity. There may b
 
 ===== Extended `dcsr`
 
-The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
+The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<mdprv>>.  
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="The `dmprv` field in debug control and status register (dcsr)"]
