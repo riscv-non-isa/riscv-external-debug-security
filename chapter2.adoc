@@ -74,7 +74,7 @@ The maximum debug privilege level that can be configured in `prv` and `v` is sho
 | mdbgen | sdedbgalw | Maximum privilege allowed on resume
 | 1      | Don't care      | M
 | 0      | 1      | S(HS)
-| 0      | 0      | N/A
+| 0      | 0      | None
 |=========================================
 
 [NOTE]
@@ -101,7 +101,7 @@ Each hart must add a new state element, `mtrcen`, which controls the availabilit
 Similar to M-mode debug control, `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation may group several harts together and use one signal to drive their `mtrcen` state or assign each hart its own dedicated state. 
 
 ==== Supervisor Domain Trace Control 
-The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1,  trace can be enabled when the hart runs in the supervisor domain. 
+The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1,  trace can be allowed when the hart runs in the supervisor domain. 
 
 When both `sdetrcalw` and `mtrcen` are set to 0, trace is inhibited in all privilege levels. 
 
@@ -117,7 +117,7 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-Allowing M-mode to have write access to `dmode` allows M-mode to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain. Although the trigger could take action (breakpoint exception or Debug Mode entry) in a disallowed supervisor domain, the action could be pended and taken once a debug allowed supervisor domain is entered.  This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain. Although the trigger could take action (breakpoint exception or Debug Mode entry) in a disallowed supervisor domain, the action could be pended and taken once a debug allowed supervisor domain is entered.  This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
 ==== External Triggers
 

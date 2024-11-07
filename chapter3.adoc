@@ -9,7 +9,7 @@ This chapter defines the required security enhancements for the Debug Module. Th
 * Abstract commands (Access Register, Quick Access, Access Memory)
 * System bus access
 
-Further, all harts in the system must implement Sdsec.
+If any hart in the system implements the Sdsec extension, the Debug Module must also implement the non-ISA extension. 
 
 === External Debug Security Extensions Discovery 
 
@@ -23,7 +23,7 @@ The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The R
 
 The hartreset operation resets selected harts. When M-mode is not allowed to be debugged, the hart will raise a security fault error to the Debug Module. The debugger could monitor the error by polling `allsecfault` or/and `anysecfault` in `dmstatus`. 
 
-The ndmreset operation is a system-level reset not tied to hart privilege levels and reset the entire system (excluding the Debug Module). Debug Module Security makes ndmreset read-only 0. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
+The ndmreset operation is a system-level reset not tied to hart privilege levels and reset the entire system (excluding the Debug Module). Debug Module Security Extension makes ndmreset read-only 0. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
