@@ -9,7 +9,7 @@ This chapter defines the required security enhancements for the Debug Module. Th
 * Abstract commands (Access Register, Quick Access, Access Memory)
 * System bus access
 
-If any hart in the system implements the Sdsec extension, the Debug Module must also implement the non-ISA extension. 
+If any hart in the system implements the Sdsec extension, the Debug Module must also implement the Debug Module Security Extension.
 
 === External Debug Security Extensions Discovery 
 
