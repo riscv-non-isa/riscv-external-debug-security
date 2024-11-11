@@ -82,7 +82,7 @@ As the `prv` and `v` fields are Write Any Read Legal (WARL) fields, the external
 
 ==== Privilege Level Changing Instructions
 
-The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the EBREAK instruction. In Sdsec, privilege changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `cmderr` to 3).
+The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the EBREAK instruction. In Sdsec, privilege changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs.cmderr` to 3).
 
 ==== Interrupt during Single Stepping
 
@@ -117,7 +117,14 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain. Although the trigger could take action (breakpoint exception or Debug Mode entry) in a disallowed supervisor domain, the action could be pended and taken once a debug allowed supervisor domain is entered.  This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain. 
+
+
+Although the trigger could take action (breakpoint exception or Debug Mode entry) in a disallowed supervisor domain, the action could be pended and taken once a debug allowed supervisor domain is entered.  
+
+The trigger can raise breakpoint exception in a debug disallowed supervisor domain, and the breakpoint hit by reading the Sdtrig CSR.
+
+This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
 ==== External Triggers
 
