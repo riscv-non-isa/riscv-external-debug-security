@@ -117,14 +117,7 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains from a debug allowed supervisor domain. 
-
-
-Although the trigger could take action (breakpoint exception or Debug Mode entry) in a disallowed supervisor domain, the action could be pended and taken once a debug allowed supervisor domain is entered.  
-
-The trigger can raise breakpoint exception in a debug disallowed supervisor domain, and the breakpoint hit by reading the Sdtrig CSR.
-
-This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains. The trigger may raise a breakpoint exception in a supervisor domain where debugging is disallowed. This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc) and may even result in a Denial of Service (DoS). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
 ==== External Triggers
 
