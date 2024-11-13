@@ -44,39 +44,27 @@ When `mdbgen` is set to 0, the <<dbops, debug operations>> are disallowed and th
 ==== Supervisor Domain Debug Control
 The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>>, to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
 
+[[dbgaccpriv]]
+==== Debug Access Privilege
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Memory and register accesses from Debug Mode carry *debug access privilege* instead of always with M-mode. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. The `dmprv` field in `dcsr` modifies the memory load/store privilege, while leaving the register access privilege unaffected. When `dmprv`=1, the memory load and store uses the privilege level represented in `prv` and `v` fields. Any attempt by the debugger to access state inaccessible to *debug access privilege* will return an error and set `abstractcs.cmderr` to 3.
+
+[NOTE]
+When `dmprv`=1, the debugger memory access privilege matches the hart's privilege at Debug Mode entry. With `dmprv`, the debugger may modify the memory access privilege to VS/VU/U in Debug Mode when `mdbgen`=0 and `sdedbgalw`=1. However, the `dmprv` is still a debug feature, and it may be proposed to RISC-V Debug specification cite:[dbgspec] in the future to facilitate specific debug use cases. 
+
 [[dbgpriv]]
 [options="header"]
 [cols="15%,15%,35%,35%"]
 .External Debug Configuration and Privilege
 |============================================
-| mdbgen | sdedbgalw | Debug allowed privilege modes | Debug access privilege 
+| mdbgen | sdedbgalw | Debug allowed privilege modes | Debug access privilege (`dmprv`=0) 
 | 1      | Don't care      | All                      | M-mode
 | 0      | 1      | All except M                      | S-mode
 | 0      | 0      | None                              | N/A
 |============================================
 
-[[dbgaccpriv]]
-==== Debug Access Privilege
+==== Using EBREAK to Enter Debug Mode
 
-The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution.  Any attempt by the debugger to access state inaccessible to *debug access privilege* will return an error.
-
-[dmprv]
-===== Memory Prvilege in Debug Mode
-The `dmprv` field in `dcsr` modifies the memory load/store privilege level, while the register access privilege remains at the maximum debug privilege. When `dmprv`=1, the memory load and store uses the privilege level represented in `prv` and `v` fields.
-
-The `prv` and `v` fields in `dcsr` are updated with the current privilege mode on Debug Mode entry, and are used to set the new privilege mode on resume from Debug Mode.  The debugger may modify the `prv` and `v` fields, to alter the mode of execution upon resume, but the allowed values are constrained by the debugger privilege. 
-
-The maximum debug privilege level that can be configured in `prv` and `v` is shown in <<maxdbgpriv>>. On a write that attempts to write an illegal value to `prv` and/or `v`, the fields retain legal values. Illegal privilege levels include values higher than the maximum allowed debug privilege.
-
-[[maxdbgpriv]]
-[options="header"]
-.Maximum Allowed Resume Privilege Mode
-|=========================================
-| mdbgen | sdedbgalw | Maximum privilege allowed on resume
-| 1      | Don't care      | M
-| 0      | 1      | S(HS)
-| 0      | 0      | None
-|=========================================
+The EBREAK instruction can enter Debug Mode in the corresponding privilege level when the `ebreakm`, `ebreaks`, `ebreaku`, `ebreakvs`, and `ebreakvu` fields in `dcsr` are set to 1. However, this configuration will be ignored if the hart is running in a debug disallowed privilege level, in which case EBREAK will always raise breakpoint exception instead. 
 
 ==== Privilege Level Changing Instructions
 
@@ -115,7 +103,7 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains. The trigger may raise a breakpoint exception in a supervisor domain where debugging is disallowed. This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc) and may even result in a Denial of Service (DoS). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains. The trigger may raise a breakpoint exception in a supervisor domain where debugging is disallowed. This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc.) and may even result in a Denial of Service (DoS). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
 
 ==== External Triggers
 
@@ -133,7 +121,7 @@ This represents a balance between usability and hardware complexity. There may b
 
 ===== Extended `dcsr`
 
-The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<mdprv>>.  
+The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="The `dmprv` field in debug control and status register (dcsr)"]
@@ -158,6 +146,16 @@ The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* 
 |=================================================================================================================================================================
 
 The maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+
+[[maxdbgpriv]]
+[options="header"]
+.Maximum Allowed Resume Privilege Mode
+|=========================================
+| mdbgen | sdedbgalw | Maximum privilege allowed on resume
+| 1      | Don't care      | M
+| 0      | 1      | S(HS)
+| 0      | 0      | None
+|=========================================
 
 ===== `Sdcsr` and `sdpc`
 
