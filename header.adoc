@@ -1,6 +1,6 @@
 = RISC-V External Debug Security Specification
 :docgroup: RISC-V Task Group
-:description: RISC-V External Eebug Security Specification
+:description: RISC-V External Debug Security Specification
 :company: RISC-V.org
 :revdate: 1/2023
 :revnumber: 1.0
