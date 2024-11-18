@@ -46,7 +46,9 @@ The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR 
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
-The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Memory and register accesses from Debug Mode carry *debug access privilege* instead of always with M-mode. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. The `dmprv` field in `dcsr` modifies the memory load/store privilege, while leaving the register access privilege unaffected. When `dmprv`=1, the memory load and store uses the privilege level represented in `prv` and `v` fields. Any attempt by the debugger to access state inaccessible to *debug access privilege* will return an error and set `abstractcs.cmderr` to 3.
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Memory and register accesses from Debug Mode carry *debug access privilege* instead of always with M-mode. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. 
+
+The `dmprv` field in `dcsr` modifies effective debug access privilege to memory. When `dmprv`=0, debugger access privilege to memory follows <<dbgpriv>>, when `dmprv`=1, effective debug access privilege to memory is represented by `prv` and `v` in `dcsr`, illegal access will return an error and set `abstractcs.cmderr` to 3.
 
 [NOTE]
 When `dmprv`=1, the debugger memory access privilege matches the hart's privilege at Debug Mode entry. With `dmprv`, the debugger may modify the memory access privilege to VS/VU/U in Debug Mode when `mdbgen`=0 and `sdedbgalw`=1. However, the `dmprv` is still a debug feature, and it may be proposed to RISC-V Debug specification cite:[dbgspec] in the future to facilitate specific debug use cases. 
