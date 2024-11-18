@@ -14,7 +14,7 @@ Debug operations affected by Sdsec:
 * Executing the Program Buffer
 * Serving abstract commands (Access Register, Access Memory)
 
-When external debug is disallowed in the current privilege level, the hart behaves as follows: 
+When external debug is disallowed at the current privilege level, the hart behaves as follows: 
 
 [[dbgdisallowed]]
 * The hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
@@ -46,9 +46,9 @@ The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR 
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
-The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Memory and register accesses from Debug Mode carry *debug access privilege* instead of always with M-mode. The privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. 
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Memory and register accesses from Debug Mode carry *debug access privilege* instead of always with M-mode, while the privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. Illegal access will return an error and set `abstractcs.cmderr` to 3.
 
-The `dmprv` field in `dcsr` modifies effective debug access privilege to memory. When `dmprv`=0, debugger access privilege to memory follows <<dbgpriv>>, when `dmprv`=1, effective debug access privilege to memory is represented by `prv` and `v` in `dcsr`, illegal access will return an error and set `abstractcs.cmderr` to 3.
+The `dmprv` field in `dcsr` modifies the effective *debug access privilege* to memory. When `dmprv`=0, the *debug access privilege* to memory follows <<dbgpriv>>; when `dmprv`=1, the effective *debug access privilege* to memory is represented by `prv` and `v` fields in `dcsr`. 
 
 [NOTE]
 When `dmprv`=1, the debugger memory access privilege matches the hart's privilege at Debug Mode entry. With `dmprv`, the debugger may modify the memory access privilege to VS/VU/U in Debug Mode when `mdbgen`=0 and `sdedbgalw`=1. However, the `dmprv` is still a debug feature, and it may be proposed to RISC-V Debug specification cite:[dbgspec] in the future to facilitate specific debug use cases. 
@@ -66,7 +66,7 @@ When `dmprv`=1, the debugger memory access privilege matches the hart's privileg
 
 ==== Using EBREAK to Enter Debug Mode
 
-EBREAK works normal as specified in debug spec when external debug is allowed at running privilege level, when running in a debug disallowed privilege level, EBREAK will result in breakpoint exception
+EBREAK works as specified in The RISC-V Debug Specification cite:[dbgspec] when external debug is allowed at the running privilege level. When hart is running at a debug disallowed privilege level, EBREAK will always results in breakpoint exception.
 
 ==== Privilege Level Changing Instructions
 
@@ -91,7 +91,7 @@ Similar to M-mode debug control, `mtrcen` may be controlled through various meth
 ==== Supervisor Domain Trace Control 
 The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1,  trace can be allowed when the hart runs in the supervisor domain. 
 
-When both `sdetrcalw` and `mtrcen` are set to 0, trace is inhibited in all privilege levels. 
+When both `sdetrcalw` and `mtrcen` are set to 0, trace is inhibited at all privilege levels. 
 
 === Triggers (Sdtrig)
 
