@@ -71,7 +71,6 @@ The state element `nsecdbg` is introduced to retain full debugging capabilities,
 * Trace output is enabled in all privilege modes.  
 
 [NOTE]
-During the early stages of a chip's lifecycle, such as when developing the boot process, it is desirable to debug from the initial system state. The `nsecdbg` should only be set to 1 when the entire system is authorized for unrestricted debugging and tracing.
 
 === Update of Debug Module Registers
 
