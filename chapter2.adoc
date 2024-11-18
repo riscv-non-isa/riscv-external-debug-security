@@ -66,7 +66,7 @@ When `dmprv`=1, the debugger memory access privilege matches the hart's privileg
 
 ==== Using EBREAK to Enter Debug Mode
 
-The EBREAK instruction can enter Debug Mode in the corresponding privilege level when the `ebreakm`, `ebreaks`, `ebreaku`, `ebreakvs`, and `ebreakvu` fields in `dcsr` are set to 1. However, this configuration will be ignored if the hart is running in a debug disallowed privilege level, in which case EBREAK will always raise breakpoint exception instead. 
+EBREAK works normal as specified in debug spec when external debug is allowed at running privilege level, when running in a debug disallowed privilege level, EBREAK will result in breakpoint exception
 
 ==== Privilege Level Changing Instructions
 
