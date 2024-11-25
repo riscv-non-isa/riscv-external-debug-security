@@ -44,15 +44,6 @@ When `mdbgen` is set to 0, the <<dbops, debug operations>> are disallowed and th
 ==== Supervisor Domain Debug Control
 The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>>, to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
 
-[[dbgaccpriv]]
-==== Debug Access Privilege
-The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Memory and register accesses from Debug Mode carry *debug access privilege* instead of always with M-mode, while the privilege is determined by <<mdbgctl, `mdbgen`>> and <<submdbgctl, `sdedbgalw`>>, as listed in <<dbgpriv>>. Illegal access will return an error and set `abstractcs.cmderr` to 3.
-
-The `dmprv` field in `dcsr` modifies the effective *debug access privilege* to memory. When `dmprv`=0, the *debug access privilege* to memory follows <<dbgpriv>>; when `dmprv`=1, the effective *debug access privilege* to memory is represented by `prv` and `v` fields in `dcsr`. 
-
-[NOTE]
-When `dmprv`=1, the debugger memory access privilege matches the hart's privilege at Debug Mode entry. With `dmprv`, the debugger may modify the memory access privilege to VS/VU/U in Debug Mode when `mdbgen`=0 and `sdedbgalw`=1. However, the `dmprv` is still a debug feature, and it may be proposed to RISC-V Debug specification cite:[dbgspec] in the future to facilitate specific debug use cases. 
-
 [[dbgpriv]]
 [options="header"]
 [cols="15%,15%,35%,35%"]
@@ -64,9 +55,26 @@ When `dmprv`=1, the debugger memory access privilege matches the hart's privileg
 | 0      | 0      | None                              | N/A
 |============================================
 
+[[dbgaccpriv]]
+==== Debug Access Privilege
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Where previously Debug Mode always had access to M-mode state, Debug Mode now accesses registers and memory using *debug access privilege*. Attempts from Debug Mode to access state that requires privilege above *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>, and can be modified using `dcsr.dmprv` as described in <<dmprv>>.
+
+The `dmprv` field in `dcsr` modifies the effective *debug access privilege* to memory. When `dmprv`=0, the *debug access privilege* to memory follows <<dbgpriv>>; when `dmprv`=1, the effective *debug access privilege* to memory is represented by `prv` and `v` fields in `dcsr`. 
+
+[[dmprv]]
+.Details of the `dmprv` field in `dcsr`
+[options="header"]
+[cols="15%,55%,15%,15%"]
+|=================================================================================================================================================================
+| Field | Description                                                                                                                          | Access | Reset  
+| dmprv | 0 (normal): The privilege level in Debug Mode is not modified.
+
+1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `prv` and `v`.| WARL   | 0      
+|=================================================================================================================================================================
+
 ==== Using EBREAK to Enter Debug Mode
 
-EBREAK works as specified in The RISC-V Debug Specification cite:[dbgspec] when external debug is allowed at the running privilege level. When hart is running at a debug disallowed privilege level, EBREAK will always results in breakpoint exception.
+EBREAK works as specified in The RISC-V Debug Specification cite:[dbgspec] when external debug is allowed at the running privilege level. When the hart is running at a debug disallowed privilege level, EBREAK always raises a breakpoint exception.
 
 ==== Privilege Level Changing Instructions
 
@@ -123,7 +131,7 @@ This represents a balance between usability and hardware complexity. There may b
 
 ===== Extended `dcsr`
 
-The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
+The `dmprv` is added as bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="The `dmprv` field in debug control and status register (dcsr)"]
@@ -136,16 +144,6 @@ The `dmprv` is added to bit 18 in `dcsr` to modify the *debug access privilege* 
   {bits:   13, name: ' '},
 ], config:{lanes: 3, hspace:1024}}
 ....
-
-.Details of the `dmprv` field in `dcsr`
-[options="header"]
-[cols="15%,55%,15%,15%"]
-|=================================================================================================================================================================
-| Field | Description                                                                                                                          | Access | Reset  
-| dmprv | 0 (normal): The privilege level in Debug Mode is not modified.
-
-1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `prv` and `v`.| WARL   | 0      
-|=================================================================================================================================================================
 
 The maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
 
