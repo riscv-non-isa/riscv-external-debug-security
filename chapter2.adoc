@@ -226,7 +226,7 @@ The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in 
 
 ==== Extension of Sdtrig CSR
 
-The Smtdeleg and Sstcfg extensions define the process for delegating triggers to modes with lower privilege than M-mode. The Sdsec requires both extensions to securely delegate Sdtrig triggers to supervisor domain.
+The Smtdeleg extension cite:[smtdeleg] defines the process for delegating triggers to modes with lower privilege than M-mode. The Sdsec requires both extensions to securely delegate Sdtrig triggers to supervisor domain.
 
 [NOTE]
 When M-mode enables debugging for supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with S-mode privilege to configure these triggers.
