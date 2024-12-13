@@ -1,0 +1,5 @@
+;; shadow-cljs configuration
+{:deps    true
+ :builds  {:lib {:target      :node-library
+                 :output-to   "lib.js"
+                 :exports-var org.deepsymmetry.bytefield.core/generate}}}
