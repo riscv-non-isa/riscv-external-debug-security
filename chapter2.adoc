@@ -135,13 +135,13 @@ The `dmprv` is added as bit 18 in `dcsr` to modify the *debug access privilege* 
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="The `dmprv` field in debug control and status register (dcsr)"]
-[id=dmprv]
+[id=csr_dmprv]
 [wavedrom, ,svg]
 ....
 {reg: [
-  {bits:   18, name: ' '},
+  {bits:   20, name: ' '},
   {bits:   1, name: 'mdprv'},
-  {bits:   13, name: ' '},
+  {bits:   11, name: ' '},
 ], config:{lanes: 3, hspace:1024}}
 ....
 
@@ -197,8 +197,9 @@ Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor acce
   {bits:   1, name: '0'},
   {bits:   1, name: 'ebreakvu'},
   {bits:   1, name: 'ebreakvs'},
+  {bits:   2, name: '0'},
   {bits:   1, name: 'dmprv'},
-  {bits:   5, name: '0'},
+  {bits:   3, name: '0'},
   {bits:   3, name: 'extcause'},
   {bits:   1, name: '0'},
   {bits:   4, name: 'debugver'}
