@@ -8,8 +8,8 @@ This chapter introduces the Sdsec ISA extension, which enhances the Sdext extens
 
 Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension, other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
 
-[[dbops]]
 Debug operations affected by Sdsec: 
+[[dbops]]
 * Halting the hart to enter Debug Mode
 * Executing the Program Buffer
 * Serving abstract commands (Access Register, Access Memory)
