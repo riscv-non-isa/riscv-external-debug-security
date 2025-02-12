@@ -14,7 +14,7 @@ When `nsecdbg` is set to 0, the validation process involves two actors, which ma
 [[extdbg]]
 image::external_debug_dm.png[title="The debug security control",align="center"]
 
-When the external debugger is stepping through an instruction via `dcsr.step` that triggers a transition to a higher privilege level, the security control logic must verify against debug capability according to <<dbgpriv>> before entering Debug Mode. If debugging is permitted, the hart re-enters Debug Mode after executing the instruction. Otherwise, the hart continues executing with the pending single step request until it becomes debuggable and can re-enter Debug Mode. 
+When the external debugger is stepping through an instruction via `dcsr.step` that triggers a transition to a higher privilege level, the security control logic must verify against debug capability according to <<dbgpriv>> before entering Debug Mode. If external debug is allowed, the hart re-enters Debug Mode after executing the instruction. Otherwise, the hart continues executing with the pending single step request until it becomes debuggable and can re-enter Debug Mode. 
 
 Application-level debugging is primarily accomplished through self-hosted debugging, allowing the management of debug policies by supervisor domains. As a result, user-level debugging management is not addressed within this extension.
 
