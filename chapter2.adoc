@@ -120,7 +120,7 @@ M-mode is given write access to `dmode` to allow it to save/restore trigger cont
 
 The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug allowed privilege as specified in <<dbgpriv>>.
 
-The external trigger inputs (tmexttrigger) can be driven by any input signals, e.g. the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknoledge the input until it is in a debug allowed state. For example, if the external trigger input of hart _i_ is connected to external trigger output of hart _j_, the assertion of output signal from hart _j_ is determined by its own allowed privilege level for debug. The hart _i_ will response according to `tmexttrigger.action` only when it is in a debug allowed state and hart _j_ asserts the output signal.
+The external trigger inputs (tmexttrigger) can be driven by any input signals, e.g. the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknowledge the input until it is in a debug allowed state. For example, if the external trigger input of hart _i_ is connected to external trigger output of hart _j_, the assertion of output signal from hart _j_ is determined by its own allowed privilege level for debug. Hart _i_ will respond according to `tmexttrigger.action` only when it is in a debug allowed state and hart _j_ asserts the output signal.
 
 === CSRs
 
