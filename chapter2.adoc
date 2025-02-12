@@ -39,7 +39,7 @@ When `mdbgen` is set to 0, external debug is disallowed in M-mode. See <<sdsecex
 The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` state to enforce a unified debug policy across all harts.
 
 [NOTE]
-For M-mode firmware debugging with protected ROM code, assert `mdbgen` only after the ROM code is complete. For example, the `mdbgen` of the non-RoT hart can be controlled by RoT. The `mdbgen` of the RoT hart, if present, can be managed by external hardware like OTP/life-cycle fuse, with optional authentication. Establishing a chain of trust (CoT) allows M-mode firmware debugging without exposing ROM code to unauthorized debugger.
+For M-mode firmware debugging with protected ROM code, assert `mdbgen` only after the ROM code is complete. For example, the `mdbgen` of the non-RoT hart can be controlled by the RoT. The `mdbgen` of the RoT hart, if present, can be managed by external hardware like OTP/life-cycle fuse, with optional authentication. Establishing a chain of trust (CoT) allows M-mode firmware debugging without exposing ROM code to an unauthorized debugger.
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
