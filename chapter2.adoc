@@ -39,7 +39,7 @@ When `mdbgen` is set to 0, external debug is disallowed in M-mode. See <<sdsecex
 The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` state to enforce a unified debug policy across all harts.
 
 [NOTE]
-For M-mode firmware debugging with protected ROM code, assert `mdbgen` only after the ROM code is complete. For example, the `mdbgen` of the non-RoT hart can be controlled by the RoT. The `mdbgen` of the RoT hart, if present, can be managed by external hardware like OTP/life-cycle fuse, with optional authentication. Establishing a chain of trust (CoT) allows M-mode firmware debugging without exposing ROM code to an unauthorized debugger.
+For M-mode firmware debugging with protected ROM code, assert `mdbgen` only after the ROM code is completed. For example, the `mdbgen` of the non-RoT hart can be controlled by the RoT. The `mdbgen` of the RoT hart, if present, can be managed by external hardware like OTP/life-cycle fuse, with optional authentication. Establishing a chain of trust (CoT) allows M-mode firmware debugging without exposing ROM code to an unauthorized debugger.
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
@@ -120,7 +120,7 @@ M-mode is given write access to `dmode` to allow it to save/restore trigger cont
 
 The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug allowed privilege as specified in <<dbgpriv>>.
 
-The external trigger inputs (tmexttrigger) can be driven by any input signals, e.g. the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknowledge the input until it is in a debug allowed state. For example, if the external trigger input of hart _i_ is connected to external trigger output of hart _j_, the assertion of output signal from hart _j_ is determined by its own allowed privilege level for debug. Hart _i_ will respond according to `tmexttrigger.action` only when it is in a debug allowed state and hart _j_ asserts the output signal.
+The external trigger inputs (tmexttrigger) can be driven by any input signals, e.g. the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknowledge the input until it is in a debug allowed state. For example, if the external trigger input of hart _i_ is connected to external trigger output of hart _j_, the assertion of output signal from hart _j_ is determined by its own allowed privilege level for debug. Hart _i_ will halt if `tmexttrigger.action` is 1, when it is in a debug allowed state and hart _j_ asserts the output signal.
 
 === CSRs
 
