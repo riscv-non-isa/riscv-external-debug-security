@@ -43,7 +43,7 @@ For M-mode firmware debugging with protected ROM code, assert `mdbgen` only afte
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>>, to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. When disallowed, see <<sdsecextdbg>> for the impact on hart behavior in debug disallowed modes. 
+The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. When disallowed, see <<sdsecextdbg>> for the impact on hart behavior in debug disallowed modes. 
 
 [[dbgpriv]]
 [options="header"]
