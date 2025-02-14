@@ -17,7 +17,7 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be removed as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset request, the request is only acknowledged by the hart once it has reached a privilege level in which debug is permitted. 
+The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec],  a halt request must be responded within one second. However, this constraint must be removed as the request might be pending due to the situations where debugging is disallowed. In the case of halt-on-reset request (`setresethaltreq`), the request is only acknowledged by the hart once it has reached a privilege level in which debug is permitted. 
 
 [NOTE]
 When an external debugger issues a halt request, including halt-on-reset, it will be pending if debug is disallowed. This pending request will halt the hart at the first instruction where debug is allowed. If halt-on-reset is not supported by Debug Module and the external debugger cannot stop precisely, the debug build software can optionally enter a `while(0)` loop, allowing the debugger to take control and exit the loop.

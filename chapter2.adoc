@@ -22,9 +22,6 @@ When external debug is disallowed at the current privilege level, the hart behav
 
 The subsequent subsections describe how external debug is authorized by <<mdbgctl, M-mode debug control>> and <<submdbgctl, supervisor domain debug control>>.
 
-[NOTE]
-A pending request to enter Debug Mode can dynamically change from a disallowed state to an allowed state due to updates in debug controls. For example, once the software completes executing confidential code, it can grant debuggability for an external debugger, and the hart will acknowledge the pending halt request at that point. 
-
 [[mdbgctl]]
 ==== M-mode Debug Control
 
