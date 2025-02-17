@@ -38,9 +38,11 @@ The `mdbgen` may be controlled through various methods, such as a new input port
 [NOTE]
 The `mdbgen` of the non-RoT hart shall be managed by the RoT firmware. The `mdbgen` of the RoT hart (if present) shall be managed by SOC hardware. It can be OTP/life-cycle fuse optionally with authentication module.
 
+The `mdbgen` state for the Root-of-Trust (RoT) should be managed by SoC hardware, likely dependent on lifecycle fusing. The `mdbgen` for any other harts in the system should be managed by the RoT.
+
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. When disallowed, see <<sdsecextdbg>> for the impact on hart behavior in debug disallowed modes. 
+The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
 
 [[dbgpriv]]
 [options="header"]
@@ -86,7 +88,7 @@ Interrupts during single-step can be disabled by setting `dcsr.stepie`=0. When `
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For instance, if a crypto engine generates an interrupt to M-mode during single stepping, it will not be disabled if M-mode is debug disallowed. The interrupt will be served upon exiting Debug Mode.
 
 === Trace
-When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the interface defined for RISC-V to trace module cite:[etrace]. 
+When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the hart-trace interface (HTI) cite:[etrace]. 
 
 ==== M-Mode Trace Control 
 Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain; setting `mtrcen` to 0 inhibits trace when the hart is running in M-mode.
@@ -230,5 +232,5 @@ When M-mode enables debugging for supervisor domain, it can optionally delegate 
 [[Sdseccsr]]
 ==== Debug Control CSR
 
-The CSR `msdcfg`, holding the debug and trace control for supervisor domain (`sdedbgalw` and `sdetrcalw`), are defined in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for debugging and/or tracing in supervisor domains.
+The CSR `msdcfg`, holding the debug and trace control for supervisor domain (`sdedbgalw` and `sdetrcalw`), is defined in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for debugging and/or tracing in supervisor domains.
 
