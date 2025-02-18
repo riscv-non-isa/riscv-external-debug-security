@@ -36,8 +36,6 @@ When `mdbgen` is set to 0, external debug is disallowed in M-mode. See <<sdsecex
 The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` state to enforce a unified debug policy across all harts.
 
 [NOTE]
-The `mdbgen` of the non-RoT hart shall be managed by the RoT firmware. The `mdbgen` of the RoT hart (if present) shall be managed by SOC hardware. It can be OTP/life-cycle fuse optionally with authentication module.
-
 The `mdbgen` state for the Root-of-Trust (RoT) should be managed by SoC hardware, likely dependent on lifecycle fusing. The `mdbgen` for any other harts in the system should be managed by the RoT.
 
 [[submdbgctl]]
