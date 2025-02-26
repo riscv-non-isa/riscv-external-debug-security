@@ -126,7 +126,7 @@ The external trigger inputs (tmexttrigger) can be driven by any input signals, e
 
 ===== Extended `dcsr`
 
-The `dmprv` is added as bit 18 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
+The `dmprv` is added as bit 20 in `dcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
 
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="The `dmprv` field in debug control and status register (dcsr)"]
@@ -202,7 +202,7 @@ Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor acce
 ....
 
 [NOTE]
-The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode,  masked from `sdcsr`, while the `prv` field is constrained to 1 bit.  
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode,  masked from `sdcsr`, while the `prv` field is only 1 bit wide in `sdcsr`.  
 
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="Supervisor debug program counter (sdpc)"]
