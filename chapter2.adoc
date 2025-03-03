@@ -124,34 +124,6 @@ The external trigger inputs (tmexttrigger) can be driven by any input signals, e
 [[ssdextcsr]]
 ==== Extension of Sdext CSR
 
-===== Extended `dcsr`
-
-The `dmprv` is added as bit 4 in `sdcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
-
-//[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-//[title="The `dmprv` field in debug control and status register (dcsr)"]
-//[id=csr_dmprv]
-//[wavedrom, ,svg]
-//....
-//{reg: [
-//  {bits:   20, name: ' '},
-//  {bits:   1, name: 'mdprv'},
-//  {bits:   11, name: ' '},
-//], config:{lanes: 3, hspace:1024}}
-//....
-
-The maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
-
-[[maxdbgpriv]]
-[options="header"]
-.Maximum Allowed Resume Privilege Mode
-|=========================================
-| mdbgen | sdedbgalw | Maximum privilege allowed on resume
-| 1      | Don't care      | M
-| 0      | 1      | S(HS)
-| 0      | 0      | None
-|=========================================
-
 ===== `Sdcsr` and `sdpc`
 
 The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. They are only accessible in Debug Mode. 
@@ -201,6 +173,20 @@ Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor acce
 
 [NOTE]
 The `nmip`,`stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 `sdcsr`.  
+
+The `dmprv` is added as bit 4 in `sdcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
+
+The maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+
+[[maxdbgpriv]]
+[options="header"]
+.Maximum Allowed Resume Privilege Mode
+|=========================================
+| mdbgen | sdedbgalw | Maximum privilege allowed on resume
+| 1      | Don't care      | M
+| 0      | 1      | S(HS)
+| 0      | 0      | None
+|=========================================
 
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="Supervisor debug program counter (sdpc)"]
