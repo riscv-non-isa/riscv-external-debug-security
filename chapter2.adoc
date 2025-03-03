@@ -57,13 +57,13 @@ The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR 
 ==== Debug Access Privilege
 The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Where previously Debug Mode always had access to M-mode state, Debug Mode now accesses registers and memory using *debug access privilege*. Attempts from Debug Mode to access state that requires privilege above *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
 
-The `sdcsr.dmprv` modifies the effective *debug access privilege* to memory in S-mode debugger. When `sdcsr.dmprv`=0, the effective *debug access privilege* to memory follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the effective *debug access privilege* to memory is represented by `spp` and `spv` fields in `sstatus`.
+The `sdcsr.dmprv` modifies the effective *debug access privilege* to memory in S-mode debugger. When `sdcsr.dmprv`=0, the effective *debug access privilege* to memory follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the effective *debug access privilege* to memory is represented by `sstatus.spp` and `sstatus.spv`. 
 
-`sdcsr.dmprv` is 0 when `mdbgen`=1.
+`sdcsr.dmprv` only takes effect when `mdbgen` is 0, `sdcsr.dmprv` is 0 when `mdbgen` is 1.
 
-[NOTE]
-The effective *debug access privilege* to memory in M-mode debugger can  be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec].
+The effective *debug access privilege* to memory in M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. 
 
+With Sdsec, `dcsr.mprven` only takes effect When `mdbgen`=1, `dcsr.mprven` is 0 when `mdbgen`=0.
 
 [[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
@@ -73,7 +73,7 @@ The effective *debug access privilege* to memory in M-mode debugger can  be modi
 | Field | Description                                                                                                                          | Access | Reset  
 | dmprv | 0 (normal): The privilege level in Debug Mode is not modified.
 
-1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `prv` and `v`.| WARL   | 0      
+1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `sstatus.spp` and `sstatus.spv`.| WARL   | 0      
 |=================================================================================================================================================================
 
 ==== Using EBREAK to Enter Debug Mode
