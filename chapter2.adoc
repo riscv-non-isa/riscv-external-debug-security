@@ -130,7 +130,7 @@ The external trigger inputs (tmexttrigger) can be driven by any input signals, e
 
 ===== `Sdcsr` and `sdpc`
 
-The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. They are only accessible in Debug Mode. 
+The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds `dmprv` to modify effective *debug access privilege* in S-mode. Both registers are only accessible in Debug Mode. 
 
 .Allocated addresses for supervisor shadow of Debug Mode CSR  
 [options="header"]
