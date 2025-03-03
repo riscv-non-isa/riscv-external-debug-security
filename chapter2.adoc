@@ -172,7 +172,7 @@ Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor acce
 ....
 
 [NOTE]
-The `nmip`,`stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 `sdcsr`.  
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 `sdcsr`. The field for `mprven` is reclaimed by `dmprv` in `sdcsr` layout to avoid waste of fields. 
 
 The `dmprv` is added as bit 4 in `sdcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
 
