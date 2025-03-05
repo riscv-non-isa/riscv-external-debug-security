@@ -47,7 +47,7 @@ The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR 
 [cols="15%,15%,35%,35%"]
 .External Debug Configuration and Privilege
 |============================================
-| mdbgen | sdedbgalw | Debug allowed privilege modes | Debug access privilege (`dmprv`=0) 
+| mdbgen | sdedbgalw | Debug allowed privilege modes | Debug access privilege 
 | 1      | Don't care      | All                      | M-mode
 | 0      | 1      | All except M                      | S-mode
 | 0      | 0      | None                              | N/A
@@ -57,13 +57,9 @@ The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR 
 ==== Debug Access Privilege
 The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Where previously Debug Mode always had access to M-mode state, Debug Mode now accesses registers and memory using *debug access privilege*. Attempts from Debug Mode to access state that requires privilege above *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
 
-The `sdcsr.dmprv` modifies the effective *debug access privilege* to memory in S-mode debugger. When `sdcsr.dmprv`=0, the effective *debug access privilege* to memory follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the effective *debug access privilege* to memory is represented by `sstatus.spp` and `sstatus.spv`. 
+The `sdcsr.dmprv` modifies the effective *debug access privilege* for load and store in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the effective *debug access privilege* of memory accesses in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the effective *debug access privilege* of memory accesses in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, `sdcsr.dmprv` is 0 when `mdbgen` is 1.
 
-`sdcsr.dmprv` only takes effect when `mdbgen` is 0, `sdcsr.dmprv` is 0 when `mdbgen` is 1.
-
-The effective *debug access privilege* to memory in M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. 
-
-With Sdsec, `dcsr.mprven` only takes effect When `mdbgen`=1, `dcsr.mprven` is 0 when `mdbgen`=0.
+The effective *debug access privilege* to memory by an M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, `dcsr.mprven` only takes effect When `mdbgen`=1, and `dcsr.mprven` is 0 when `mdbgen`=0.
 
 [[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
@@ -73,7 +69,7 @@ With Sdsec, `dcsr.mprven` only takes effect When `mdbgen`=1, `dcsr.mprven` is 0 
 | Field | Description                                                                                                                          | Access | Reset  
 | dmprv | 0 (normal): The privilege level in Debug Mode is not modified.
 
-1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `sstatus.spp` and `sstatus.spv`.| WARL   | 0      
+1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `sstatus.spp` and `hstatus.spv`.| WARL   | 0      
 |=================================================================================================================================================================
 
 ==== Using EBREAK to Enter Debug Mode
@@ -128,11 +124,28 @@ The external trigger inputs (tmexttrigger) can be driven by any input signals, e
 === CSRs
 
 [[ssdextcsr]]
-==== Extension of Sdext CSR
+==== Extension of Debug Mode CSR
 
+The `dcsr`, `dpc` and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, an exception occurs. The `sdcsr` and `sdpc` (see <<smodecsr>>) are accessible in Debug Mode if either `mdbgen`=1 or `sedbgalw`= 1.
+
+===== `Dcsr`
+
+With Sdsec, the maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+
+[[maxdbgpriv]]
+[options="header"]
+.Maximum Allowed Resume Privilege Mode
+|=========================================
+| mdbgen | sdedbgalw | Maximum privilege allowed on resume
+| 1      | Don't care      | M
+| 0      | 1      | S(HS)
+| 0      | 0      | None
+|=========================================
+
+[[smodecsr]]
 ===== `Sdcsr` and `sdpc`
 
-The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds `dmprv` to modify effective *debug access privilege* in S-mode. Both registers are only accessible in Debug Mode. 
+The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds `dmprv` to modify the effective *debug access privilege* in S-mode. Both registers are only accessible in Debug Mode. 
 
 .Allocated addresses for supervisor shadow of Debug Mode CSR  
 [options="header"]
@@ -146,7 +159,7 @@ The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dc
 The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32>>, while the `sdpc` register provides full access to `dpc`.
 
 [NOTE]
-Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor access mechanism, and external debuggers with S-mode privilege cannot not use them.
+Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a supervisor access mechanism, and external debuggers with S-mode privilege cannot not use them.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug control and status register (sdcsr)"]
@@ -178,21 +191,9 @@ Unlike `dcsr` and `dpc`, the `dscratch*` registers do not have a supervisor acce
 ....
 
 [NOTE]
-The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 `sdcsr`. The field for `mprven` is reclaimed by `dmprv` in `sdcsr` layout to avoid waste of fields. 
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 in `sdcsr`. The field for `mprven` is reclaimed by `dmprv` in `sdcsr` layout to avoid waste of fields. 
 
-The `dmprv` is added as bit 4 in `sdcsr` to modify the *debug access privilege* for memory load and store operations, as defined in <<dbgaccpriv>>.  
-
-The maximum privilege level that can be configured in `prv` and `v` is determined in <<maxdbgpriv>>. The fields retain legal values when the `prv` and `v` are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
-
-[[maxdbgpriv]]
-[options="header"]
-.Maximum Allowed Resume Privilege Mode
-|=========================================
-| mdbgen | sdedbgalw | Maximum privilege allowed on resume
-| 1      | Don't care      | M
-| 0      | 1      | S(HS)
-| 0      | 0      | None
-|=========================================
+The `dmprv` field is added as bit 4 in `sdcsr` to modify the effective *debug access privilege* for memory load and store accesses, as defined in <<dbgaccpriv>>.  
 
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="Supervisor debug program counter (sdpc)"]
