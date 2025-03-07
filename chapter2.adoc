@@ -58,9 +58,9 @@ The *debug access privilege* is defined as the privilege level granted to the ex
 |============================================
 
 
-The `sdcsr.dmprv` modifies the effective *debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the effective *debug access privilege* of memory accesses in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the effective *debug access privilege* of memory accesses in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The 'sdcsr.dmprv' does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, `sdcsr.dmprv` is ignored when `mdbgen` is 1.
+The `sdcsr.dmprv` modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the *effective debug access privilege* of memory accesses in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the *effective debug access privilege* of memory accesses in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The 'sdcsr.dmprv' does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
 
-The effective *debug access privilege* to memory by an M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, `dcsr.mprven` only takes effect When `mdbgen`=1, and `dcsr.mprven` is ignored when `mdbgen`=0.
+The *effective debug access privilege* to memory by an M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, the `dcsr.mprven` only takes effect When `mdbgen`=1, and it is ignored when `mdbgen`=0.
 
 [[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
@@ -146,7 +146,7 @@ With Sdsec, the maximum privilege level that can be configured in `prv` and `v` 
 [[smodecsr]]
 ===== `Sdcsr` and `sdpc`
 
-The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds `dmprv` to modify the effective *debug access privilege* in S-mode. Both registers are only accessible in Debug Mode. 
+The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds `dmprv` to modify the *effective debug access privilege* in S-mode. Both registers are only accessible in Debug Mode. 
 
 .Allocated addresses for supervisor shadow of Debug Mode CSR  
 [options="header"]
@@ -194,7 +194,7 @@ Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a supervisor ac
 [NOTE]
 The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 in `sdcsr`. The field for `mprven` is reclaimed by `dmprv` in `sdcsr` layout to avoid waste of fields. 
 
-The `dmprv` field is added as bit 4 in `sdcsr` to modify the effective *debug access privilege* for memory load and store accesses, as defined in <<dbgaccpriv>>.  
+The `dmprv` field is added as bit 4 in `sdcsr` to modify the *effective debug access privilege* for memory load and store accesses, as defined in <<dbgaccpriv>>.  
 
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="Supervisor debug program counter (sdpc)"]
