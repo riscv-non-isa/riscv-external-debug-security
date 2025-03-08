@@ -38,6 +38,12 @@ The `mdbgen` may be controlled through various methods, such as a new input port
 [NOTE]
 The `mdbgen` state for the Root-of-Trust (RoT) should be managed by SoC hardware, likely dependent on lifecycle fusing. The `mdbgen` for any other harts in the system should be managed by the RoT.
 
+[NOTE]
+This specification assumes the controlling entity ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. 
+Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior, the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
+
+[[extdbg]]
+
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
 The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
@@ -127,7 +133,7 @@ The external trigger inputs (tmexttrigger) can be driven by any input signals, e
 [[ssdextcsr]]
 ==== Extension of Debug Mode CSR
 
-The `dcsr`, `dpc` and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstract.cmderr` is set to 3 (exception). The `sdcsr` and `sdpc` (see <<smodecsr>>) are accessible in Debug Mode if either `mdbgen`=1 or `sedbgalw`= 1.
+The `dcsr`, `dpc` and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstract.cmderr` is set to 3 (exception). The `sdcsr` and `sdpc` (see <<smodecsr>>) are accessible in Debug Mode if either `mdbgen`=1 or `sdedbgalw`= 1.
 
 ===== `Dcsr`
 
