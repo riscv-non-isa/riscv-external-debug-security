@@ -50,7 +50,7 @@ The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR 
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
-The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. Where previously Debug Mode always had access to M-mode state, Debug Mode now accesses registers and memory using *debug access privilege*. Attempts from Debug Mode to access state that requires privilege above *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
+The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. With Sdext, Debug Mode operates as if it has M-mode privilege. When Sdsec is implemented, Debug Mode accesses registers and memory using the *debug access privilege*. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
 
 [[dbgpriv]]
 [options="header"]
