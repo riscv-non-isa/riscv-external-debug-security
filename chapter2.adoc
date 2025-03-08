@@ -58,7 +58,7 @@ The *debug access privilege* is defined as the privilege level granted to the ex
 |============================================
 
 
-The `sdcsr.dmprv` modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the *effective debug access privilege* of memory accesses in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the *effective debug access privilege* of memory accesses in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The 'sdcsr.dmprv' does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
+The `sdcsr.dmprv` modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The 'sdcsr.dmprv' does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
 
 The *effective debug access privilege* to memory by an M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, the `dcsr.mprven` only takes effect When `mdbgen`=1, and it is ignored when `mdbgen`=0.
 
