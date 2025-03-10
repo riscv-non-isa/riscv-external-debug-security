@@ -23,7 +23,7 @@ The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The R
 
 The `hartreset` operation resets selected harts. When M-mode is not allowed to be debugged, the hart will raise a security fault error to the Debug Module. The debugger can monitor the error by polling `allsecfault` and/or `anysecfault` in `dmstatus`. 
 
-The ndmreset operation is a system-level reset not tied to hart privilege levels and resets the entire system (excluding the Debug Module). The Debug Module Security Extension makes ndmreset read-only 0. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
+The `ndmreset` operation is a system-level reset not tied to hart privilege levels and resets the entire system (excluding the Debug Module). The Debug Module Security Extension makes `ndmreset` read-only 0. The debugger can determine support for the ndmreset operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
