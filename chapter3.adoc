@@ -49,7 +49,7 @@ Quick Access abstract commands effect a halt, execution of Program Buffer, and r
 
 === System Bus Access 
 
-The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal access; in that case, the Debug Module will set `sberror` of `sbcs` (at 0x38 in Debug Module) to 6 (security fault error).
+The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sberror` of `sbcs` (at 0x38 in Debug Module) to 6 (security fault error).
 
 [NOTE]
 Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to M-mode. Similarly, M-mode should apply the protection before enabling supervisor domain debug. 
