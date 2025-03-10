@@ -1,12 +1,12 @@
 [[Sdsec]]
 == Sdsec (ISA extension)
 
-This chapter introduces the Sdsec ISA extension, which enhances the Sdext extension defined in _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege based protection for debug operations, and for triggers in Sdtrig cite:[dbgspec]. Furthermore, it constrains trace functionality cite:[etrace] according to RISC-V privilege levels.
+This chapter introduces the Sdsec ISA extension, which enhances the Sdext extension defined in _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege-based protection for debug operations and for triggers in Sdtrig cite:[dbgspec]. Furthermore, it constrains trace functionality cite:[etrace] according to RISC-V privilege levels.
 
 [[sdsecextdbg]]
 === External Debug
 
-Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension, other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
+Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional debug operations. The operations listed below are affected by the Sdsec extension; other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
 
 Debug operations affected by Sdsec: 
 [[dbops]]
@@ -27,26 +27,26 @@ The subsequent subsections describe how external debug is authorized by <<mdbgct
 
 A state element in each hart, named `mdbgen`, is introduced to control the debuggability of M-mode for each hart as depicted in <<extdbg>>. When `mdbgen` is set to 1, the following rules apply:
 
-- The <<dbgaccpriv, debug access privilege>> for the hart is M-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with M-mode privilege
+- The <<dbgaccpriv, debug access privilege>> for the hart is M-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with M-mode privilege.
 - The <<dbops, debug operations>> are permitted when the hart executes in any privilege mode.
 
 When `mdbgen` is set to 0, external debug is disallowed in M-mode. See <<sdsecextdbg>> for how this impacts hart behavior in M-mode. 
 
 [NOTE]
-The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` state to enforce a unified debug policy across all harts.
+The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` states to enforce a unified debug policy across all harts.
 
 [NOTE]
 The `mdbgen` state for the Root-of-Trust (RoT) should be managed by SoC hardware, likely dependent on lifecycle fusing. The `mdbgen` for any other harts in the system should be managed by the RoT.
 
 [NOTE]
 This specification assumes the controlling entity ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. 
-Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior, the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
+Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
 
 [[extdbg]]
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
+The Smsdedbg extension cite:[smmtt] introduces the `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug-allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
@@ -64,9 +64,9 @@ The *debug access privilege* is defined as the privilege level granted to the ex
 |============================================
 
 
-The `sdcsr.dmprv` modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The 'sdcsr.dmprv' does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
+The `sdcsr.dmprv` modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr.dmprv`=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr.dmprv`=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by `sstatus.spp` and `hstatus.spv`. The `sdcsr.dmprv` does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr.dmprv` only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
 
-The *effective debug access privilege* to memory by an M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, the `dcsr.mprven` only takes effect When `mdbgen`=1, and it is ignored when `mdbgen`=0.
+The *effective debug access privilege* to memory by an M-mode debugger can be modified by `dcsr.mprven` and `mstatus.mprv` as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, the `dcsr.mprven` only takes effect when `mdbgen`=1, and it is ignored when `mdbgen`=0.
 
 [[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
@@ -81,18 +81,18 @@ The *effective debug access privilege* to memory by an M-mode debugger can be mo
 
 ==== Using EBREAK to Enter Debug Mode
 
-EBREAK works as specified in The RISC-V Debug Specification cite:[dbgspec] when external debug is allowed at the running privilege level. When the hart is running at a debug disallowed privilege level, EBREAK always raises a breakpoint exception.
+EBREAK works as specified in The RISC-V Debug Specification cite:[dbgspec] when external debug is allowed at the running privilege level. When the hart is running at a debug-disallowed privilege level, EBREAK always raises a breakpoint exception.
 
 ==== Privilege Level Changing Instructions
 
-The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with exception of the EBREAK instruction. In Sdsec, privilege changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs.cmderr` to 3).
+The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with the exception of the EBREAK instruction. In Sdsec, privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs.cmderr` to 3).
 
 ==== Interrupt during Single Stepping
 
 Interrupts during single-step can be disabled by setting `dcsr.stepie`=0. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only delegated interrupts are disabled, while interrupts that trap to M-mode are not affected.
 
 [NOTE]
-When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For instance, if a crypto engine generates an interrupt to M-mode during single stepping, it will not be disabled if M-mode is debug disallowed. The interrupt will be served upon exiting Debug Mode.
+When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For instance, if a crypto engine generates an interrupt to M-mode during single stepping, it will not be disabled if M-mode is debug-disallowed. The interrupt will be served upon exiting Debug Mode.
 
 === Trace
 When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the hart-trace interface (HTI) cite:[etrace]. 
@@ -104,7 +104,7 @@ Each hart must add a new state element, `mtrcen`, which controls the availabilit
 Similar to M-mode debug control, `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation may group several harts together and use one signal to drive their `mtrcen` state or assign each hart its own dedicated state. 
 
 ==== Supervisor Domain Trace Control 
-The Smsdetrc extension introduces `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1,  trace can be allowed when the hart runs in the supervisor domain. 
+The Smsdetrc extension introduces the `sdetrcalw` field (bit 8) in CSR <<Sdseccsr,msdcfg>> within a hart. The trace availability for a hart in the supervisor domain is determined by the `sdetrcalw` field and `mtrcen`. If either `sdetrcalw` or `mtrcen` is set to 1, trace can be allowed when the hart runs in the supervisor domain. 
 
 When both `sdetrcalw` and `mtrcen` are set to 0, trace is inhibited at all privilege levels. 
 
@@ -117,23 +117,23 @@ Implementations must ensure that pending triggers intending to enter Debug Mode 
 
 ==== M-mode Accessibility to `dmode` in `tdata1`
  
-When Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
+When the Sdsec extension is implemented, `dmode` is read/write for both M-mode and Debug Mode when `mdbgen` is 0, and remains only accessible to Debug Mode when `mdbgen` is 1.
 
 [NOTE]
-M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise a trigger could serve as a side-channel to debug disallowed supervisor domains. The trigger may raise a breakpoint exception in a supervisor domain where debugging is disallowed. This could allow the external debugger to indirectly observe the state from the debug disallowed supervisor domain (PC, data address, etc.) and may even result in a Denial of Service (DoS). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at supervisor domain boundary.
+M-mode is given write access to `dmode` to allow it to save/restore trigger context on behalf of a supervisor debugger. Otherwise, a trigger could serve as a side-channel to debug-disallowed supervisor domains. The trigger may raise a breakpoint exception in a supervisor domain where debugging is disallowed. This could allow the external debugger to indirectly observe the state from the debug-disallowed supervisor domain (PC, data address, etc.) and may even result in a Denial of Service (DoS). By making `dmode` M-mode accessible when `mdbgen` is 0, such an attack can be mitigated by having M-mode firmware switch the trigger context at the supervisor domain boundary.
 
 ==== External Triggers
 
-The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug allowed privilege as specified in <<dbgpriv>>.
+The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug-allowed privilege as specified in <<dbgpriv>>.
 
-The external trigger inputs (tmexttrigger) can be driven by any input signals, e.g. the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknowledge the input until it is in a debug allowed state. For example, if the external trigger input of hart _i_ is connected to external trigger output of hart _j_, the assertion of output signal from hart _j_ is determined by its own allowed privilege level for debug. Hart _i_ will halt if `tmexttrigger.action` is 1, when it is in a debug allowed state and hart _j_ asserts the output signal.
+The external trigger inputs (tmexttrigger) can be driven by any input signals, e.g., the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknowledge the input until it is in a debug-allowed state. For example, if the external trigger input of hart _i_ is connected to the external trigger output of hart _j_, the assertion of the output signal from hart _j_ is determined by its own allowed privilege level for debug. Hart _i_ will halt if `tmexttrigger.action` is 1, when it is in a debug-allowed state and hart _j_ asserts the output signal.
 
 === CSRs
 
 [[ssdextcsr]]
 ==== Extension of Debug Mode CSR
 
-The `dcsr`, `dpc` and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstract.cmderr` is set to 3 (exception). The `sdcsr` and `sdpc` (see <<smodecsr>>) are alway accessible in Debug Mode.
+The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstract.cmderr` is set to 3 (exception). The `sdcsr` and `sdpc` (see <<smodecsr>>) are always accessible in Debug Mode.
 
 ===== `Dcsr`
 
@@ -158,7 +158,7 @@ The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dc
 [options="header"]
 [cols="25%,25%,50%"]
 |============================================================================================
-| Number   | Name       | Descirption
+| Number   | Name       | Description
 | 0xaaa    | sdcsr      | Supervisor debug control and status register.
 | 0xaaa    | sdpc       | Supervisor debug program counter. 
 |============================================================================================
@@ -166,7 +166,7 @@ The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dc
 The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32>>, while the `sdpc` register provides full access to `dpc`.
 
 [NOTE]
-Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a supervisor access mechanism, and external debuggers with S-mode privilege cannot not use them.
+Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a supervisor access mechanism, and external debuggers with S-mode privilege cannot use them.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="Supervisor debug control and status register (sdcsr)"]
@@ -198,7 +198,7 @@ Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a supervisor ac
 ....
 
 [NOTE]
-The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm` and `cetrig` fields in `dcsr` are configurable only by M-mode, they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 in `sdcsr`. The field for `mprven` is reclaimed by `dmprv` in `sdcsr` layout to avoid waste of fields. 
+The `nmip`, `mprven`, `stoptime`, `stopcount`, `ebreakm`, and `cetrig` fields in `dcsr` are configurable only by M-mode; they are masked in `sdcsr`, while `prv[1]` is hardwired to 0 in `sdcsr`. The field for `mprven` is reclaimed by `dmprv` in `sdcsr` layout to avoid waste of fields. 
 
 The `dmprv` field is added as bit 4 in `sdcsr` to modify the *effective debug access privilege* for memory load and store accesses, as defined in <<dbgaccpriv>>.  
 
@@ -220,13 +220,13 @@ The `dmprv` field is added as bit 4 in `sdcsr` to modify the *effective debug ac
 
 ==== Extension of Sdtrig CSR
 
-The Smtdeleg cite:[smtdeleg] and Smstateen cite:[smstateen] extensions define the process for delegating triggers to modes with lower privilege than M-mode. The Sdsec requires both extensions to securely delegate Sdtrig triggers to supervisor domain.
+The Smtdeleg cite:[smtdeleg] and Smstateen cite:[smstateen] extensions define the process for delegating triggers to modes with lower privilege than M-mode. The Sdsec requires both extensions to securely delegate Sdtrig triggers to the supervisor domain.
 
 [NOTE]
-When M-mode enables debugging for supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with S-mode privilege to configure these triggers.
+When M-mode enables debugging for the supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with S-mode privilege to configure these triggers.
 
 [[Sdseccsr]]
 ==== Debug Control CSR
 
-The CSR `msdcfg`, holding the debug and trace control for supervisor domain (`sdedbgalw` and `sdetrcalw`), is defined in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for debugging and/or tracing in supervisor domains.
+The CSR `msdcfg`, holding the debug and trace control for the supervisor domain (`sdedbgalw` and `sdetrcalw`), is defined in _RISC-V Supervisor Domains Access Protection_ cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for debugging and/or tracing in supervisor domains.
 
