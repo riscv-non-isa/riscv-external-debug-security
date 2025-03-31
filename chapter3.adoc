@@ -44,8 +44,8 @@ The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines w
 
 When M-mode debugging is disallowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded by the Debug Module, causing `abstractcs.cmderr` to be set to 6.
 
-[NOTE] 
-Quick Access abstract commands effect a halt, execution of Program Buffer, and resume of the selected hart. These halts cannot remain pending until debug is allowed because the debugger blocks while waiting for completion. To handle this, the hart would need to distinguish between Quick Access and other halt requests. Since Quick Access is an optional optimization, the extension avoids this extra hardware complexity by disallowing Quick Access when `mdbgen` is 0.
+[NOTE]
+Quick Access abstract commands initiate a halt, execute the Program Buffer, and resume the selected hart. These halts cannot remain pending until debugging is allowed because the debugger blocks while waiting for completion. To address this, the hart would need to distinguish between Quick Access and other halt requests. Since Quick Access is an optional optimization, the Sdsec extension avoids this additional hardware complexity by disallowing Quick Access when `mdbgen` is 0.
 
 === System Bus Access 
 
