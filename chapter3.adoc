@@ -38,18 +38,21 @@ The `relaxedpriv` field is hardwired to 0.
 
 ==== Address Translation `aamvirtual`  
 
-The field `aamvirtual` in the command (at 0x17 in the Debug Module) determines whether the Access Memory command uses a physical or virtual address. When an Access Memory command is issued with `aamvirtual`=0, the hart must check whether physical access to memory is allowed. The hart responds with an exception to the Debug Module when M-mode is disallowed to debug, `tvm` (in mstatus) is set to 1, and `mode` (in satp) enables any kind of virtual translation. In the event of an exception, the Debug Module sets `cmderr` of `abstractcs` (at 0x16 in Debug Module) to 3 and clears the data registers to 0.
+The field `command.aamvirtual` determines whether the Access Memory command uses a physical or virtual address. When `mdbgen`=1, the behavior follows the original RISC-V Debug Specification cite:[dbgspec]. When `mdbgen`=0:
+
+* If `aamvirtual`=0, the hart responds with a security fault error (setting `abstractcs.cmderr` to 6).
+* If `aamvirtual`=1, addresses are treated as virtual and are translated and protected according to the *effective debug access privilege*, as defined in <<dbgaccpriv>>.
 
 ==== Quick Access 
 
 When M-mode debugging is disallowed (`mdbgen`=0) for a hart, any Quick Access operation will be discarded by the Debug Module, causing `abstractcs.cmderr` to be set to 6.
 
 [NOTE]
-Quick Access abstract commands initiate a halt, execute the Program Buffer, and resume the selected hart. These halts cannot remain pending until debugging is allowed because the debugger blocks while waiting for completion. To address this, the hart would need to distinguish between Quick Access and other halt requests. Since Quick Access is an optional optimization, the Sdsec extension avoids this additional hardware complexity by disallowing Quick Access when `mdbgen` is 0.
+Quick Access abstract commands initiate a halt, execute the Program Buffer, and resume the selected hart. These halts cannot remain pending until debugging is allowed because the debugger blocks while waiting for completion. To address this, the hart would need to distinguish between Quick Access and other halt requests. Since Quick Access is an optional optimization, the Debug Module Security Extension avoids this additional hardware complexity by disallowing Quick Access when `mdbgen` is 0.
 
 === System Bus Access 
 
-The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sberror` of `sbcs` (at 0x38 in Debug Module) to 6 (security fault error).
+The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sberror` of `sbcs` to 6 (security fault error).
 
 [NOTE]
 Trusted entities like RoT should configure IOPMP or equivalent protection before granting debug access to M-mode. Similarly, M-mode should apply the protection before enabling supervisor domain debug. 
@@ -58,7 +61,7 @@ Trusted entities like RoT should configure IOPMP or equivalent protection before
 
 A dedicated error code, security fault error (cmderr 6), is included in `cmderr` of `abstractcs`. Issuance of abstract commands under disallowed circumstances sets `cmderr` to 6. Additionally, the bus security fault error (sberror 6) is introduced in `sberror` of `sbcs` to denote errors related to system bus access. 
 
-Error status bits are internally maintained for each hart. The `allsecfault` and `anysecfault` fields in `dmstatus` indicate the error status of the currently selected harts. These error statuses are sticky and can only be cleared by writing 1 to `acksecfault` in `dmcs2`.
+Error status bits are internally maintained for each hart. The `allsecfault` and `anysecfault` fields in `dmstatus` indicate the error status of the currently selected harts. These error statuses are sticky and can only be cleared by writing 1 to `acksecfault` in `dmcs2` <<regdmcs2>>.
 
 === Non-secure Debug 
 
@@ -71,6 +74,8 @@ The state element `nsecdbg` is introduced to retain full debugging capabilities,
 * Trace output is enabled in all privilege modes.  
 
 === Update of Debug Module Registers
+
+The Debug Module Security Extension introduces new fields in the Debug Module registers. In `dmstatus`, `anysecured` and `allsecured` are added at bit 20 and bit 21 respectively, while `anysecfault` and `allsecfault` are added at bit 25 and bit 26. The `acksecfault` field is added to `dmcs2` at bit 12.
 
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="Newly introduced fields in dmstatus"]
