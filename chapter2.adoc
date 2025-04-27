@@ -28,7 +28,7 @@ The subsequent subsections describe how external debug is authorized by <<mdbgct
 A state element in each hart, named `mdbgen`, is introduced to control the debuggability of M-mode for each hart as depicted in <<extdbg>>. When `mdbgen` is set to 1, the following rules apply:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart is M-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with M-mode privilege.
-- The <<dbops, debug operations>> are permitted when the hart executes in any privilege mode.
+- The <<dbops, debug operations>> are allowed when the hart executes in any privilege mode.
 
 When `mdbgen` is set to 0, external debug is disallowed in M-mode. See <<sdsecextdbg>> for how this impacts hart behavior in M-mode. 
 
@@ -50,7 +50,7 @@ The Smsdedbg extension cite:[smmtt] introduces the `sdedbgalw` field (bit 7) in 
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
-The *debug access privilege* is defined as the privilege level granted to the external debugger when performing state accesses via the hart, such as Abstract Commands and Program Buffer execution. With Sdext, Debug Mode operates as if it has M-mode privilege. When Sdsec is implemented, Debug Mode accesses registers and memory using the *debug access privilege*. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
+The *debug access privilege* is the privilege level for state accesses via the hart, such as Abstract Commands and Program Buffer execution. With Sdext, Debug Mode operates as if it has M-mode privilege. When Sdsec is implemented, Debug Mode accesses registers and memory using the *debug access privilege*. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs.cmderr` to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
 
 [[dbgpriv]]
 [options="header"]
@@ -134,6 +134,8 @@ The external trigger inputs (`tmexttrigger`) can be driven by any input signals,
 ==== Extension of Debug Mode CSR
 
 The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstract.cmderr` is set to 3 (exception). The `sdcsr` and `sdpc` (see <<smodecsr>>) are always accessible in Debug Mode.
+
+When external debug is disallowed at the current privilege level, the configuration in `dcsr` and `sdcsr` will be ignored as if they were 0.
 
 ===== `Dcsr`
 
