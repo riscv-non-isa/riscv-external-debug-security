@@ -14,11 +14,8 @@ Debug operations affected by Sdsec:
 * Executing the Program Buffer
 * Serving abstract commands (Access Register, Access Memory)
 
-When external debug is disallowed at the current privilege level, the hart behaves as follows: 
-
-[[dbgdisallowed]]
-* The hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
-* Triggers with `action`=1 (enter Debug Mode) will not match or fire.
+When external debug is disallowed at the current privilege level, the hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
+Triggers with `action`=1 (enter Debug Mode) will not match or fire when the effective privilege level is debug-disallowed.
 
 The subsequent subsections describe how external debug is authorized by <<mdbgctl, M-mode debug control>> and <<submdbgctl, supervisor domain debug control>>.
 
@@ -95,7 +92,10 @@ Interrupts during single-step can be disabled by setting `dcsr.stepie`=0. When `
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For instance, if a crypto engine generates an interrupt to M-mode during single stepping, it will not be disabled if M-mode is debug-disallowed. The interrupt will be served upon exiting Debug Mode.
 
 === Trace
-When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. The availability of trace output is indicated through the hart-trace interface (HTI) cite:[etrace]. 
+When Sdsec is supported, trace, as a non-intrusive debug method, will be constrained based on RISC-V privilege level. 
+
+[NOTE]
+The availability of trace output is indicated through signals of the hart-trace interface (HTI) cite:[etrace]. These signals are influenced by both the `mtrcen` and `sdetrcalw`. 
 
 ==== M-Mode Trace Control 
 Each hart must add a new state element, `mtrcen`, which controls the availability of M-mode tracing. Setting `mtrcen` to 1 enables trace for both M-mode and the supervisor domain; setting `mtrcen` to 0 inhibits trace when the hart is running in M-mode.
@@ -108,12 +108,12 @@ The Smsdetrc extension introduces the `sdetrcalw` field (bit 8) in CSR <<Sdseccs
 
 When both `sdetrcalw` and `mtrcen` are set to 0, trace is inhibited at all privilege levels. 
 
-=== Triggers (Sdtrig)
+=== Trigger Security and Access 
 
-Triggers configured to enter Debug Mode can only fire or match when external debug is allowed, as outlined in <<dbgpriv>>. 
+Triggers configured to enter Debug Mode can only match or fire when external debug is allowed, as outlined in <<dbgpriv>>. 
 
 [NOTE]
-Implementations must ensure that pending triggers intending to enter Debug Mode match or fire only when the hart is in a state where debug is allowed. For example, if an interrupt traps the hart to a debug-disallowed privilege mode, the trigger can only take effect either before the privilege is updated and control flow is transferred to the trap handler, or after the interrupt is completely handled and returns from the trap handler. The implementation must prevent Debug Mode from being entered in an intermediate state where privilege is changed or the PC is updated. This also applies to scenarios where a trigger is configured to enter Debug Mode before instruction execution and an interrupt occurs simultaneously.
+Implementations must ensure that pending triggers intending to enter Debug Mode match or fire only when the effective privilege level is debug-allowed. For example, if an interrupt traps the hart to a debug-disallowed privilege mode, the trigger can only take effect either before the privilege is updated and control flow is transferred to the trap handler, or after the interrupt is completely handled and returns from the trap handler. The implementation must prevent Debug Mode from being entered in an intermediate state where privilege is changed or the PC is updated. This also applies to scenarios where a trigger is configured to enter Debug Mode before instruction execution and an interrupt occurs simultaneously.
 
 ==== M-mode Accessibility to `dmode` in `tdata1`
  
@@ -124,7 +124,7 @@ M-mode is given write access to `dmode` to allow it to save/restore trigger cont
 
 ==== External Triggers
 
-The external trigger outputs (with `action` = 8/9) will not fire or match when the privilege level of the hart exceeds debug-allowed privilege as specified in <<dbgpriv>>.
+The external trigger outputs (with `action` = 8/9) will not match or fire when the effective privilege level of the hart exceeds debug-allowed privilege as specified in <<dbgpriv>>.
 
 The external trigger inputs (`tmexttrigger`) can be driven by any input signals, e.g., the external trigger output from another hart, interrupt signals, etc. The initiators of these signals are responsible for determining whether the signal is allowed to assert. The hart will not acknowledge the input until it is in a debug-allowed state. For example, if the external trigger input of hart _i_ is connected to the external trigger output of hart _j_, the assertion of the output signal from hart _j_ is determined by its own allowed privilege level for debug. Hart _i_ will halt if `tmexttrigger.action` is 1, when it is in a debug-allowed state and hart _j_ asserts the output signal.
 
@@ -222,7 +222,7 @@ The `dmprv` field is added as bit 4 in `sdcsr` to modify the *effective debug ac
 
 ==== Extension of Sdtrig CSR
 
-The Smtdeleg cite:[smtdeleg] and Smstateen cite:[smstateen] extensions define the process for delegating triggers to modes with lower privilege than M-mode. The Sdsec requires both extensions to securely delegate Sdtrig triggers to the supervisor domain.
+The Smtdeleg/Sstcfg cite:[smtdeleg] extensions define the process for delegating triggers to modes with lower privilege than M-mode. If Sdtrig is supported, the Sdsec requires both extensions to securely delegate Sdtrig triggers to the supervisor domain.
 
 [NOTE]
 When M-mode enables debugging for the supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with S-mode privilege to configure these triggers.
