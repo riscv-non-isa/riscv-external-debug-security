@@ -1,7 +1,7 @@
 [[Sdsec]]
 == Sdsec (ISA extension)
 
-This chapter introduces the Sdsec ISA extension, which enhances the Sdext extension defined in _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege-based protection for debug operations and for triggers in Sdtrig cite:[dbgspec]. Furthermore, it constrains trace functionality cite:[etrace] according to RISC-V privilege levels.
+This chapter introduces the Sdsec ISA extension, which enhances the Sdext extension defined in _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege-based protection for debug operations and for triggers in Sdtrig cite:[dbgspec]. Furthermore, it constrains trace functionality cite:[etrace] cite:[ntrace] according to RISC-V privilege levels. The Sdsec extension requires the Smsdedbg cite:[smmtt] extension to be implemented, and the Smsdetrc cite:[smmtt] extension if trace functionality is supported. 
 
 [[sdsecextdbg]]
 === External Debug
@@ -43,7 +43,7 @@ Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the 
 
 [[submdbgctl]]
 ==== Supervisor Domain Debug Control
-The Smsdedbg extension cite:[smmtt] introduces the `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug-allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
+The Smsdedbg extension introduces the `sdedbgalw` field (bit 7) in CSR <<Sdseccsr,msdcfg>> to control the debuggability of supervisor domains. When `mdbgen`=0, the `sdedbgalw` field determines both the debug-allowed privilege modes and the <<dbgaccpriv, debug access privilege>>, as illustrated in <<dbgpriv>>. 
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
