@@ -88,6 +88,8 @@ The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that
 
 Interrupts during single-step can be disabled by setting `dcsr.stepie`=0. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only delegated interrupts are disabled, while interrupts that trap to M-mode are not affected.
 
+When `mdbgen`=0 and `sdedbgalw`=1, M-mode interrupts during single-stepping in S-mode behave as follows. The hart exits Debug Mode and traps to M-mode. It then executes the trap handler, returns to S-mode, executes the single-stepped instruction, and finally re-enters Debug Mode.
+
 [NOTE]
 When debugging is only allowed for the supervisor domain, M-mode interrupts must not be disabled. Otherwise, debugging might impact the behavior of other parts of the system. For instance, if a crypto engine generates an interrupt to M-mode during single stepping, it will not be disabled if M-mode is debug-disallowed. The interrupt will be served upon exiting Debug Mode.
 
