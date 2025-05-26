@@ -84,7 +84,7 @@ EBREAK works as specified in The RISC-V Debug Specification cite:[dbgspec] when 
 
 The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that change the privilege mode have UNSPECIFIED behavior when executed within the Program Buffer, with the exception of the EBREAK instruction. In Sdsec, privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs.cmderr` to 3).
 
-==== Single Stepping
+==== Single Step
 
 If `mdbgen`=0, `sdedbgalw`=1, and `dcsr.step`=1, and a single-stepped instruction transfers control to an M-mode trap handler, the hart will execute the handler in M-mode and re-enter Debug Mode immediately after an `mret` instruction changes the PC. Note that the M-mode trap handler might restart the instruction (e.g., due to page faults or interrupts), which can prevent the single-step from advancing past that instruction. To assist users, the external debugger should perform an additional step if the PC does not change after a regular step.
 
