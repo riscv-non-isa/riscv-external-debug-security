@@ -14,10 +14,6 @@ When `nsecdbg` is set to 0, the validation process involves two actors, which ma
 [[extdbg]]
 image::external_debug_dm.png[title="The debug security control",align="center"]
 
-When the external debugger is using `dcsr.step` or `icount` to step over an instruction that triggers a transition to a higher privilege level, the security control logic must check that the resulting privilege level is debuggable (see <<dbgpriv>>). If so, the hart will enter Debug Mode before the first instruction in the trap handler executes. If not, Debug Mode entry will remain pending until the hart returns to a debuggable privilege level.
-
-Similar to the scenario described in The RISC-V Debug Specification cite:[dbgspec] Appendix B.3, the trap handler might restart the instruction in case of page faults, emulated FPU instructions, or interrupts, which can result in single-stepping not passing an instruction. To help users, the external debugger should perform an extra step when the PC does not change during a regular step.
-
 Application-level debugging is primarily accomplished through self-hosted debugging, allowing the management of debug policies by supervisor domains. As a result, user-level debugging management is not addressed within this extension.
 
 === Trace Security Control 
