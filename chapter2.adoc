@@ -86,7 +86,7 @@ The RISC-V Debug Specification cite:[dbgspec] defines that the instructions that
 
 ==== Single Step
 
-If `mdbgen`=0, `sdedbgalw`=1, and `dcsr.step`=1, and a single-stepped instruction transfers control to an M-mode trap handler, the hart will execute the handler in M-mode and re-enter Debug Mode immediately after an `mret` instruction changes the PC. Note that the M-mode trap handler might restart the instruction (e.g., due to page faults or interrupts), which can prevent the single-step from advancing past that instruction. To assist users, the external debugger should perform an additional step if the PC does not change after a regular step.
+If `mdbgen`=0, `sdedbgalw`=1, `dcsr.step`=1, and a single-stepped instruction transfers control to an M-mode trap handler, the hart will execute the handler in M-mode and re-enter Debug Mode immediately after an `mret` instruction changes the PC. Note that the M-mode trap handler might restart the instruction (e.g., due to page faults or interrupts), which can prevent the single-step from advancing past that instruction. To assist users, the external debugger should perform an additional step if the PC does not change after a regular step.
 
 Interrupts during single-step can be disabled by setting `dcsr.stepie`=0. When `mdbgen` is 1, `stepie` disables interrupts in all privilege modes for the hart. When `mdbgen` is 0 and `sdedbgalw` is 1, only delegated interrupts are disabled, while interrupts that trap to M-mode are not affected.
 
