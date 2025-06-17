@@ -62,9 +62,9 @@ Copyright 2023-2024 by RISC-V International.
 include::contributors.adoc[]
 
 include::intro.adoc[]
-include::chapter1.adoc[]
-include::chapter2.adoc[]
-include::chapter3.adoc[]
+include::threat_model.adoc[]
+include::sdsec.adoc[]
+include::dmextsec.adoc[]
 include::appendix.adoc[]
 
 // The index must precede the bibliography
