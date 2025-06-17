@@ -13,7 +13,7 @@ If any hart in the system implements the Sdsec extension, the Debug Module must 
 
 === External Debug Security Extensions Discovery 
 
-The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the ALLSECURED and/or ANYSECURED bits in `dmstatus` <<regdmstatus>>.  If the field ALLSECURED or ANYSECURED is set to 1, it indicates that all or any selected harts implement the Sdsec extension and <<nsecdbg, `nsecdbg`>> is set to 0. When any hart implements the Sdsec extension, it indicates that the Debug Module implements the Debug Module Security Extension as described in this chapter.
+The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the ALLSECURED and/or ANYSECURED bits in `dmstatus` <<regdmstatus>>. These bits will read as 0 when `nsecdbg` is set to 1, regardless of whether the harts implement the Sdsec extension. When `nsecdbg` is 0, ALLSECURED is set to 1 if all currently selected harts implement the Sdsec extension, and ANYSECURED is set to 1 if any currently selected hart implements the Sdsec extension. When any hart implements the Sdsec extension, it indicates that the Debug Module implements the Debug Module Security Extension as described in this chapter.
 
 === Halt 
 
@@ -100,8 +100,8 @@ The Debug Module Security Extension introduces new fields in the Debug Module re
 [options="header"]
 |================================================================================================================================================
 | Field       | Description                                                                                                       | Access | Reset
-| ALLSECURED  | The field is 1 when all currently selected harts implement the Sdsec extension and `nsecdbg` is set to 0.         | R      | -    
-| ANYSECURED  | The field is 1 when any currently selected hart implements the Sdsec extension and `nsecdbg` is set to 0.         | R      | -    
+| ALLSECURED  | The field is 0 when `nsecdbg` is 1. When `nsecdbg` is 0, this field is 1 if all currently selected harts implement the Sdsec extension.         | R      | -    
+| ANYSECURED  | The field is 0 when `nsecdbg` is 1. When `nsecdbg` is 0, this field is 1 if any currently selected hart implements the Sdsec extension.         | R      | -    
 | ALLSECFAULT | The field is 1 when all currently selected harts have raised a security fault due to reset or keepalive operation | R      | -    
 | ANYSECFAULT | The field is 1 when any currently selected hart has raised a security fault due to reset or keepalive operation   | R      | -    
 |================================================================================================================================================
