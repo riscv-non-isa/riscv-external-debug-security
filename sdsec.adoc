@@ -56,10 +56,12 @@ The *debug access privilege* is the privilege level for state accesses via the h
 |============================================
 | mdbgen | SDEDBGALW | Debug allowed privilege modes | Debug access privilege 
 | 1      | Don't care      | All                      | M-mode
-| 0      | 1      | All except M                      | S-mode
+| 0      | 1      | All except M                      | Next level privilege mode
 | 0      | 0      | None                              | N/A
 |============================================
 
+[NOTE]
+The next level privilege mode is the next level after M-mode. If S-mode is implemented, this is S-mode. If only M-mode and U-mode are implemented (no S-mode), it is U-mode.
 
 The `sdcsr`.DMPRV modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr`.DMPRV=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by `sstatus`.SPP and `hstatus`.SPV. The `sdcsr`.DMPRV does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr`.DMPRV only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
 
@@ -135,7 +137,7 @@ The external trigger inputs (`tmexttrigger`) can be driven by any input signals,
 [[ssdextcsr]]
 ==== Extension of Debug Mode CSR
 
-The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstractcs`.CMDERR is set to 3 (exception). The `sdcsr` and `sdpc` (see <<smodecsr>>) are always accessible in Debug Mode.
+The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstractcs`.CMDERR is set to 3 (exception). The `sdcsr`, `udcsr`, `sdpc`, and `udpc` are always accessible in Debug Mode.
 
 When external debug is disallowed at the current privilege level, the configuration in `dcsr` and `sdcsr` will be ignored as if they were 0.
 
@@ -149,7 +151,7 @@ With Sdsec, the maximum privilege level that can be configured in PRV and V is d
 |=========================================
 | mdbgen | SDEDBGALW | Maximum privilege allowed on resume
 | 1      | Don't care      | M
-| 0      | 1      | S(HS)
+| 0      | 1      | Next level privilege mode
 | 0      | 0      | None
 |=========================================
 
@@ -206,6 +208,52 @@ The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are 
 
 The DMPRV field is added as bit 4 in `sdcsr` to modify the *effective debug access privilege* for memory load and store accesses, as defined in <<dbgaccpriv>>.  
 
+===== `Udcsr` and `udpc`
+
+For implementations with only M-mode and U-mode (no S-mode), the `udcsr` and `udpc` registers provide user read/write access to the `dcsr` and `dpc` registers respectively. Both registers are only accessible in Debug Mode.
+
+User shadow of Debug Mode CSRs is not supported when S-mode is implemented.
+
+.Allocated addresses for user shadow of Debug Mode CSR  
+[options="header"]
+[cols="25%,25%,50%"]
+|============================================================================================
+| Number   | Name       | Description
+| 0xccc    | udcsr      | User debug control and status register.
+| 0xddd    | udpc       | User debug program counter. 
+|============================================================================================
+
+The `udcsr` register exposes a subset of `dcsr`, formatted as shown in <<udcsr32>>, while the `udpc` register provides full access to `dpc`.
+
+[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
+[title="User debug control and status register (udcsr)"]
+[id=udcsr32]
+[wavedrom, ,svg]
+....
+{reg: [
+  {bits:   2, name: '0'},
+  {bits:   1, name: 'STEP'},
+  {bits:   2, name: '0'},
+  {bits:   1, name: '0'},
+  {bits:   3, name: 'CAUSE'},
+  {bits:   1, name: '0'},
+  {bits:   1, name: '0'},
+  {bits:   1, name: 'STEPIE'},
+  {bits:   1, name: 'EBREAKU'},
+  {bits:   1, name: '0'},
+  {bits:   1, name: '0'},
+  {bits:   1, name: '0'},
+  {bits:   2, name: '0'},
+  {bits:   6, name: '0'},
+  {bits:   3, name: 'EXTCAUSE'},
+  {bits:   1, name: '0'},
+  {bits:   4, name: 'DEBUGVER'}
+], config:{lanes: 3, hspace:1024}}
+....
+
+[NOTE]
+The `udcsr` register provides access to only a minimal subset of `dcsr` fields necessary for U-mode debugging. The DEBUGVER, EXTCAUSE, EBREAKU, STEPIE, CAUSE, and STEP fields are exposed, while PRV, V, and other privileged fields are hardwired to 0. The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, EBREAKS, EBREAKVU, EBREAKVS, and CETRIG fields are not accessible in `udcsr`.
+
 //[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 //[title="Supervisor debug program counter (sdpc)"]
 //[id=sdpc]
@@ -227,7 +275,7 @@ The DMPRV field is added as bit 4 in `sdcsr` to modify the *effective debug acce
 The Smtdeleg/Sstcfg cite:[smtdeleg] extensions define the process for delegating triggers to modes with lower privilege than M-mode. If Sdtrig is supported, the Sdsec requires both extensions to securely delegate Sdtrig triggers to the supervisor domain.
 
 [NOTE]
-When M-mode enables debugging for the supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with S-mode privilege to configure these triggers.
+When M-mode enables debugging for the supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with next level privilege mode to configure these triggers.
 
 [[Sdseccsr]]
 ==== Debug Control CSR
