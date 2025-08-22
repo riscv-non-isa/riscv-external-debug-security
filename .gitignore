@@ -1,2 +1,4 @@
 *.pdf
+images/diag-wavedrom-*.svg
+.asciidoctor/
 
