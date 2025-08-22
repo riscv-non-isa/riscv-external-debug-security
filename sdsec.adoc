@@ -135,7 +135,7 @@ The external trigger inputs (`tmexttrigger`) can be driven by any input signals,
 [[ssdextcsr]]
 ==== Extension of Debug Mode CSR
 
-The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstractcs`.CMDERR is set to 3 (exception). The `sdcsr`, `udcsr`, and `sdpc`, `udpc` are always accessible in Debug Mode.
+The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbgen`=1; otherwise, the access will fail and `abstractcs`.CMDERR is set to 3 (exception). The `sdcsr`, `udcsr`, `sdpc`, and `udpc` are always accessible in Debug Mode.
 
 When external debug is disallowed at the current privilege level, the configuration in `dcsr` and `sdcsr` will be ignored as if they were 0.
 
