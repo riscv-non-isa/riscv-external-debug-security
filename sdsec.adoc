@@ -155,9 +155,6 @@ With Sdsec, the maximum privilege level that can be configured in PRV and V is d
 | 0      | 0      | None
 |=========================================
 
-[NOTE]
-The maximum allowed privilege mode on resume is the next level after M-mode. If S-mode is implemented, this is S-mode. If only M-mode and U-mode are implemented (no S-mode), it is U-mode.
-
 [[smodecsr]]
 ===== `Sdcsr` and `sdpc`
 
