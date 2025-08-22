@@ -213,6 +213,8 @@ The DMPRV field is added as bit 4 in `sdcsr` to modify the *effective debug acce
 
 For implementations with only M-mode and U-mode (no S-mode), the `udcsr` and `udpc` registers provide user read/write access to the `dcsr` and `dpc` registers respectively. Both registers are only accessible in Debug Mode.
 
+User shadow of Debug Mode CSRs is not supported when S-mode is implemented.
+
 .Allocated addresses for user shadow of Debug Mode CSR  
 [options="header"]
 [cols="25%,25%,50%"]
