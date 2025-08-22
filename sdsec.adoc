@@ -56,10 +56,12 @@ The *debug access privilege* is the privilege level for state accesses via the h
 |============================================
 | mdbgen | SDEDBGALW | Debug allowed privilege modes | Debug access privilege 
 | 1      | Don't care      | All                      | M-mode
-| 0      | 1      | All except M                      | S-mode
+| 0      | 1      | All except M                      | Next level privilege mode
 | 0      | 0      | None                              | N/A
 |============================================
 
+[NOTE]
+The next level privilege mode is the next level after M-mode. If S-mode is implemented, this is S-mode. If only M-mode and U-mode are implemented (no S-mode), it is U-mode.
 
 The `sdcsr`.DMPRV modifies the *effective debug access privilege* for loads and stores in Debug Mode by an S-mode debugger. When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr`.DMPRV=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by `sstatus`.SPP and `hstatus`.SPV. The `sdcsr`.DMPRV does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr`.DMPRV only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
 
@@ -276,7 +278,7 @@ The `udcsr` register provides access to only a minimal subset of `dcsr` fields n
 The Smtdeleg/Sstcfg cite:[smtdeleg] extensions define the process for delegating triggers to modes with lower privilege than M-mode. If Sdtrig is supported, the Sdsec requires both extensions to securely delegate Sdtrig triggers to the supervisor domain.
 
 [NOTE]
-When M-mode enables debugging for the supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with S-mode privilege to configure these triggers.
+When M-mode enables debugging for the supervisor domain, it can optionally delegate the triggers to the supervisor domain, allowing an external debugger with next level privilege mode to configure these triggers.
 
 [[Sdseccsr]]
 ==== Debug Control CSR
