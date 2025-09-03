@@ -17,7 +17,41 @@ Debug operations affected by Sdsec:
 When external debug is disallowed at the current privilege level, the hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
 Triggers with ACTION=1 (enter Debug Mode) will not match or fire when the effective privilege level is debug-disallowed.
 
-The subsequent subsections describe how external debug is authorized by <<mdbgctl, M-mode debug control>> and <<submdbgctl, supervisor domain debug control>>.
+The Sdsec extension provides debug control across different RISC-V privilege levels through a mandatory M-mode debug control and a set of optional extensions. This allows selectively enabling or disabling external debug capabilities for specific privilege modes.
+
+The debug controls include:
+
+* **M-mode Debug Control**: Mandatory control for external debug access to M-mode
+* **S-mode Debug Control (Smsdedbg)**: Optional extension controlling external debug access to S/HS-mode  
+* **VS-mode Debug Control (Smvsdedbg)**: Optional extension controlling external debug access to VS-mode
+* **U-mode Debug Control (Smudedbg)**: Optional extension controlling external debug access to U/VU-mode
+
+The table below lists the debug control and CSRs added for each extension:
+
+[[dbgctlcsr]]
+[cols="20%,20%,20%,20%,20%", options="header"]
+.Debug Control and CSRs
+|===========================================
+|               |     Sdsec(baseline)   |   Smsdedbg(optional)      |    Smvsdedbg(optional)  |  Smudedbg(optional)   
+| Debug Control |     mdbgen            |   SDEDBGALW               |    VSEDBGALW            |  USEDBGALW
+| CSR           |     N/A               |   sdcsr, sdpc             |    vsdcsr               |  udcsr, udpc
+|===========================================
+
+[NOTE]
+Users can choose to implement some or all of the optional extensions depending on their system requirements. These extensions work together to establish a hierarchical debug control model where external debug access can be restricted to specific privilege levels, preventing unauthorized debugging. 
+
+The following table summarizes the valid extension combinations:
+
+[[validimplcomb]]
+[cols="20%,80%", options="header"]
+.Valid Extension Combinations by Architecture
+|===========================================
+| Architecture |          Valid implementations           
+| M            |   Sdsec only                    
+| M/U          |   Sdsec or Sdsec + Smudedbg         
+| M/S/U        |   Sdsec, Sdsec + Smsdedbg, Sdsec + Smsdedbg + Smudedbg                     
+| M/S/VS/VU/U  |   Sdsec, Sdsec + Smsdedbg, Sdsec + Smsdedbg + Smvsdedbg, Sdsec + Smsdedbg + Smvsdedbg + Smudedbg                 
+|===========================================
 
 [[mdbgctl]]
 ==== M-mode Debug Control
