@@ -1,7 +1,54 @@
 [[Sdsec]]
 == Sdsec (ISA extension)
 
-This chapter introduces the Sdsec ISA extension, which enhances the Sdext extension defined in _The RISC-V Debug Specification_ cite:[dbgspec]. The Sdsec extension provides privilege-based protection for debug operations and for triggers in Sdtrig cite:[dbgspec]. Furthermore, it constrains trace functionality cite:[etrace] cite:[ntrace] according to RISC-V privilege levels. The Sdsec extension requires the Smsdedbg cite:[smmtt] extension to be implemented, and the Smsdetrc cite:[smmtt] extension if trace functionality is supported. 
+This chapter introduces the Sdsec ISA extension, which adds security enhancements to the Sdext/Sdtrig cite:[dbgspec] and trace functionality cite:[etrace] cite:[ntrace]. The extension provides mandatory M-mode debug and trace control, along with optional extensions for lower privilege modes.
+
+//FIXME: how to deal with the extension defined in smmtt?
+//The Sdsec extension requires the Smsdedbg cite:[smmtt] extension to be implemented, and the Smsdetrc cite:[smmtt] extension if trace functionality is supported. 
+
+
+It defines the following debug and trace controls:
+
+* **M-mode Control**: Mandatory control for M-mode external debug and trace
+* **S-mode Control (Smsdedbg)**: Optional extension for S/HS-mode external debug and trace
+* **VS-mode Control (Smvsdedbg)**: Optional extension for VS-mode external debug and trace  
+* **U-mode Control (Smudedbg)**: Optional extension for U/VU-mode external debug and trace
+
+The following table summarizes the debug and trace control and associated CSRs:
+
+[[dbgctlcsr]]
+.Debug and Trace Control and CSRs
+[options="header"]
+|=====================================================================
+| Extension          | Debug Control    | Trace Control    | New CSRs      | Target Modes
+| Sdsec (baseline)   | mdbgen           | mtrcen           | None          | M-mode
+| Smsdedbg           | msdcfg.SDEDBGALW | msdcfg.SDETRCALW | sdcsr, sdpc   | S/HS-mode  
+| Smvsdedbg          | msdcfg.VSEDBGALW | msdcfg.VSETRCALW | vsdcsr        | VS-mode
+| Smudedbg           | msdcfg.USEDBGALW | msdcfg.USETRCALW | udcsr, udpc   | U/VU-mode
+|=====================================================================
+
+[NOTE]
+Users can choose to implement some or all of the optional extensions depending on their system requirements. These extensions work together to establish a hierarchical debug control model where external debug access can be restricted to specific privilege levels, preventing unauthorized debugging. 
+
+The following table shows valid implementation combinations for different architectures:
+
+[[validimplcomb]]
+.Valid Implementation Combinations
+[cols="25%,75%", options="header"]
+|=====================================================================
+| Architecture    | Valid Extension Combinations           
+| M-only          | • Sdsec only                    
+| M/U             | • Sdsec only +
+                    • Sdsec + Smudedbg         
+| M/S/U           | • Sdsec only +
+                    • Sdsec + Smsdedbg +
+                    • Sdsec + Smsdedbg + Smudedbg                     
+| M/S/VS/VU/U     | • Sdsec only +
+                    • Sdsec + Smsdedbg +
+                    • Sdsec + Smsdedbg + Smvsdedbg +
+                    • Sdsec + Smsdedbg + Smvsdedbg + Smudedbg                 
+|=====================================================================
+
 
 [[sdsecextdbg]]
 === External Debug
@@ -16,42 +63,6 @@ Debug operations affected by Sdsec:
 
 When external debug is disallowed at the current privilege level, the hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
 Triggers with ACTION=1 (enter Debug Mode) will not match or fire when the effective privilege level is debug-disallowed.
-
-The Sdsec extension provides debug control across different RISC-V privilege levels through a mandatory M-mode debug control and a set of optional extensions. This allows selectively enabling or disabling external debug capabilities for specific privilege modes.
-
-The debug controls include:
-
-* **M-mode Debug Control**: Mandatory control for external debug access to M-mode
-* **S-mode Debug Control (Smsdedbg)**: Optional extension controlling external debug access to S/HS-mode  
-* **VS-mode Debug Control (Smvsdedbg)**: Optional extension controlling external debug access to VS-mode
-* **U-mode Debug Control (Smudedbg)**: Optional extension controlling external debug access to U/VU-mode
-
-The table below lists the debug control and CSRs added for each extension:
-
-[[dbgctlcsr]]
-[cols="20%,20%,20%,20%,20%", options="header"]
-.Debug Control and CSRs
-|===========================================
-|               |     Sdsec(baseline)   |   Smsdedbg(optional)      |    Smvsdedbg(optional)  |  Smudedbg(optional)   
-| Debug Control |     mdbgen            |   SDEDBGALW               |    VSEDBGALW            |  USEDBGALW
-| CSR           |     N/A               |   sdcsr, sdpc             |    vsdcsr               |  udcsr, udpc
-|===========================================
-
-[NOTE]
-Users can choose to implement some or all of the optional extensions depending on their system requirements. These extensions work together to establish a hierarchical debug control model where external debug access can be restricted to specific privilege levels, preventing unauthorized debugging. 
-
-The following table summarizes the valid extension combinations:
-
-[[validimplcomb]]
-[cols="20%,80%", options="header"]
-.Valid Extension Combinations by Architecture
-|===========================================
-| Architecture |          Valid implementations           
-| M            |   Sdsec only                    
-| M/U          |   Sdsec or Sdsec + Smudedbg         
-| M/S/U        |   Sdsec, Sdsec + Smsdedbg, Sdsec + Smsdedbg + Smudedbg                     
-| M/S/VS/VU/U  |   Sdsec, Sdsec + Smsdedbg, Sdsec + Smsdedbg + Smvsdedbg, Sdsec + Smsdedbg + Smvsdedbg + Smudedbg                 
-|===========================================
 
 [[mdbgctl]]
 ==== M-mode Debug Control
@@ -72,8 +83,6 @@ The `mdbgen` state for the Root-of-Trust (RoT) should be managed by SoC hardware
 [NOTE]
 This specification assumes the controlling entity ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. 
 Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
-
-[[extdbg]]
 
 [[submdbgctl]]
 ==== S-mode Debug Control (Smsdedbg)
