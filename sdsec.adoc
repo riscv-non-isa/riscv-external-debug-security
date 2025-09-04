@@ -61,8 +61,45 @@ Debug operations affected by Sdsec:
 * Executing the Program Buffer
 * Serving abstract commands (Access Register, Access Memory)
 
-When external debug is disallowed at the current privilege level, the hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
-Triggers with ACTION=1 (enter Debug Mode) will not match or fire when the effective privilege level is debug-disallowed.
+[[dbgaccpriv]]
+==== Debug Access Privilege
+
+The *debug access privilege* is defined as the privilege level for state accesses via the hart, such as Abstract Commands and Program Buffer execution. With Sdext, Debug Mode operates as if it has M-mode privilege. When Sdsec is implemented, Debug Mode accesses registers and memory using the *debug access privilege*. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
+
+[[dbgpriv]]
+[options="header"]
+[cols="5*"]
+.External Debug Configuration and Privilege
+|=====================================================================================================
+| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Debug Access Privilege
+| 1      | Don't care | Don't care | Don't care | M-mode                
+| 0      | 1          | Don't care | Dont care  | S/HS-Mode             
+| 0      | 0          | 1          | Don't care | VS-Mode               
+| 0      | 0          | 0          | 1          | U/VU-Mode             
+| 0      | 0          | 0          | 0          | None                  
+|=====================================================================================================
+
+[[maxdbgpriv]]
+==== Maximum Allowed Resume Privilege Mode
+
+With Sdsec, the maximum privilege level that can be configured in PRV and V is determined in <<maxdbgpriv>>. The fields retain legal values when the PRV and V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+
+[[maxdbgpriv]]
+[cols="5*", options="header"]
+.Maximum Allowed Resume Privilege Mode
+|=====================================================================================================
+| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Maximum Debug Allowed Privilege on resume 
+| 1      | Don't care | Don't care | Don't care | M-Mode                                         
+| 0      | 1          | Don't care | Dont care  | S/HS-Mode                                  
+| 0      | 0          | 1          | Don't care | VS-Mode
+| 0      | 0          | 0          | 1          | U/VU-Mode
+| 0      | 0          | 0          | 0          | None
+|=====================================================================================================
+
+
+// TODO: elaborate this on each control. 
+//When external debug is disallowed at the current privilege level, the hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
+//Triggers with ACTION=1 (enter Debug Mode) will not match or fire when the effective privilege level is debug-disallowed.
 
 [[mdbgctl]]
 ==== M-mode Debug Control
@@ -72,13 +109,23 @@ A state element in each hart, named `mdbgen`, is introduced to control the debug
 - The <<dbgaccpriv, debug access privilege>> for the hart is M-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with M-mode privilege.
 - The <<dbops, debug operations>> are allowed when the hart executes in any privilege mode.
 
-When `mdbgen` is set to 0, external debug is disallowed in M-mode. See <<sdsecextdbg>> for how this impacts hart behavior in M-mode. 
+When `mdbgen` is set to 0 and the hart is running in M-mode:
+
+- The hart will not enter Debug Mode.
+- Halt requests will remain pending until debug is allowed.  
+- Triggers with ACTION=1 (enter Debug Mode) will not match or fire.
+- The external trigger outputs (with ACTION=8/9) will not match or fire.
+- EBREAK always raises a breakpoint exception.
+- Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
+- Single-stepping cannot stop in M-mode.
+- Interrupts to M-mode cannot be disabled by setting `dcsr`.STEPIE=0. 
 
 [NOTE]
-The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` states to enforce a unified debug policy across all harts.
+When `mdbgen`=0 and `dcsr`.STEP=1, a single-stepped instruction in a debug-allowed prvilege mode may transfer control to M-mode trap handler. The hart will execute the handler in M-mode and re-enter Debug Mode immediately after an MRET instruction returns to the debug-allowed privilege mode (i.e., MRET with `mstatus`.MPP<3) . The hart shall not re-enter Debug Mode if the MRET instruction returns to a debug-disallowed privilege mode (i.e., MRET with `mstatus`.MPP=3, `mdbgen`=0). 
 
 [NOTE]
-The `mdbgen` state for the Root-of-Trust (RoT) should be managed by SoC hardware, likely dependent on lifecycle fusing. The `mdbgen` for any other harts in the system should be managed by the RoT.
+The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The `mdbgen` state for the Root-of-Trust (RoT) itself should be managed by SoC hardware, likely dependent on lifecycle fusing. 
+The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` states to enforce a unified debug policy across all harts.
 
 [NOTE]
 This specification assumes the controlling entity ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. 
@@ -94,38 +141,8 @@ The optional Smvsdedbg extension introduces the VSEDBGALW field (bit 8) in CSR <
 ==== U-mode Debug Control (Smudedbg)
 The optional Smudedbg extension introduces the USEDBGALW field (bit 9) in CSR <<Sdseccsr,`msdcfg`>> to control the debuggability of U-mode and VU-mode illustrated in <<maxdbgpriv>> and the <<dbgaccpriv, debug access privilege>> illustrated in <<dbgpriv>>.
 
-==== Maximum Allowed Privilege Mode
-With Sdsec, the maximum privilege level that can be configured in PRV and V is determined in <<maxdbgpriv>>. The fields retain legal values when the PRV and V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
 
-[[maxdbgpriv]]
-[cols="5*", options="header"]
-.Maximum Allowed Resume Privilege Mode
-|=====================================================================================================
-| MDBGEN | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Maximum Debug Allowed Privilege on resume 
-| 1      | Don't care | Don't care | Don't care | M-Mode                                         
-| 0      | 1          | Don't care | Dont care  | S/HS-Mode                                  
-| 0      | 0          | 1          | Don't care | VS-Mode
-| 0      | 0          | 0          | 1          | U/VU-Mode
-| 0      | 0          | 0          | 0          | None
-|=====================================================================================================
-
-[[dbgaccpriv]]
-==== Debug Access Privilege
-The *debug access privilege* is the privilege level for state accesses via the hart, such as Abstract Commands and Program Buffer execution. With Sdext, Debug Mode operates as if it has M-mode privilege. When Sdsec is implemented, Debug Mode accesses registers and memory using the *debug access privilege*. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. The *debug access privilege* is derived as shown in <<dbgpriv>>.
-
-[[dbgpriv]]
-[options="header"]
-[cols="5*"]
-.External Debug Configuration and Privilege
-|=====================================================================================================
-| MDBGEN | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Debug Access Privilege
-| 1      | Don't care | Don't care | Don't care | M-mode                
-| 0      | 1          | Don't care | Dont care  | S/HS-Mode             
-| 0      | 0          | 1          | Don't care | VS-Mode               
-| 0      | 0          | 0          | 1          | U/VU-Mode             
-| 0      | 0          | 0          | 0          | None                  
-|=====================================================================================================
-
+// TODO: move it to s/vs/u mode control.
 ===== Debug Access Privilege to memory
 
 The *effective debug access privilege* of loads and stores by an M-mode debugger to access memory in Debug Mode can be modified by `dcsr`.MPRVEN and `mstatus`.MPRV as specified in The RISC-V Debug Specification cite:[dbgspec]. With Sdsec, the `dcsr`.MPRVEN only takes effect when `mdbgen`=1, and it is ignored when `mdbgen`=0.
