@@ -101,6 +101,10 @@ With Sdsec, the maximum privilege level that can be configured in PRV and V is d
 //When external debug is disallowed at the current privilege level, the hart will not enter Debug Mode. Halt requests will remain pending until debug is allowed.  
 //Triggers with ACTION=1 (enter Debug Mode) will not match or fire when the effective privilege level is debug-disallowed.
 
+==== Privilege-changing Instructions
+
+Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
+
 [[mdbgctl]]
 ==== M-mode Debug Control
 
@@ -116,7 +120,9 @@ When `mdbgen` is set to 0 and the hart is running in M-mode:
 - Triggers with ACTION=1 (enter Debug Mode) will not match or fire.
 - The external trigger outputs (with ACTION=8/9) will not match or fire.
 - EBREAK always raises a breakpoint exception.
-- Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
+
+If the hart is running in a debug-allowed privilege mode when `mdbgen` is 0: 
+
 - Single-stepping cannot stop in M-mode.
 - Interrupts to M-mode cannot be disabled by setting `dcsr`.STEPIE=0. 
 
