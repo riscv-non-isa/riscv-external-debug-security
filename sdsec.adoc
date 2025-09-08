@@ -9,10 +9,12 @@ This chapter introduces the Sdsec ISA extension, which adds security enhancement
 
 It defines the following debug and trace controls:
 
-* **M-mode Control**: Mandatory control for M-mode external debug and trace
+* **M-mode Control (Smmdedbg)**: Mandatory control for M-mode external debug and trace
 * **S-mode Control (Smsdedbg)**: Optional extension for S/HS-mode external debug and trace
 * **VS-mode Control (Smvsdedbg)**: Optional extension for VS-mode external debug and trace  
 * **U-mode Control (Smudedbg)**: Optional extension for U/VU-mode external debug and trace
+
+When debug or trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well.  
 
 The following table summarizes the debug and trace control and associated CSRs:
 
@@ -21,7 +23,7 @@ The following table summarizes the debug and trace control and associated CSRs:
 [options="header"]
 |=====================================================================
 | Extension          | Debug Control    | Trace Control    | New CSRs      | Target Modes
-| Sdsec (baseline)   | mdbgen           | mtrcen           | None          | M-mode
+| Smmdedbg           | mdbgen           | mtrcen           | None          | M-mode
 | Smsdedbg           | msdcfg.SDEDBGALW | msdcfg.SDETRCALW | sdcsr, sdpc   | S/HS-mode  
 | Smvsdedbg          | msdcfg.VSEDBGALW | msdcfg.VSETRCALW | vsdcsr        | VS-mode
 | Smudedbg           | msdcfg.USEDBGALW | msdcfg.USETRCALW | udcsr, udpc   | U/VU-mode
@@ -37,16 +39,16 @@ The following table shows valid implementation combinations for different archit
 [cols="25%,75%", options="header"]
 |=====================================================================
 | Architecture    | Valid Extension Combinations           
-| M-only          | • Sdsec only                    
-| M/U             | • Sdsec only +
-                    • Sdsec + Smudedbg         
-| M/S/U           | • Sdsec only +
-                    • Sdsec + Smsdedbg +
-                    • Sdsec + Smsdedbg + Smudedbg                     
-| M/S/VS/VU/U     | • Sdsec only +
-                    • Sdsec + Smsdedbg +
-                    • Sdsec + Smsdedbg + Smvsdedbg +
-                    • Sdsec + Smsdedbg + Smvsdedbg + Smudedbg                 
+| M-only          | • Smmdedbg only                    
+| M/U             | • Smmdedbg only +
+                    • Smmdedbg + Smudedbg         
+| M/S/U           | • Smmdedbg only +
+                    • Smmdedbg + Smsdedbg +
+                    • Smmdedbg + Smsdedbg + Smudedbg                     
+| M/S/VS/VU/U     | • Smmdedbg only +
+                    • Smmdedbg + Smsdedbg +
+                    • Smmdedbg + Smsdedbg + Smvsdedbg +
+                    • Smmdedbg + Smsdedbg + Smvsdedbg + Smudedbg                 
 |=====================================================================
 
 
@@ -106,20 +108,20 @@ With Sdsec, the maximum privilege level that can be configured in PRV and V is d
 Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
 
 [[mdbgctl]]
-==== M-mode Debug Control
+==== M-mode Debug Control (Smmdedbg)
 
-A state element in each hart, named `mdbgen`, is introduced to control the debuggability of M-mode for each hart as depicted in <<extdbg>>. When `mdbgen` is set to 1, the following rules apply:
+A state element in each hart, named `mdbgen`, is introduced to control the debuggability of M-mode for each hart as depicted in <<extdbg>>. When `mdbgen` is set to 1, debug is allowed for M-mode and the following rules apply:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart is M-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with M-mode privilege.
 - The <<dbops, debug operations>> are allowed when the hart executes in any privilege mode.
 
-When `mdbgen` is set to 0 and the hart is running in M-mode:
+When `mdbgen` is set to 0 and the hart is running in M-mode, debug is disallowed for M-mode:
 
-- The hart will not enter Debug Mode.
-- Halt requests will remain pending until debug is allowed.  
-- Triggers with ACTION=1 (enter Debug Mode) will not match or fire.
+- The hart will not enter Debug Mode:
+  * Halt requests will remain pending until debug is allowed.  
+  * Triggers with ACTION=1 (enter Debug Mode) will not match or fire.
+  * EBREAK cannot enter Debug Mode and always raises a breakpoint exception.
 - The external trigger outputs (with ACTION=8/9) will not match or fire.
-- EBREAK always raises a breakpoint exception.
 
 If the hart is running in a debug-allowed privilege mode when `mdbgen` is 0: 
 
@@ -137,9 +139,31 @@ The implementation can choose to group several harts together and use one signal
 This specification assumes the controlling entity ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. 
 Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
 
-[[submdbgctl]]
-==== S-mode Debug Control (Smsdedbg)
-The optional Smsdedbg extension introduces the SDEDBGALW field (bit 7) in CSR <<Sdseccsr,`msdcfg`>> to control the debuggability of S/HS-mode and lower privilege modes illustrated in <<maxdbgpriv>> and the <<dbgaccpriv, debug access privilege>> illustrated in <<dbgpriv>>.
+[[smsdbgctl]]
+==== S/HS-mode Debug Control (Smsdedbg)
+
+The optional Smsdedbg extension introduces the `SDEDBGALW` field (bit 7) in CSR <<Sdseccsr,`msdcfg`>>. The `SDEDBGALW` field only takes effect when `mdbgen` is 0; otherwise, debug control is dominated by `mdbgen`.
+
+[NOTE]
+All behavior described in this section applies only when `mdbgen` is 0. When `mdbgen` is 1, M-mode debug control overrides all lower privilege mode settings. Moreover, when S/HS-mode debug control is in effect, it implies that M-mode debug control in <<mdbgctl>> is also in effect as `mdbgen` is 0.
+
+When `SDEDBGALW` is set to 1, S/HS-mode debug is allowed:
+
+- The <<dbgaccpriv, debug access privilege>> for the hart is S/HS-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with S/HS-mode privilege.
+- The <<dbops, debug operations>> are allowed when the hart executes in S/HS-mode.
+
+When `SDEDBGALW` is set to 0 and the hart is running in S/HS-mode, debug is disallowed for S/HS-mode:
+
+- The hart will not enter Debug Mode while running in S/HS-mode:
+  * Halt requests will remain pending until debug is allowed.  
+  * Triggers with ACTION=1 (enter Debug Mode) will not match or fire.
+  * EBREAK cannot enter Debug Mode and always raises a breakpoint exception.
+- The external trigger outputs (with ACTION=8/9) will not match or fire while in S/HS-mode.
+
+When `SDEDBGALW` is set to 0 and the hart is running in a debug-allowed lower privilege mode, S/HS-mode restrictions include:
+
+- Single-stepping cannot stop in S/HS-mode.
+- Interrupts delegated to S/HS-mode cannot be disabled by setting `dcsr`.STEPIE=0. 
 
 ==== VS-mode Debug Control (Smvsdedbg)
 The optional Smvsdedbg extension introduces the VSEDBGALW field (bit 8) in CSR <<Sdseccsr,`msdcfg`>> to control the debuggability of VS-mode and lower privilege modes illustrated in <<maxdbgpriv>> and the <<dbgaccpriv, debug access privilege>> illustrated in <<dbgpriv>>.
