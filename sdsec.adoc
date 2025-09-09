@@ -25,7 +25,7 @@ The following table summarizes the debug and trace control and associated CSRs:
 | Extension          | Debug Control    | Trace Control    | New CSRs      | Target Modes
 | Smmdedbg           | mdbgen           | mtrcen           | None          | M-mode
 | Smsdedbg           | msdcfg.SDEDBGALW | msdcfg.SDETRCALW | sdcsr, sdpc   | S/HS-mode  
-| Smvsdedbg          | msdcfg.VSEDBGALW | msdcfg.VSETRCALW | vsdcsr        | VS-mode
+| Smvsdedbg          | msdcfg.VSEDBGALW | msdcfg.VSETRCALW | None          | VS-mode
 | Smudedbg           | msdcfg.USEDBGALW | msdcfg.USETRCALW | udcsr, udpc   | U/VU-mode
 |=====================================================================
 
@@ -81,7 +81,6 @@ The *debug access privilege* is defined as the privilege level for state accesse
 | 0      | 0          | 0          | 0          | None                  
 |=====================================================================================================
 
-[[maxdbgpriv]]
 ==== Maximum Allowed Resume Privilege Mode
 
 With Sdsec, the maximum privilege level that can be configured in PRV and V is determined in <<maxdbgpriv>>. The fields retain legal values when the PRV and V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
@@ -164,12 +163,12 @@ When `SDEDBGALW` is set to 0 and the hart is running in a debug-allowed lower pr
 - Interrupts delegated to S/HS-mode cannot be disabled by setting `dcsr`.STEPIE=0. 
 
 
-==== CSRs
+===== CSRs
 
-The `sdcsr` and `sdpc` (see <<smodecsr>>) are accessible in Debug Mode if `SDEDBGALW`=1; otherwise, the access will fail and `abstractcs`.CMDERR is set to 3 (exception). When external debug is disallowed in S/HS-mode, the configuration visible in `sdcsr` will be ignored as if it were 0.
+The `sdcsr` and `sdpc` (see <<smodecsr>>) are accessible in Debug Mode if `SDEDBGALW`=1. When external debug is disallowed in S/HS-mode, the configuration visible in `sdcsr` will be ignored as if it were 0.
 
 [[smodecsr]]
-===== `Sdcsr` and `sdpc` (Smsdedbg)
+====== `Sdcsr` and `sdpc`
 
 The `sdcsr` and `sdpc` registers provide S/HS-mode read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds DMPRV to modify the *effective debug access privilege* in S/HS-mode. Both registers are only accessible in Debug Mode. 
 
@@ -232,7 +231,7 @@ The DMPRV field is added as bit 4 in `sdcsr` to modify the *effective debug acce
 1: In Debug Mode, the privilege level for load and store operations is modified and indicated by `sstatus`.SPP and `hstatus`.SPV.| WARL   | 0      
 |=================================================================================================================================================================
 
-===== Extension of Sdtrig CSR
+====== Extension of Sdtrig CSR
 
 The Smtdeleg/Sstcfg cite:[smtdeleg] extensions define the process for delegating triggers to modes with lower privilege than M-mode. If Sdtrig is supported, the Sdsec requires both extensions to securely delegate Sdtrig triggers to the S/HS-mode.
 
@@ -245,7 +244,38 @@ When M-mode enables debugging for the S/HS-mode, it can optionally delegate the 
 The *effective debug access privilege* of loads and stores by an S-mode debugger to access memory in Debug Mode can be modified by `sdcsr`.DMPRV. When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr`.DMPRV=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by `sstatus`.SPP and `hstatus`.SPV. The `sdcsr`.DMPRV does not affect the virtual-machine load/store instructions, HLV, HLVX, and HSV. The `sdcsr`.DMPRV only takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1.
 
 ==== VS-mode Debug Control (Smvsdedbg)
-The optional Smvsdedbg extension introduces the VSEDBGALW field (bit 8) in CSR <<Sdseccsr,`msdcfg`>> to control the debuggability of VS-mode and lower privilege modes illustrated in <<maxdbgpriv>> and the <<dbgaccpriv, debug access privilege>> illustrated in <<dbgpriv>>.
+
+The optional Smvsdedbg extension introduces the `VSEDBGALW` field (bit 8) in CSR <<Sdseccsr,`msdcfg`>>. The `VSEDBGALW` field only takes effect when both `mdbgen` and `VSEDBGALW` are 0; otherwise, debug control is dominated by `mdbgen` or `VSEDBGALW`.
+
+[NOTE]
+All behavior described in this section applies only when both `mdbgen` and `VSEDBGALW` are 0. When `mdbgen` is 1 or `VSEDBGALW` is 1, M-mode debug control or S/HS-mode debug control overrides all lower privilege mode settings. Moreover, when VS-mode debug control is in effect, it implies that M-mode and S/HS-mode debug control in <<mdbgctl>> and <<smsdbgctl>> is also in effect as `mdbgen` and `VSEDBGALW` are 0.
+
+When `VSEDBGALW` is set to 1, VS-mode debug is allowed:
+
+- The <<dbgaccpriv, debug access privilege>> for the hart is VS-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with VS-mode privilege.
+- The <<dbops, debug operations>> are allowed when the hart executes in S/HS-mode.
+
+When `VSEDBGALW` is set to 0 and the hart is running in VS-mode, debug is disallowed for VS-mode:
+
+- The hart will not enter Debug Mode while running in VS-mode:
+  * Halt requests will remain pending until debug is allowed.  
+  * Triggers with ACTION=1 (enter Debug Mode) will not match or fire.
+  * EBREAK cannot enter Debug Mode and always raises a breakpoint exception.
+- The external trigger outputs (with ACTION=8/9) will not match or fire while in VS-mode.
+
+When `VSEDBGALW` is set to 0 and the hart is running in a debug-allowed lower privilege mode, VS-mode restrictions include:
+
+- Single-stepping cannot stop in VS-mode.
+- Interrupts delegated to S/HS-mode cannot be disabled by setting `dcsr`.STEPIE=0. 
+
+===== CSRs
+
+The `sdcsr` and `sdpc` are accessible in Debug Mode if `VSEDBGALW`=1.  When external debug is disallowed in VS-mode, the configuration visible in `sdcsr` will be ignored as if it were 0.
+
+// TODO: add CSR description with vs-mode debug control.
+//When `VSEDBGALW` is 1, the `sdcsr` and `sdpc` registers provide VS-mode read/write access to the `dcsr`, the   
+
+
 
 ==== U-mode Debug Control (Smudedbg)
 The optional Smudedbg extension introduces the USEDBGALW field (bit 9) in CSR <<Sdseccsr,`msdcfg`>> to control the debuggability of U-mode and VU-mode illustrated in <<maxdbgpriv>> and the <<dbgaccpriv, debug access privilege>> illustrated in <<dbgpriv>>.
@@ -323,8 +353,7 @@ The `dcsr`, `dpc`, and `dscratch0/1` are accessible in Debug Mode only if `mdbge
 
 When external debug is disallowed at the current privilege level, the configuration in `dcsr` and `sdcsr` will be ignored as if they were 0.
 
-[[smodecsr]]
-===== `Sdcsr` and `sdpc` (Smsdedbg)
+===== `Sdcsr` and `sdpc` 
 
 The `sdcsr` and `sdpc` registers provide supervisor read/write access to the `dcsr` and `dpc` registers respectively. Moreover, the `sdcsr` adds DMPRV to modify the *effective debug access privilege* in S-mode. Both registers are only accessible in Debug Mode. 
 
@@ -342,41 +371,40 @@ The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32
 [NOTE]
 Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a supervisor access mechanism, and external debuggers with S-mode privilege cannot use them.
 
-[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="Supervisor debug control and status register (sdcsr)"]
-[id=sdcsr32]
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:   1, name: 'PRV'},
-  {bits:   1, name: '0'},
-  {bits:   1, name: 'STEP'},
-  {bits:   1, name: '0'},
-  {bits:   1, name: 'DMPRV'},
-  {bits:   1, name: 'V'},
-  {bits:   3, name: 'CAUSE'},
-  {bits:   1, name: '0'},
-  {bits:   1, name: '0'},
-  {bits:   1, name: 'STEPIE'},
-  {bits:   1, name: 'EBREAKU'},
-  {bits:   1, name: 'EBREAKS'},
-  {bits:   1, name: '0'},
-  {bits:   1, name: '0'},
-  {bits:   1, name: 'EBREAKVU'},
-  {bits:   1, name: 'EBREAKVS'},
-  {bits:   6, name: '0'},
-  {bits:   3, name: 'EXTCAUSE'},
-  {bits:   1, name: '0'},
-  {bits:   4, name: 'DEBUGVER'}
-], config:{lanes: 3, hspace:1024}}
-....
+//[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
+//[title="Supervisor debug control and status register (sdcsr)"]
+//[id=sdcsr32]
+//[wavedrom, ,svg]
+//....
+//{reg: [
+//  {bits:   1, name: 'PRV'},
+//  {bits:   1, name: '0'},
+//  {bits:   1, name: 'STEP'},
+//  {bits:   1, name: '0'},
+//  {bits:   1, name: 'DMPRV'},
+//  {bits:   1, name: 'V'},
+//  {bits:   3, name: 'CAUSE'},
+//  {bits:   1, name: '0'},
+//  {bits:   1, name: '0'},
+//  {bits:   1, name: 'STEPIE'},
+//  {bits:   1, name: 'EBREAKU'},
+//  {bits:   1, name: 'EBREAKS'},
+//  {bits:   1, name: '0'},
+//  {bits:   1, name: '0'},
+//  {bits:   1, name: 'EBREAKVU'},
+//  {bits:   1, name: 'EBREAKVS'},
+//  {bits:   6, name: '0'},
+//  {bits:   3, name: 'EXTCAUSE'},
+//  {bits:   1, name: '0'},
+//  {bits:   4, name: 'DEBUGVER'}
+//], config:{lanes: 3, hspace:1024}}
+//....
 
 [NOTE]
 The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are configurable only by M-mode; they are masked in `sdcsr`, while PRV[1] is hardwired to 0 in `sdcsr`. The field for MPRVEN is reclaimed by DMPRV in `sdcsr` layout to avoid waste of fields. 
 
 The DMPRV field is added as bit 4 in `sdcsr` to modify the *effective debug access privilege* for memory load and store accesses, as defined in <<dbgaccpriv>>.
 
-[[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
 [options="header"]
 [cols="15%,55%,15%,15%"]
