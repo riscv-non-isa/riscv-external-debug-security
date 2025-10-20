@@ -23,6 +23,10 @@ Similar to debug security, trace is controlled by platform state `nsecdbg`, hart
 image::external_debug_trace.png[title="The trace security control",align="center"]
 
 [appendix]
+== Debug Policy Management 
+TBD: Elaborate on how to manage debug policies for different privilege modes by software.
+
+[appendix]
 == Execution Based Implementation with Sdsec
 
 In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access the memory and CSR. However, once execution is dispatched to an Abstract Command or the program buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
