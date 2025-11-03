@@ -35,13 +35,13 @@ The following table shows valid implementation combinations for different archit
 [cols="25%,75%", options="header"]
 |=====================================================================
 | Architecture    | Valid Extension Combinations           
-| M-only          | • Smmdedbg only                    
-| M/U             | • Smmdedbg only +
+| M-only          | • Smmdedbg 
+| M/U             | • Smmdedbg +
                     • Smmdedbg + Smudedbg         
-| M/S/U           | • Smmdedbg only +
+| M/S/U           | • Smmdedbg +
                     • Smmdedbg + Smsdedbg +
                     • Smmdedbg + Smsdedbg + Smudedbg                     
-| M/S/VS/VU/U     | • Smmdedbg only +
+| M/S/VS/VU/U     | • Smmdedbg +
                     • Smmdedbg + Smsdedbg +
                     • Smmdedbg + Smsdedbg + Smvsdedbg +
                     • Smmdedbg + Smsdedbg + Smvsdedbg + Smudedbg                 
