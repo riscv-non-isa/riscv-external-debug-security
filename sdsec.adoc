@@ -70,7 +70,7 @@ The Smmdedbg extension introduces mandatory security controls for M-mode externa
 * `mdbgen`: Controls M-mode external debug operations
 * `mtrcen`: Controls M-mode trace output
 
-When external debug or trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. External debug and trace controls operate independently - a privilege mode can have external debug enabled while trace is disabled, or vice versa.
+When external debug or trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. External debug and trace controls operate independently - a privilege mode can have external debug enabled while trace is disabled, or vice versa. If the optional extension is not implemented, its control state will be treated as if it were 0; the control state may either be not implemented or read-only 0.  
 
 [NOTE]
 The `mdbgen` and `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The `mdbgen` and `mtrcen` state for the Root-of-Trust (RoT) itself should be managed by SoC hardware, likely dependent on lifecycle fusing. 
@@ -105,7 +105,7 @@ This specification assumes the controlling entity ensures `mdbgen` shall never b
 [[dbgaccpriv]]
 ====== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege level for state accesses in Debug Mode, such as Abstract Commands and Program Buffer execution. Debug Mode accessing registers and memory uses the privilege level derived in <<dbgpriv>> when the corresponding extension(s) is/are implemented. If the extensions are not implemented, its control state will be treated as if it were 0. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. 
+The *debug access privilege* is defined as the privilege level for state accesses in Debug Mode, such as Abstract Commands and Program Buffer execution. Debug Mode accessing registers and memory uses the privilege level derived in <<dbgpriv>>. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. 
 
 [[dbgpriv]]
 [options="header"]
@@ -122,7 +122,7 @@ The *debug access privilege* is defined as the privilege level for state accesse
 
 ====== Maximum Allowed Resume Privilege Mode
 
-The maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is determined in <<maxdbgpriv>> when the corresponding extension(s) is/are implemented. If the extensions are not implemented, its control state will be treated as if it were 0. The fields retain legal values when the `dcsr`.PRV and `dcsr`.V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+The maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is determined in <<maxdbgpriv>>. The fields retain legal values when the `dcsr`.PRV and `dcsr`.V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
 
 [[maxdbgpriv]]
 [options="header"]
