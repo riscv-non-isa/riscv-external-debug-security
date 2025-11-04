@@ -5,12 +5,10 @@ This chapter introduces the Sdsec ISA extension, which adds security enhancement
 
 It defines the following debug and trace control extensions:
 
-* **M-mode Control (Smmdedbg)**: Mandatory control for M-mode external debug and trace
-* **S-mode Control (Smsdedbg)**: Optional extension for S/HS-mode external debug and trace
-* **VS-mode Control (Smvsdedbg)**: Optional extension for VS-mode external debug and trace  
-* **U-mode Control (Smudedbg)**: Optional extension for U/VU-mode external debug and trace
-
-When external debug or trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. External debug and trace controls operate independently - a privilege mode can have external debug enabled while trace is disabled, or vice versa.
+* **Smmdedbg (Base)**: Mandatory base extension providing M-mode external debug and trace control
+* **Smsdedbg (Optional)**: Extends Smmdedbg to add S/HS-mode external debug and trace control
+* **Smvsdedbg (Optional)**: Extends Smmdedbg to add VS-mode external debug and trace control  
+* **Smudedbg (Optional)**: Extends Smmdedbg to add U-mode and VU-mode external debug and trace control
 
 The following table summarizes the external debug and trace control signals/fields and associated CSRs:
 
@@ -25,10 +23,7 @@ The following table summarizes the external debug and trace control signals/fiel
 | Smudedbg           | msdcfg.USEDBGALW | msdcfg.USETRCALW | udcsr, udpc   | U-Mode or VU-mode
 |=====================================================================
 
-[NOTE]
-Users can choose to implement some or all of the optional extensions depending on their system requirements. These extensions work together to establish a hierarchical external debug and trace control model where external debug access or trace output can be restricted to specific privilege levels, preventing unauthorized debugging or tracing. 
-
-The following table shows valid implementation combinations for different architectures:
+The table below shows valid implementation combinations for different architectures:
 
 [[validimplcomb]]
 .Valid Implementation Combinations
@@ -47,6 +42,9 @@ The following table shows valid implementation combinations for different archit
                     • Smmdedbg + Smsdedbg + Smvsdedbg + Smudedbg                 
 |=====================================================================
 
+[NOTE]
+The Smmdedbg base extension is mandatory and must always be implemented. Users can choose to implement some or all of the optional extensions depending on their system requirements. These extensions work together to establish a hierarchical external debug and trace control model where external debug access or trace output can be restricted to specific privilege levels, preventing unauthorized debugging or tracing. 
+
 [[Sdseccsr]]
 === Debug Control CSR
 
@@ -64,45 +62,6 @@ Debug operations affected by Sdsec:
 * Executing the Program Buffer
 * Serving abstract commands (Access Register, Access Memory)
 
-[[dbgaccpriv]]
-==== Debug Access Privilege
-
-The *debug access privilege* is defined as the privilege level for state accesses in Debug Mode, such as Abstract Commands and Program Buffer execution. When Sdsec is implemented, Debug Mode accessing registers and memory uses the privilege level derived in <<dbgpriv>>. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. 
-
-[[dbgpriv]]
-[options="header"]
-[cols="15%,20%,20%,20%,25%"]
-.External Debug Configuration and Privilege
-|=====================================================================================================
-| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Debug Access Privilege
-| 1      | Don't care | Don't care | Don't care | M-mode                
-| 0      | 1          | Don't care | Don't care  | S/HS-Mode             
-| 0      | 0          | 1          | Don't care | VS-Mode               
-| 0      | 0          | 0          | 1          | U-Mode or VU-Mode             
-| 0      | 0          | 0          | 0          | None                  
-|=====================================================================================================
-
-==== Maximum Allowed Resume Privilege Mode
-
-With Sdsec implemented, the maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is determined in <<maxdbgpriv>>. The fields retain legal values when the `dcsr`.PRV and `dcsr`.V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
-
-[[maxdbgpriv]]
-[options="header"]
-[cols="15%,20%,20%,20%,25%"]
-.Maximum Allowed Resume Privilege Mode
-|=====================================================================================================
-| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Maximum Debug Allowed Privilege on resume 
-| 1      | Don't care | Don't care | Don't care | M-Mode                                         
-| 0      | 1          | Don't care | Don't care | S/HS-Mode                                  
-| 0      | 0          | 1          | Don't care | VS-Mode
-| 0      | 0          | 0          | 1          | U-Mode or VU-Mode
-| 0      | 0          | 0          | 0          | None
-|=====================================================================================================
-
-==== Privilege-changing Instructions
-
-Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
-
 [[mdbgctl]]
 ==== M-mode External Debug and Trace Control (Smmdedbg)
 
@@ -110,6 +69,8 @@ The Smmdedbg extension introduces mandatory security controls for M-mode externa
 
 * `mdbgen`: Controls M-mode external debug operations
 * `mtrcen`: Controls M-mode trace output
+
+When external debug or trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. External debug and trace controls operate independently - a privilege mode can have external debug enabled while trace is disabled, or vice versa.
 
 [NOTE]
 The `mdbgen` and `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The `mdbgen` and `mtrcen` state for the Root-of-Trust (RoT) itself should be managed by SoC hardware, likely dependent on lifecycle fusing. 
@@ -140,6 +101,45 @@ When `mdbgen`=0 and `dcsr`.STEP=1, a single-stepped instruction in a debug-allow
 
 [NOTE]
 This specification assumes the controlling entity ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
+
+[[dbgaccpriv]]
+====== Debug Access Privilege
+
+The *debug access privilege* is defined as the privilege level for state accesses in Debug Mode, such as Abstract Commands and Program Buffer execution. Debug Mode accessing registers and memory uses the privilege level derived in <<dbgpriv>> when the corresponding extension(s) is/are implemented. If the extensions are not implemented, its control state will be treated as if it were 0. Attempts from Debug Mode to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. 
+
+[[dbgpriv]]
+[options="header"]
+[cols="15%,20%,20%,20%,25%"]
+.External Debug Configuration and Privilege
+|=====================================================================================================
+| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Debug Access Privilege
+| 1      | Don't care | Don't care | Don't care | M-mode                
+| 0      | 1          | Don't care | Don't care | S/HS-Mode             
+| 0      | 0          | 1          | Don't care | VS-Mode               
+| 0      | 0          | 0          | 1          | U-Mode or VU-Mode             
+| 0      | 0          | 0          | 0          | None                  
+|=====================================================================================================
+
+====== Maximum Allowed Resume Privilege Mode
+
+The maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is determined in <<maxdbgpriv>> when the corresponding extension(s) is/are implemented. If the extensions are not implemented, its control state will be treated as if it were 0. The fields retain legal values when the `dcsr`.PRV and `dcsr`.V are configured with an illegal privilege level. Illegal privilege levels include unsupported levels and any level higher than the maximum allowed debug privilege. 
+
+[[maxdbgpriv]]
+[options="header"]
+[cols="15%,20%,20%,20%,25%"]
+.Maximum Allowed Resume Privilege Mode
+|=====================================================================================================
+| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Maximum Debug Allowed Privilege on resume 
+| 1      | Don't care | Don't care | Don't care | M-Mode                                         
+| 0      | 1          | Don't care | Don't care | S/HS-Mode                                  
+| 0      | 0          | 1          | Don't care | VS-Mode
+| 0      | 0          | 0          | 1          | U-Mode or VU-Mode
+| 0      | 0          | 0          | 0          | None
+|=====================================================================================================
+
+===== Privilege-changing Instructions
+
+Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
 
 ===== M-mode Trace Control
 
