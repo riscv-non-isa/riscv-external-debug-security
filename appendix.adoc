@@ -3,7 +3,7 @@
 
 This chapter explains the theory of operation for the External Debug Security Extension. The subsequent diagram illustrates the reference implementation of security control for the debug and trace, respectively.
 
-=== Debug Security Control
+=== External Debug Security Control
 
 As outlined in the specification, the dedicated debug security policy for a hart is enforced by platform state `nsecdbg`, hart state `mdbgen`, and the SDEDBGALW field inside the `msdcfg` CSR. Both the `nsecdbg` and `mdbgen` states can be accommodated in MMIO outside the harts, such as in the Debug Module registers, or implemented as fuses.  
 
@@ -16,11 +16,49 @@ image::external_debug_dm.png[title="The debug security control",align="center"]
 
 Application-level debugging is primarily accomplished through self-hosted debugging, allowing the management of debug policies by supervisor domains. As a result, user-level debugging management is not addressed within this extension.
 
+The tables below show valid implementation combinations for different architectures for external debug:
+
+[[validimplcomb]]
+.Valid External Debug Extension Combinations
+[cols="25%,75%", options="header"]
+|=====================================================================
+| Architecture    | Valid Debug Extension Combinations           
+| M-only          | • Smmdedbg 
+| M/U             | • Smmdedbg +
+                    • Smmdedbg + Smudedbg         
+| M/S/U           | • Smmdedbg +
+                    • Smmdedbg + Smsdedbg +
+                    • Smmdedbg + Smsdedbg + Smudedbg                     
+| M/S/VS/VU/U     | • Smmdedbg +
+                    • Smmdedbg + Smsdedbg +
+                    • Smmdedbg + Smsdedbg + Smvsdedbg +
+                    • Smmdedbg + Smsdedbg + Smvsdedbg + Smudedbg                 
+|=====================================================================
+
 === Trace Security Control 
 
 Similar to debug security, trace is controlled by platform state `nsecdbg`, hart state `mtrcen`, and SDETRCALW in CSR `msdcfg` for each hart. The sec_inhibit sideband signal indicates the availability of trace to the trace encoder.
 
 image::external_debug_trace.png[title="The trace security control",align="center"]
+
+The tables below show valid implementation combinations for different architectures for trace:
+
+[[validtrccomb]]
+.Valid Trace Extension Combinations
+[cols="25%,75%", options="header"]
+|=====================================================================
+| Architecture    | Valid Trace Extension Combinations           
+| M-only          | • Smmdetrc 
+| M/U             | • Smmdetrc +
+                    • Smmdetrc + Smudetrc         
+| M/S/U           | • Smmdetrc +
+                    • Smmdetrc + Smsdetrc +
+                    • Smmdetrc + Smsdetrc + Smudetrc                     
+| M/S/VS/VU/U     | • Smmdetrc +
+                    • Smmdetrc + Smsdetrc +
+                    • Smmdetrc + Smsdetrc + Smvsdetrc +
+                    • Smmdetrc + Smsdetrc + Smvsdetrc + Smudetrc                 
+|=====================================================================
 
 [appendix]
 == Debug Policy Management 

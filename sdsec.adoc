@@ -17,74 +17,38 @@ When trace is implemented, it defines the following trace control extensions:
 * **Smvsdetrc (Optional)**: Extends Smmdetrc to add VS-mode trace control  
 * **Smudetrc (Optional)**: Extends Smmdetrc to add U-mode and VU-mode trace control
 
-The following tables summarize the external debug and trace control signals/fields and associated CSRs:
+//The following tables summarize the external debug and trace control signals/fields and associated CSRs:
 
-[[dbgctlcsr]]
-.External Debug Control and CSRs
-[cols="20%,35%,20%,25%", options="header"]
-|=====================================================================
-| Extension          | External Debug Control    | New CSRs      | Target Modes
-| Smmdedbg           | mdbgen                    | None          | M-mode
-| Smsdedbg           | msdcfg.SDEDBGALW          | sdcsr, sdpc   | S/HS-mode  
-| Smvsdedbg          | msdcfg.VSEDBGALW          | None          | VS-mode
-| Smudedbg           | msdcfg.USEDBGALW          | udcsr, udpc   | U-Mode or VU-mode
-|=====================================================================
+//[[dbgctlcsr]]
+//.External Debug Control and CSRs
+//[cols="20%,35%,20%,25%", options="header"]
+//|=====================================================================
+//| Extension          | External Debug Control    | New CSRs      | Target Modes
+//| Smmdedbg           | mdbgen                    | None          | M-mode
+//| Smsdedbg           | msdcfg.SDEDBGALW          | sdcsr, sdpc   | S/HS-mode  
+//| Smvsdedbg          | msdcfg.VSEDBGALW          | None          | VS-mode
+//| Smudedbg           | msdcfg.USEDBGALW          | udcsr, udpc   | U-Mode or VU-mode
+//|=====================================================================
 
-[[trcctlcsr]]
-.Trace Control and CSRs
-[cols="20%,35%,20%,25%", options="header"]
-|=====================================================================
-| Extension          | Trace Control             | New CSRs      | Target Modes
-| Smmdetrc           | mtrcen                    | None          | M-mode
-| Smsdetrc           | msdcfg.SDETRCALW          | None          | S/HS-mode  
-| Smvsdetrc          | msdcfg.VSETRCALW          | None          | VS-mode
-| Smudetrc           | msdcfg.USETRCALW          | None          | U-Mode or VU-mode
-|=====================================================================
-
-The tables below show valid implementation combinations for different architectures:
-
-[[validimplcomb]]
-.Valid External Debug Extension Combinations
-[cols="25%,75%", options="header"]
-|=====================================================================
-| Architecture    | Valid Debug Extension Combinations           
-| M-only          | • Smmdedbg 
-| M/U             | • Smmdedbg +
-                    • Smmdedbg + Smudedbg         
-| M/S/U           | • Smmdedbg +
-                    • Smmdedbg + Smsdedbg +
-                    • Smmdedbg + Smsdedbg + Smudedbg                     
-| M/S/VS/VU/U     | • Smmdedbg +
-                    • Smmdedbg + Smsdedbg +
-                    • Smmdedbg + Smsdedbg + Smvsdedbg +
-                    • Smmdedbg + Smsdedbg + Smvsdedbg + Smudedbg                 
-|=====================================================================
-
-[[validtrccomb]]
-.Valid Trace Extension Combinations
-[cols="25%,75%", options="header"]
-|=====================================================================
-| Architecture    | Valid Trace Extension Combinations           
-| M-only          | • Smmdetrc 
-| M/U             | • Smmdetrc +
-                    • Smmdetrc + Smudetrc         
-| M/S/U           | • Smmdetrc +
-                    • Smmdetrc + Smsdetrc +
-                    • Smmdetrc + Smsdetrc + Smudetrc                     
-| M/S/VS/VU/U     | • Smmdetrc +
-                    • Smmdetrc + Smsdetrc +
-                    • Smmdetrc + Smsdetrc + Smvsdetrc +
-                    • Smmdetrc + Smsdetrc + Smvsdetrc + Smudetrc                 
-|=====================================================================
+//[[trcctlcsr]]
+//.Trace Control and CSRs
+//[cols="20%,35%,20%,25%", options="header"]
+//|=====================================================================
+//| Extension          | Trace Control             | New CSRs      | Target Modes
+//| Smmdetrc           | mtrcen                    | None          | M-mode
+//| Smsdetrc           | msdcfg.SDETRCALW          | None          | S/HS-mode  
+//| Smvsdetrc          | msdcfg.VSETRCALW          | None          | VS-mode
+//| Smudetrc           | msdcfg.USETRCALW          | None          | U-Mode or VU-mode
+//|=====================================================================
 
 [NOTE]
 The Smmdedbg base extension is mandatory when external debug is implemented. The Smmdetrc base extension is mandatory when trace is implemented. If a system implements both external debug and trace, both base extensions must be implemented. Users can choose to implement some or all of the optional extensions depending on their system requirements. Debug and trace extensions can be implemented independently - for example, a system may implement Smsdedbg without Smsdetrc, or vice versa. However, when implementing extensions for lower privilege modes, all extensions for higher privilege modes of the same type (external debug or trace) must also be implemented. These extensions work together to establish a hierarchical external debug and trace control model where external debug access or trace output can be restricted to specific privilege levels, preventing unauthorized debugging or tracing. 
 
-[[Sdseccsr]]
-=== Debug and Trace Control CSR
-
-The CSR `msdcfg`, which holds the external debug and trace control fields (<<dbgctlcsr>> and <<trcctlcsr>>), is defined in the RISC-V Supervisor Domains Access Protection specification cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for external debugging and/or tracing in the corresponding privilege modes.
-
+//[[Sdseccsr]]
+//=== Debug and Trace Control CSR
+//
+//The CSR `msdcfg`, which holds the external debug and trace control fields (<<dbgctlcsr>> and <<trcctlcsr>>), is defined in the RISC-V Supervisor Domains Access Protection specification cite:[smmtt]. The Smsdedbg and/or Smsdetrc extensions must be implemented to support security control for external debugging and/or tracing in the corresponding privilege modes.
+//
 
 [[sdsecextdbg]]
 === External Debug Security
@@ -142,7 +106,7 @@ The *debug access privilege* is defined as the privilege level for state accesse
 [cols="15%,20%,20%,20%,25%"]
 .External Debug Configuration and Privilege
 |=====================================================================================================
-| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Debug Access Privilege
+| mdbgen | SDEDBGALW (if implemented)  | VSEDBGALW (if implemented)  | UEDBGALW (if implemented)   | Debug Access Privilege
 | 1      | Don't care | Don't care | Don't care | M-mode                
 | 0      | 1          | Don't care | Don't care | S/HS-Mode             
 | 0      | 0          | 1          | Don't care | VS-Mode               
@@ -159,7 +123,7 @@ The maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is
 [cols="15%,20%,20%,20%,25%"]
 .Maximum Allowed Resume Privilege Mode
 |=====================================================================================================
-| mdbgen | SDEDBGALW  | VSEDBGALW  | UEDBGALW   | Maximum Debug Allowed Privilege on resume 
+| mdbgen | SDEDBGALW (if implemented)  | VSEDBGALW (if implemented)  | UEDBGALW (if implemented)   | Maximum Debug Allowed Privilege on resume 
 | 1      | Don't care | Don't care | Don't care | M-Mode                                         
 | 0      | 1          | Don't care | Don't care | S/HS-Mode                                  
 | 0      | 0          | 1          | Don't care | VS-Mode
@@ -187,8 +151,6 @@ M-mode is given write access to DMODE to allow it to save/restore trigger contex
 The optional Smsdedbg extension introduces the `SDEDBGALW` field (bit 7) in CSR <<Sdseccsr,`msdcfg`>>. This field controls S/HS-mode external debug operations.
 
 The `SDEDBGALW` field only has effect when `mdbgen` is 0; otherwise, debug control is dominated by the Smmdedbg extension.
-
-===== S/HS-mode External Debug Control
 
 The `SDEDBGALW` field controls external debug access for S/HS-mode. When `SDEDBGALW` is set to 1, S/HS-mode external debug is allowed:
 
@@ -299,8 +261,6 @@ The optional Smvsdedbg extension introduces the `VSEDBGALW` field (bit TBD) in C
 
 The `VSEDBGALW` field only has effect when both `mdbgen` and `SDEDBGALW` are 0; otherwise, debug control is dominated by the Smmdedbg or Smsdedbg extensions.
 
-===== VS-mode External Debug Control
-
 The `VSEDBGALW` field controls external debug access for VS-mode. When `VSEDBGALW` is set to 1, VS-mode external debug is allowed:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart is VS-mode. Abstract Commands, including "Quick Access", and Program Buffer execution operate with VS-mode privilege.
@@ -401,29 +361,16 @@ The `udcsr` register exposes a subset of `dcsr`, formatted as shown in <<udcsr32
 [[sdsectrc]]
 === Trace Security
 
-When trace is implemented, trace output can expose sensitive information across privilege boundaries. Trace data may reveal execution flow, data values, memory addresses, and other implementation details. The Sdsec trace extensions provide security controls to restrict trace output based on privilege levels.
-
-When trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional trace extension is not implemented, its control state will be treated as if it were 0; the control state may either be not implemented or read-only 0.
+When trace is implemented, trace output can expose sensitive information across privilege boundaries. The extensions below provide security controls to restrict trace output based on privilege levels.
 
 [NOTE]
 The availability of trace output is controlled through signals defined in the hart-trace interface (HTI) cite:[hti]. The logical `sec_inhibit` signal can be converted to the canonical trace interface signals by implementation.
 
-[[tracepriv]]
-[options="header"]
-[cols="15%,20%,20%,20%,25%"]
-.Trace Security Control
-|=====================================================================================================
-| mtrcen | SDETRCALW  | VSETRCALW  | USETRCALW  | Trace Allowed Mode
-| 1      | Don't care | Don't care | Don't care | All modes                
-| 0      | 1          | Don't care | Don't care | All except M-mode             
-| 0      | 0          | 1          | Don't care | VS-Mode and VU-Mode               
-| 0      | 0          | 0          | 1          | U-Mode or VU-Mode             
-| 0      | 0          | 0          | 0          | None                  
-|=====================================================================================================
-
 ==== M-mode Trace Control (Smmdetrc)
 
 The Smmdetrc extension is the mandatory base extension when trace is implemented. A state element in each hart, named `mtrcen`, is introduced to control trace output for M-mode.
+
+When trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional trace extension is not implemented, its control state will be treated as if it were 0; the control state may either be not implemented or read-only 0.
 
 [NOTE]
 The `mtrcen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The `mtrcen` state for the Root-of-Trust (RoT) itself should be managed by SoC hardware, likely dependent on lifecycle fusing. 
