@@ -17,7 +17,7 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec], a halt request must be responded to within one second. However, this constraint must be removed as the request might be pending due to situations where debugging is disallowed. In the case of a halt-on-reset request (SETRESETHALTREQ), the request is only acknowledged by the hart once it has reached a privilege level in which debug is allowed. 
+The halt behavior for a hart is detailed in <<Sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec], a halt request must be responded to within one second. However, this constraint must be removed as the request might be pending due to situations where debugging is disallowed. In the case of a halt-on-reset request (SETRESETHALTREQ), the request is only acknowledged by the hart once it has reached a privilege level in which debug is allowed. 
 
 === Reset
 
@@ -30,7 +30,7 @@ The NDMRESET operation is a system-level reset not tied to hart privilege levels
 The SETKEEPALIVE bit serves as an optional request for the hart to remain available for debugging. This bit only takes effect when M-mode is allowed to be debugged; otherwise, the hart behaves as if the bit is not set.
 
 === Abstract Commands 
-The hart's response to abstract commands is detailed in <<sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues an abstract command. 
+The hart's response to abstract commands is detailed in <<Sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues an abstract command. 
 
 ==== Relaxed Permission Check `relaxedpriv`
 
@@ -41,7 +41,7 @@ The `relaxedpriv` field is hardwired to 0.
 The field `command`.AAMVIRTUAL determines whether the Access Memory command uses a physical or virtual address. When `mdbgen`=1, the behavior follows the original RISC-V Debug Specification cite:[dbgspec]. When `mdbgen`=0:
 
 * If AAMVIRTUAL=0, the hart responds with a security fault error (setting `abstractcs`.CMDERR to 6).
-* If AAMVIRTUAL=1, addresses are treated as virtual and are translated and protected according to the *effective debug access privilege*, as defined in <<dbgaccpriv>>.
+* If AAMVIRTUAL=1, addresses are treated as virtual and are translated and protected according to the *debug access privilege*, as defined in <<dbgaccpriv>>, and may be modified to the *effective debug access privilege* as defined in <<effectivedbgpriv>> or <<vseffectivedbgpriv>>.
 
 ==== Quick Access 
 
