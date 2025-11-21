@@ -374,7 +374,7 @@ The following tables summarize control signals/fields introduced by the trace se
 
 [[trcctlcsr]]
 .Trace Control Signals/Fields
-[cols="20%,35%,20%,25%", options="header"]
+[cols="30%,35%,35%", options="header"]
 |================================================
 | Extension          | Trace Control        | Target Modes
 | Smmdetrc           | mtrcen               | M-mode
