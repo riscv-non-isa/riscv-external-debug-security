@@ -3,14 +3,14 @@
 
 This chapter introduces the Sdsec ISA extension, which adds security enhancements to the Sdext/Sdtrig cite:[dbgspec] and trace functionality cite:[etrace] cite:[ntrace]. The Sdsec extension is only applicable when external debug (Sdext/Sdtrig) or trace functionality (E-Trace/N-Trace) is implemented in the system. The extension provides mandatory M-mode external debug and trace control, along with optional extensions for lower privilege modes.
 
-When external debug is implemented, it defines the following external debug control extensions:
+When external debug is implemented, the following external debug control extensions are defined:
 
 * **Smmdedbg (Base)**: Mandatory base extension providing M-mode external debug control
 * **Smsdedbg (Optional)**: Extends Smmdedbg to add S/HS-mode external debug control
 * **Smvsdedbg (Optional)**: Extends Smmdedbg to add VS-mode external debug control  
 * **Smudedbg (Optional)**: Extends Smmdedbg to add U-mode and VU-mode external debug control
 
-When trace is implemented, it defines the following trace control extensions:
+When trace is implemented, the following trace control extensions are defined:
 
 * **Smmdetrc (Base)**: Mandatory base extension providing M-mode trace control
 * **Smsdetrc (Optional)**: Extends Smmdetrc to add S/HS-mode trace control
@@ -25,7 +25,7 @@ The Smmdedbg base extension is mandatory when external debug is implemented. The
 
 External debug operations can modify system state and expose sensitive information. The following extensions provide hierarchical privilege-based controls to restrict debug access, preventing unauthorized debugging of higher-privilege software.
 
-When external debug is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional debug extension is not implemented, its control state will be treated as if it were 0; the control state may either be not implemented or read-only 0 in such case.
+When external debug is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional debug extension is not implemented, its control state will be treated as if it were 0; the control state may either be not implemented or read-only 0 in such cases.
 
 
 ==== Debug Operations
@@ -41,7 +41,7 @@ Debug operations affected by Sdsec:
 
 ==== External Debug Security Control Signals/Fields and CSRs
 
-The following table summarize control signals/fields and associated CSRs introduced by the external debug security extensions.
+The following table summarizes control signals/fields and associated CSRs introduced by the external debug security extensions.
 
 [[Sdseccsr]]
 .External Debug Control and CSRs
@@ -57,7 +57,7 @@ The following table summarize control signals/fields and associated CSRs introdu
 [[dbgaccpriv]]
 ==== Debug Access Privilege
 
-The *debug access privilege* is defined as the privilege level for state accesses from Debug Module or in Program Buffer, such as Abstract Commands and instructions in Program Buffer. Registers and memory accesses use the privilege level derived in <<dbgpriv>>. Attempts to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. 
+The *debug access privilege* is defined as the privilege level for state accesses from the Debug Module or in the Program Buffer, such as Abstract Commands and instructions in the Program Buffer. Register and memory accesses use the privilege level derived in <<dbgpriv>>. Attempts to access state that requires a privilege level above the *debug access privilege* will fail and set `abstractcs`.CMDERR to 3. 
 
 [[dbgpriv]]
 [options="header"]
@@ -95,7 +95,7 @@ The maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is
 The Smmdedbg extension is the mandatory base extension when external debug is implemented. 
 
 [NOTE]
-The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The `mdbgen` state for the Root-of-Trust (RoT) itself should be managed by SoC hardware, likely dependent on lifecycle fusing. 
+The `mdbgen` may be controlled through various methods, such as a new input port to the hart, a handshake with the system Root of Trust (RoT), or other methods. The `mdbgen` state for the Root of Trust (RoT) itself should be managed by SoC hardware, likely depending on lifecycle fusing. 
 The implementation can choose to group several harts together and use one signal to drive their `mdbgen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mdbgen` states to enforce a unified debug policy across all harts.
 
 A state element in each hart, named `mdbgen`, is introduced to control the debuggability of M-mode for each hart. When `mdbgen` is set to 1, debug is allowed for M-mode and the following rules apply:
@@ -114,7 +114,7 @@ When `mdbgen` is set to 0 and the hart is running in M-mode, external debug is d
 - The external trigger outputs (with ACTION=8/9) will not match or fire.
 - Accesses to M-mode accessible CSRs (e.g., `dcsr`, `dpc`, and `dscratch0/1`) will fail and `abstractcs`.CMDERR is set to 3 (exception). 
 - The configuration in `dcsr` will be ignored as if it were 0.
-- DMODE is read/write for accesses from M-mode when Sdtrig is implemented
+- DMODE is read/write for accesses from M-mode when Sdtrig is implemented.
 
 [NOTE]
 M-mode is given write access to DMODE when `mdbgen` is 0 to allow M-mode software to save and restore trigger context at S/HS-mode software boundaries. This capability is necessary to prevent triggers from serving as a side-channel attack vector against S/HS-mode software where external debugging is disallowed. Without this, an external debugger could indirectly observe states (such as PC and data addresses) from the debug-disallowed software, potentially leading to information leakage or Denial of Service (DoS). By enabling M-mode to switch trigger contexts at privilege mode boundaries, such attacks can be prevented. When `mdbgen` is 1, DMODE remains accessible only from Debug Mode.
@@ -128,21 +128,21 @@ If the hart is running in a debug-allowed lower privilege mode (e.g., S/HS-mode)
 When `mdbgen`=0 and `dcsr`.STEP=1, a single-stepped instruction in a debug-allowed privilege mode may transfer control to the M-mode trap handler. The hart will execute the handler in M-mode and re-enter Debug Mode immediately after an MRET instruction returns to the debug-allowed privilege mode (i.e., MRET with `mstatus`.MPP<3). The hart does not re-enter Debug Mode if the MRET instruction returns to a debug-disallowed privilege mode (i.e., MRET with `mstatus`.MPP=3, `mdbgen`=0). 
 
 [NOTE]
-This specification assumes the debugger ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
+This specification assumes that the debugger ensures `mdbgen` shall never be set to 0 while the hart is in Debug Mode. Setting `mdbgen` to 0 while in Debug Mode could lead to undefined behavior; the hart may lose its debug privileges unexpectedly, potentially causing the debug session to fail or become insecure.
 
 [[smsdbgctl]]
 ==== S/HS-mode External Debug Security Extension (Smsdedbg)
 
-The Smsdedbg extension is the optional extension when Smmdedbg is implemented. It introduces the `SDEDBGALW` field (bit 7) in CSR <<Sdseccsr,`msdcfg`>>, and controls S/HS-mode debuggability when M-mode external debug is disallowed.
+The Smsdedbg extension is an optional extension available when Smmdedbg is implemented. It introduces the `SDEDBGALW` field (bit 7) in CSR <<Sdseccsr,`msdcfg`>>, and controls S/HS-mode debuggability when M-mode external debug is disallowed.
 
-The `SDEDBGALW` field only has effect when `mdbgen` is 0; otherwise, debug control is dominated by the Smmdedbg extension.
+The `SDEDBGALW` field only takes effect when `mdbgen` is 0; otherwise, debug control is dominated by the Smmdedbg extension.
 
 When `SDEDBGALW` is set to 1, S/HS-mode external debug is allowed:
 
 - The <<dbgaccpriv, debug access privilege>> for the hart is S/HS-mode. Abstract Commands, including Quick Access, and instructions in Program Buffer operate with S/HS-mode privilege.
 - The <<dbops, debug operations>> are allowed when the hart executes in S/HS-mode, U-mode, VS-mode, or VU-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
-- The new `sdcsr` and `sdpc` (<<smodecsr>>) are introduced in Smsdedbg to access `dcsr` and `dpc` by S/HS-mode debugger.
+- The new `sdcsr` and `sdpc` (<<smodecsr>>) are introduced in Smsdedbg to access `dcsr` and `dpc` by an S/HS-mode debugger.
 - Triggers are delegated to S/HS-mode as specified in <<trigdeleg>>, when Sdtrig is implemented.
 - The *effective debug access privilege* of loads and stores in Debug Mode may be modified as described in <<effectivedbgpriv>>.
 - The <<maxdbgpriv, maximum allowed resume privilege mode>> is S/HS-mode.
@@ -213,7 +213,7 @@ Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have a S/HS-mode acc
 ....
 
 [NOTE]
-The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are configurable only by M-mode; they are masked in `sdcsr`, while PRV[1] is hardwired to 0 in `sdcsr`. The field for MPRVEN is reclaimed by DMPRV in `sdcsr` layout to avoid waste of fields. 
+The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are configurable only by M-mode; they are masked in `sdcsr`, while PRV[1] is hardwired to 0 in `sdcsr`. The field for MPRVEN is reclaimed by DMPRV in the `sdcsr` layout to avoid wasting fields. 
 
 [[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
@@ -237,7 +237,7 @@ When M-mode enables debugging for the S/HS-mode, it can optionally delegate the 
 [[effectivedbgpriv]]
 ===== Debug Access Privilege to memory in Smsdedbg
 
-The `sdcsr`.DMPRV has effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1. With `SDEDBGALW` set to 1, the *effective debug access privilege* of loads and stores by an S/HS-mode debugger to access memory in Debug Mode can be modified by `sdcsr`.DMPRV. When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr`.DMPRV=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by:
+The `sdcsr`.DMPRV takes effect when `mdbgen` is 0, and it is read-only 0 when `mdbgen` is 1. With `SDEDBGALW` set to 1, the *effective debug access privilege* of loads and stores by an S/HS-mode debugger to access memory in Debug Mode can be modified by `sdcsr`.DMPRV. When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores in Debug Mode follows <<dbgpriv>>; when `sdcsr`.DMPRV=1, the *effective debug access privilege* of loads and stores in Debug Mode is represented by:
 
 - `sstatus`.SPP or,
 - `hstatus`.SPVP and `hstatus`.SPV if the hypervisor extension is supported.
@@ -246,9 +246,9 @@ The `sdcsr`.DMPRV does not affect the virtual-machine load/store instructions, H
 
 ==== VS-mode External Debug Security Extension (Smvsdedbg)
 
-The Smvsdedbg extension is the optional extension when Smsdedbg is implemented. It introduces the `VSEDBGALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls VS-mode debuggability when S/HS-mode external debug is disallowed.
+The Smvsdedbg extension is an optional extension available when Smsdedbg is implemented. It introduces the `VSEDBGALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls VS-mode debuggability when S/HS-mode external debug is disallowed.
 
-The `VSEDBGALW` field only has effect when both `mdbgen` and `SDEDBGALW` are 0; otherwise, debug control is dominated by the Smmdedbg or Smsdedbg extension.
+The `VSEDBGALW` field only takes effect when both `mdbgen` and `SDEDBGALW` are 0; otherwise, debug control is dominated by the Smmdedbg or Smsdedbg extension.
 
 When `VSEDBGALW` is set to 1, VS-mode external debug is allowed:
 
@@ -294,9 +294,9 @@ When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores
 
 ==== U-mode and VU-mode External Debug Security Extension (Smudedbg)
 
-The Smudedbg extension is the optional extension when Smmdedbg or Smsdedbg or Smvsdedbg is implemented. It introduces the `USEDBGALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) debuggability when M-mode or S/HS-mode or VS-mode external debug are disallowed.
+The Smudedbg extension is an optional extension available when Smmdedbg or Smsdedbg or Smvsdedbg is implemented. It introduces the `USEDBGALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) debuggability when M-mode or S/HS-mode or VS-mode external debug are disallowed.
 
-The `USEDBGALW` field only has effect when all implemented higher privilege mode debug controls are 0 (i.e., `mdbgen`=0 and any implemented `SDEDBGALW`/`VSEDBGALW`=0); otherwise, debug control is dominated by higher privilege debug extensions. The specific conditions for `USEDBGALW` to be effective depend on which optional debug extensions are implemented as shown in <<validimplcomb>>.
+The `USEDBGALW` field only takes effect when all implemented higher privilege mode debug controls are 0 (i.e., `mdbgen`=0 and any implemented `SDEDBGALW`/`VSEDBGALW`=0); otherwise, debug control is dominated by higher privilege debug extensions. The specific conditions for `USEDBGALW` to be effective depend on which optional debug extensions are implemented as shown in <<validimplcomb>>.
 
 When `USEDBGALW` is set to 1, U-mode or VU-mode (when virtualization mode is 1) external debug is allowed:
 
@@ -317,7 +317,7 @@ When `USEDBGALW` is set to 0, external debug is disallowed for all modes:
 - The configuration in `dcsr` will be ignored as if it were 0.
 
 [NOTE]
-The software in higher privilege mode is responsible for managing the debug policy of U-mode or VU-mode and must ensure that debug-allowed VU-mode cannot be exploited to breach into debug-disallowed U-mode or vice versa. 
+Software in a higher privilege mode is responsible for managing the debug policy of U-mode or VU-mode and must ensure that a debug-allowed VU-mode cannot be exploited to breach a debug-disallowed U-mode, or vice versa. 
 
 [[umodecsr]]
 ===== `udcsr` and `udpc`
@@ -395,24 +395,24 @@ When `mtrcen` is set to 1, trace is allowed for all privilege modes. When `mtrce
 
 ==== S/HS-mode Trace Security Extension (Smsdetrc)
 
-The Smsdetrc extension is the optional extension when Smmdetrc is implemented. It introduces the `SDETRCALW` field (bit 8) in CSR <<Sdseccsr,`msdcfg`>>, and controls S/HS-mode trace output when M-mode trace is disallowed.
+The Smsdetrc extension is an optional extension available when Smmdetrc is implemented. It introduces the `SDETRCALW` field (bit 8) in CSR <<Sdseccsr,`msdcfg`>>, and controls S/HS-mode trace output when M-mode trace is disallowed.
 
-The `SDETRCALW` field only has effect when `mtrcen` is 0; otherwise, trace control is dominated by the Smmdetrc extension.
+The `SDETRCALW` field only takes effect when `mtrcen` is 0; otherwise, trace control is dominated by the Smmdetrc extension.
 
 When `SDETRCALW` is set to 1, trace is allowed for all privilege modes except M-mode. When `SDETRCALW` is set to 0, trace is inhibited for S/HS-mode by asserting the logical `sec_inhibit` signal to the trace encoder when the hart is executing in S/HS-mode.
 
 ==== VS-mode Trace Security Extension (Smvsdetrc)
 
-The Smvsdetrc extension is the optional extension when Smsdetrc is implemented. It introduces the `VSETRCALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls VS-mode trace output when S/HS-mode trace is disallowed.
+The Smvsdetrc extension is an optional extension available when Smsdetrc is implemented. It introduces the `VSETRCALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls VS-mode trace output when S/HS-mode trace is disallowed.
 
-The `VSETRCALW` field only has effect when both `mtrcen` and `SDETRCALW` are 0; otherwise, trace control is dominated by the Smmdetrc or Smsdetrc extension.
+The `VSETRCALW` field only takes effect when both `mtrcen` and `SDETRCALW` are 0; otherwise, trace control is dominated by the Smmdetrc or Smsdetrc extension.
 
 When `VSETRCALW` is set to 1, trace is allowed for VS-mode and VU-mode. When `VSETRCALW` is set to 0, trace is inhibited for VS-mode by asserting the logical `sec_inhibit` signal to the trace encoder when the hart is executing in VS-mode.
 
 ==== U-mode and VU-mode Trace Security Extension (Smudetrc)
 
-The Smudetrc extension is the optional extension when Smmdetrc or Smsdetrc or Smvsdetrc is implemented. It introduces the `USETRCALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) trace output when M-mode or S/HS-mode or VS-mode trace is disallowed.
+The Smudetrc extension is an optional extension available when Smmdetrc or Smsdetrc or Smvsdetrc is implemented. It introduces the `USETRCALW` field (bit TBD) in CSR <<Sdseccsr,`msdcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) trace output when M-mode or S/HS-mode or VS-mode trace is disallowed.
 
-The `USETRCALW` field only has effect when all implemented higher privilege mode trace controls are 0 (i.e., `mtrcen`=0 and any implemented `SDETRCALW`/`VSETRCALW`=0); otherwise, trace control is dominated by higher privilege trace extensions. The specific conditions for `USETRCALW` to be effective depend on which optional trace extensions are implemented as shown in <<validtrccomb>>.
+The `USETRCALW` field only takes effect when all implemented higher privilege mode trace controls are 0 (i.e., `mtrcen`=0 and any implemented `SDETRCALW`/`VSETRCALW`=0); otherwise, trace control is dominated by higher privilege trace extensions. The specific conditions for `USETRCALW` to be effective depend on which optional trace extensions are implemented as shown in <<validtrccomb>>.
 
 When `USETRCALW` is set to 1, trace is allowed for U-mode or VU-mode. When `USETRCALW` is set to 0, trace is inhibited for all privilege modes by asserting the logical `sec_inhibit` signal to the trace encoder.

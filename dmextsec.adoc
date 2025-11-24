@@ -1,7 +1,7 @@
 [[dmextsec]]
 == Debug Module Security (non-ISA) Extension
 
-This chapter defines the required security enhancements for the Debug Module. The debug operations listed below are modified by the extension. 
+This chapter defines the required security enhancements for the Debug Module. The debug operations listed below are modified by this extension. 
 
 * Halt
 * Reset 
@@ -17,17 +17,17 @@ The ISA and non-ISA external debug security extensions impose security constrain
 
 === Halt 
 
-The halt behavior for a hart is detailed in <<Sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec], a halt request must be responded to within one second. However, this constraint must be removed as the request might be pending due to situations where debugging is disallowed. In the case of a halt-on-reset request (SETRESETHALTREQ), the request is only acknowledged by the hart once it has reached a privilege level in which debug is allowed. 
+The halt behavior for a hart is detailed in <<Sdsecextdbg>>. According to _The RISC-V Debug Specification_ cite:[dbgspec], a halt request must be responded to within one second. However, this constraint must be relaxed, as the request might remain pending when debugging is disallowed. In the case of a halt-on-reset request (SETRESETHALTREQ), the request is only acknowledged by the hart once it has reached a privilege level in which debug is allowed. 
 
 === Reset
 
-The HARTRESET operation resets selected harts. When M-mode is disallowed to be debugged, the hart will raise a security fault error to the Debug Module on HARTRESET operations. The error can be detected through ALLSECFAULT and ANYSECFAULT in `dmstatus`.
+The HARTRESET operation resets selected harts. When M-mode debugging is disallowed, the hart will raise a security fault error to the Debug Module on HARTRESET operations. The error can be detected through ALLSECFAULT and ANYSECFAULT in `dmstatus`.
 
-The NDMRESET operation is a system-level reset not tied to hart privilege levels and resets the entire system (excluding the Debug Module). The Debug Module Security Extension makes NDMRESET read-only 0 when <<nsecdbg, `nsecdbg`>> is 0. The debugger can determine support for the NDMRESET operation by setting the field to 1 and subsequently verifying the returned value upon reading.
+The NDMRESET operation is a system-level reset not tied to hart privilege levels and resets the entire system (excluding the Debug Module). The Debug Module Security Extension makes the NDMRESET field read-only 0 when <<nsecdbg, `nsecdbg`>> is 0. The debugger can determine support for the NDMRESET operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
-The SETKEEPALIVE bit serves as an optional request for the hart to remain available for debugging. This bit only takes effect when M-mode is allowed to be debugged; otherwise, the hart behaves as if the bit is not set.
+The SETKEEPALIVE bit serves as an optional request for the hart to remain available for debugging. This bit only takes effect when M-mode debugging is allowed; otherwise, the hart behaves as if the bit is not set.
 
 === Abstract Commands 
 The hart's response to abstract commands is detailed in <<Sdsecextdbg>>. The following subsection delineates the constraints when the Debug Module issues an abstract command. 
@@ -52,10 +52,10 @@ Quick Access abstract commands initiate a halt, execute the Program Buffer, and 
 
 === System Bus Access 
 
-The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp], WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sbcs`.SBERROR to 6 (security fault error).
+The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp] or WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sbcs`.SBERROR to 6 (security fault error).
 
 [NOTE]
-Trusted entities like RoT should configure IOPMP or equivalent protection before external debug is allowed.
+Trusted entities like the RoT should configure IOPMP or equivalent protection before external debug is allowed.
 
 === Security Fault Error Reporting
 

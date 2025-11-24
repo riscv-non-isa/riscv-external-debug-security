@@ -5,7 +5,7 @@ This chapter explains the theory of operation for the External Debug Security Ex
 
 === External Debug Security Control
 
-The dedicated debug security policy for a hart is enforced through a hierarchical control model using M-mode control state `mdbgen` and optional lower privilege mode control fields (`SDEDBGALW`, `VSEDBGALW`, `USEDBGALW`) in the `msdcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses, etc. Moreover, the platform state `nsecdbg` can be used to override the debug security policy in platform level and provide unrestricted debug access for all privilege modes.
+The dedicated debug security policy for a hart is enforced through a hierarchical control model using M-mode control state `mdbgen` and optional lower privilege mode control fields (`SDEDBGALW`, `VSEDBGALW`, `USEDBGALW`) in the `msdcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses. Moreover, the platform state `nsecdbg` can be used to override the debug security policy at the platform level and provide unrestricted debug access for all privilege modes.
 
 The debug security control logic validates all debug requests and triggers (with ACTION=1) against the current privilege level of the hart and the configured debug control states. The validation procedure involves two steps: 1) checking the platform state `nsecdbg` to determine if unrestricted debug access is allowed; 2) checking the hierarchical controls to determine if external debug is allowed at the hart's current privilege level. Debug requests that fail validation will either be dropped or kept pending until the hart transitions to a debug-allowed privilege mode.
 
@@ -42,12 +42,12 @@ The table <<validimplcomb>> below shows valid implementation combinations for di
 The debug security control logic must ensure that both the validation and execution of debug requests occur under the same privilege level and the same debug control states to prevent Time-of-Check Time-of-Use (TOCTOU) vulnerabilities. Failing to do so may allow debug requests to bypass security controls. 
 
 [NOTE]
-The self-hosted debugging is also commonly used in application-level debugging, providing a pure software-based debugging solution without the need for external debugger. It is orthogonal to the external debugging and will not be affected by the debug security controls.
+Self-hosted debugging is also commonly used in application-level debugging, providing a pure software-based debugging solution without the need for an external debugger. It is orthogonal to the external debugging and will not be affected by the debug security controls.
 
 
 === Trace Security Control 
 
-The trace security policy for a hart is enforced through a hierarchical control model using M-mode control state `mtrcen` and optional lower privilege mode control fields (`SDETRCALW`, `VSETRCALW`, `USETRCALW`) in the `msdcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses, etc. 
+The trace security policy for a hart is enforced through a hierarchical control model using M-mode control state `mtrcen` and optional lower privilege mode control fields (`SDETRCALW`, `VSETRCALW`, `USETRCALW`) in the `msdcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses. 
 
 The security control logic asserts the `sec_inhibit` sideband signal to the trace encoder based on the current privilege level of the hart and the configured trace security control states. The validation procedure checks the hierarchical controls to determine if trace is allowed at the hart's current privilege level. Trace will be inhibited by asserting the `sec_inhibit` signal if the validation fails. 
 
@@ -88,33 +88,33 @@ This section provides guidance on how software at different privilege levels can
 
 === M-mode Management 
 
-M-mode software is responsible for managing the `SDEDBGALW`, `VSEDBGALW`, and `USEDBGALW` fields in the `msdcfg` CSR for external debug, and the `SDETRCALW`, `VSETRCALW`, and `USETRCALW` fields in the `msdcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from software perspective.
+M-mode software is responsible for managing the `SDEDBGALW`, `VSEDBGALW`, and `USEDBGALW` fields in the `msdcfg` CSR for external debug, and the `SDETRCALW`, `VSETRCALW`, and `USETRCALW` fields in the `msdcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from a software perspective.
 
 M-mode software should:
 
 1. Initialize debug/trace security policy for lower privilege modes based on security requirements
 2. Provide interfaces for dynamic debug/trace security policy updates (e.g., through SBI calls from lower privilege modes)
-3. Context-switch debug/trace security policies when switching between supervisor softwares 
-4. Save and restore trigger context (using DMODE access when `mdbgen`=0) during supervisor software switches to prevent side-channel attacks
+3. Context-switch debug/trace security policies when switching between supervisor software
+4. Save and restore trigger context (using DMODE access when `mdbgen`=0) during supervisor software context switches to prevent side-channel attacks
 
 === S/HS-mode Management
 
 S/HS-mode software is responsible for managing debug/trace security policy for lower privilege modes:
 
-1. Call to M-mode to apply the debug/trace security policy before launching an application or VM.  
-2. Provide interfaces to handle dynamic debug/trace security policy update requests (e.g., SBI calls from VMs) and call to M-mode to apply the security policy accordingly.
+1. Call M-mode to apply the debug/trace security policy before launching an application or VM.  
+2. Provide interfaces to handle dynamic debug/trace security policy update requests (e.g., SBI calls from VMs) and call M-mode to apply the security policy accordingly.
 3. Context-switch debug/trace security policies when switching between applications or VMs
 
 === VS-mode Management
 
 VS-mode software is responsible for managing debug/trace security policy for applications in VU-mode:
 
-1. Call to S/HS-mode to apply the debug/trace security policy before launching an application.  
+1. Call S/HS-mode to apply the debug/trace security policy before launching an application.  
 2. Context-switch debug/trace security policies when switching between applications
 
 [appendix]
 == Execution Based Implementation with Sdsec
 
-In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access the memory and CSR. However, once execution is dispatched to an Abstract Command or the program buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
+In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access memory and CSRs. However, once execution is dispatched to an Abstract Command or the Program Buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
 
-To achieve this, a Debug Mode only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 by the final instruction of the park loop, right before execution is transferred to an Abstract Command or the program buffer.
+To achieve this, a Debug Mode-only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 by the final instruction of the park loop, right before execution is transferred to an Abstract Command or the program buffer.
