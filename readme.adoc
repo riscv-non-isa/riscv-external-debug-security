@@ -51,3 +51,15 @@ The build process utilizes several options, including theming and font settings,
 === Cleaning up
 
 To clean up the generated files, run `make clean`. This will remove the generated PDF file.
+
+== Current Status
+
+* Draft v0.7.3 (ARC review candidate) internal review onging 
+  * https://github.com/riscv-non-isa/riscv-external-debug-security/pull/109)
+
+== POC/Simulator Development Repository (WIP)
+
+* OpenOCD : https://github.com/AoteJin/riscv-openocd-security
+* Spike : https://github.com/AoteJin/riscv-isa-sim-sdsec
+
+
