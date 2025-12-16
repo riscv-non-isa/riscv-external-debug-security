@@ -143,7 +143,6 @@ When `SDEDBGALW` is set to 1, S/HS-mode external debug is allowed:
 - The <<dbops, debug operations>> are allowed when the hart executes in S/HS-mode, U-mode, VS-mode, or VU-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must either act as a NOP or raise an exception (stopping execution and setting `abstractcs`.CMDERR to 3). 
 - The new `sdcsr` and `sdpc` (<<smodecsr>>) are introduced in Smsdedbg to access `dcsr` and `dpc` by an S/HS-mode debugger.
-- Triggers are delegated to S/HS-mode as specified in <<trigdeleg>>, when Sdtrig is implemented.
 - The *effective debug access privilege* of loads and stores in Debug Mode may be modified as described in <<effectivedbgpriv>>.
 - The <<maxdbgpriv, maximum allowed resume privilege mode>> is S/HS-mode.
 
@@ -225,14 +224,6 @@ The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are 
 
 1: In Debug Mode, the privilege level for load and store operations is modified to the effective debug access privilege as described in <<effectivedbgpriv>> and <<vseffectivedbgpriv>>.| WARL   | 0      
 |=================================================================================================================================================================
-
-[[trigdeleg]]
-===== Extension of Sdtrig CSR
-
-The Smtdeleg/Sstcfg cite:[smtdeleg] extensions define the process for delegating triggers to modes with lower privilege than M-mode. If Sdtrig is supported, the Sdsec requires both extensions to securely delegate Sdtrig triggers to the S/HS-mode.
-
-[NOTE]
-When M-mode enables debugging for the S/HS-mode, it can optionally delegate the triggers to the S/HS-mode, allowing an external debugger with S/HS-mode privilege to configure these triggers.
 
 [[effectivedbgpriv]]
 ===== Debug Access Privilege to memory in Smsdedbg
