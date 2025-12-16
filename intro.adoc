@@ -12,7 +12,7 @@ A summary of the changes introduced by _The RISC-V External Debug Security Speci
     - *Non-secure debug:* Add a non-secure debug state to relax security constraints for backward compatibility.
     - *Debug Mode entry:* An external debugger can only halt the hart and enter Debug Mode when external debug is allowed in the current privilege mode.
     - *Memory Access:* Memory access from a hart's point of view, using the Program Buffer or an Abstract Command, must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege level>>; memory access from the Debug Module using System Bus Access (SBA) must be checked by a system memory protection mechanism, such as IOPMP or WorldGuard.
-    - *Register Access:* Register access using the Program Buffer or an Abstract Command works as if the hart is running at <<dbgaccpriv, debug access privilege level>> instead of the M-mode privilege level. The debug CSRs (`dcsr` and `dpc` ) are shadowed in lower privilege modes, while Smtdeleg/Sstcfg cite:[smtdeleg] extensions expose the trigger CSRs to S-mode. 
+    - *Register Access:* Register access using the Program Buffer or an Abstract Command works as if the hart is running at <<dbgaccpriv, debug access privilege level>> instead of the M-mode privilege level. The debug CSRs (`dcsr` and `dpc` ) are shadowed in lower privilege modes. 
 
 === Terminology
 
