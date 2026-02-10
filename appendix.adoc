@@ -52,7 +52,7 @@ The trace security policy for a hart is enforced through a hierarchical control 
 The security control logic asserts the `sec_inhibit` sideband signal to the trace encoder based on the current privilege level of the hart and the configured trace security control states. The validation procedure checks the hierarchical controls to determine if trace is allowed at the hart's current privilege level. Trace will be inhibited by asserting the `sec_inhibit` signal if the validation fails. 
 
 [[exttrace]]
-image::external_debug_trace.png[title="The trace security control",align="center"]
+image::external_debug_trace.drawio.png[title="The trace security control",align="center"]
 
 The hierarchical control applies as follows:
 

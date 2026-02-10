@@ -386,7 +386,7 @@ When trace is implemented, trace output can expose sensitive information across 
 When trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional trace extension is not implemented, its control state will be treated as if it were 0; the control state may either be not implemented or read-only 0.
 
 [NOTE]
-The availability of trace output is controlled through signals defined in the hart-trace interface (HTI) cite:[hti]. The logical `sec_inhibit` signal can be converted to the canonical trace interface signals by implementation.
+The availability of trace output is controlled through signals defined in the RISC-V hart-trace interface (RHTI) cite:[hti]. The logical `sec_inhibit` signal can be converted to the canonical trace interface signals by implementation.
 
 ==== Trace Security Control Signals/Fields 
 
