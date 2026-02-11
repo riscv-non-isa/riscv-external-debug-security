@@ -49,31 +49,34 @@ The following table summarizes control signals/fields and associated CSRs introd
 |=====================================================================
 | Extension          | External Debug Control    | New CSRs      | Target Modes
 | Smmdedbg           | mdbgen                    | None          | M-mode
-| Smsdedbg           | msdcfg.SDEDBGALW          | sdcsr, sdpc   | S/HS-mode  
-| Smvsdedbg          | msdcfg.VSEDBGALW          | None          | VS-mode
-| Smudedbg           | msdcfg.USEDBGALW          | udcsr, udpc   | U-Mode or VU-mode
+| Smsdedbg           | mdtcfg.SDEDBGALW          | sdcsr, sdpc   | S/HS-mode  
+| Smvsdedbg          | mdtcfg.VSEDBGALW          | None          | VS-mode
+| Smudedbg           | mdtcfg.USEDBGALW          | udcsr, udpc   | U-Mode or VU-mode
 |=====================================================================
 
-[[msdcfg_dbg]]
-The `msdcfg` is a machine-mode read/write CSR (address 0x74E) used to hold configurations for supervisor domains. The following fields in `msdcfg` control external debug security. Other fields in `msdcfg` are defined by other extensions. If an optional extension is not implemented, the corresponding field is read-only 0.
+[[mdtcfg_reg]]
+The `mdtcfg` (Machine Debug and Trace Configuration) is a machine-mode read/write CSR (address TBD) introduced by this specification. It holds configuration fields for external debug and trace security control. The `mdtcfg` CSR is independent of the `msdcfg` CSR defined by the Smsdid extension; implementations that do not support Smsdid/SMMTT can implement `mdtcfg` without requiring `msdcfg` or `mmpt`. If an optional extension is not implemented, the corresponding field is read-only 0.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="External debug fields in `msdcfg`"]
-[id=msdcfgdbgreg]
+[title="`mdtcfg` register"]
+[id=mdtcfgreg]
 [wavedrom, ,svg]
 ....
 {reg: [
-  {bits:  7, name:  'other ext.', type: 1},
   {bits:  1, name:  'SDEDBGALW'},
-  {bits:  1, name:  'other ext.', type: 1},
   {bits:  1, name:  'VSEDBGALW'},
-  {bits:  1, name:  'other ext.', type: 1},
   {bits:  1, name:  'USEDBGALW'},
-  {bits: 19, name:  'other ext.', type: 1},
-], config:{lanes: 3, hspace:1024}}
+  {bits:  5, name:  'WPRI', type: 1},
+  {bits:  1, name:  'SDETRCALW'},
+  {bits:  1, name:  'VSETRCALW'},
+  {bits:  1, name:  'USETRCALW'},
+  {bits: 21, name:  'WPRI', type: 1},
+], config:{lanes: 3, hspace:1200}}
 ....
 
-.Details of external debug fields in `msdcfg`
+The following fields in `mdtcfg` control external debug security. The trace security fields are described in <<sdsectrc>>.
+
+.Details of external debug fields in `mdtcfg`
 [options="header"]
 [cols="15%,55%,15%,15%"]
 |=================================================================================================================================================================
@@ -84,7 +87,7 @@ The `msdcfg` is a machine-mode read/write CSR (address 0x74E) used to hold confi
 |=================================================================================================================================================================
 
 [NOTE]
-The bit positions of `VSEDBGALW` and `USEDBGALW` shown above are tentative and have not been officially allocated. The final bit assignments will be determined during the ratification process.
+The bit positions shown above are tentative and have not been officially allocated. The final bit assignments will be determined during the ratification process.
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
@@ -96,7 +99,7 @@ The *debug access privilege* is defined as the privilege level for state accesse
 [cols="15%,20%,20%,20%,25%"]
 .External Debug Configuration and Privilege
 |=====================================================================================================
-| mdbgen | SDEDBGALW (if implemented)  | VSEDBGALW (if implemented)  | UEDBGALW (if implemented)   | Debug Access Privilege
+| mdbgen | SDEDBGALW (if implemented)  | VSEDBGALW (if implemented)  | USEDBGALW (if implemented)  | Debug Access Privilege
 | 1      | Don't care                  | Don't care                  | Don't care                  | M-mode                
 | 0      | 1                           | Don't care                  | Don't care                  | S/HS-Mode             
 | 0      | 0                           | 1                           | Don't care                  | VS-Mode               
@@ -113,7 +116,7 @@ The maximum privilege level that can be configured in `dcsr`.PRV and `dcsr`.V is
 [cols="15%,20%,20%,20%,25%"]
 .Maximum Allowed Resume Privilege Mode
 |=====================================================================================================
-| mdbgen | SDEDBGALW (if implemented)  | VSEDBGALW (if implemented)  | UEDBGALW (if implemented)   | Maximum Debug Allowed Privilege on resume 
+| mdbgen | SDEDBGALW (if implemented)  | VSEDBGALW (if implemented)  | USEDBGALW (if implemented)  | Maximum Debug Allowed Privilege on resume 
 | 1      | Don't care                  | Don't care                  | Don't care                  | M-Mode                                         
 | 0      | 1                           | Don't care                  | Don't care                  | S/HS-Mode                                  
 | 0      | 0                           | 1                           | Don't care                  | VS-Mode
@@ -165,7 +168,7 @@ This specification assumes that the debugger ensures `mdbgen` shall never be set
 [[smsdbgctl]]
 ==== S/HS-mode External Debug Security Extension (Smsdedbg)
 
-The Smsdedbg extension is an optional extension available when Smmdedbg is implemented. It introduces the `SDEDBGALW` field (bit 7) in CSR <<msdcfgdbgreg,`msdcfg`>>, and controls S/HS-mode debuggability when M-mode external debug is disallowed.
+The Smsdedbg extension is an optional extension available when Smmdedbg is implemented. It introduces the `SDEDBGALW` field in CSR <<mdtcfgreg,`mdtcfg`>>, and controls S/HS-mode debuggability when M-mode external debug is disallowed.
 
 The `SDEDBGALW` field only takes effect when `mdbgen` is 0.
 
@@ -266,7 +269,7 @@ The `sdcsr`.DMPRV does not affect the virtual-machine load/store instructions, H
 
 ==== VS-mode External Debug Security Extension (Smvsdedbg)
 
-The Smvsdedbg extension is an optional extension available when Smsdedbg is implemented. It introduces the `VSEDBGALW` field (bit TBD) in CSR <<msdcfgdbgreg,`msdcfg`>>, and controls VS-mode debuggability when S/HS-mode external debug is disallowed.
+The Smvsdedbg extension is an optional extension available when Smsdedbg is implemented. It introduces the `VSEDBGALW` field in CSR <<mdtcfgreg,`mdtcfg`>>, and controls VS-mode debuggability when S/HS-mode external debug is disallowed.
 
 The `VSEDBGALW` field only takes effect when both `mdbgen` is 0 and `SDEDBGALW` is 0.
 
@@ -314,7 +317,7 @@ When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores
 
 ==== U-mode and VU-mode External Debug Security Extension (Smudedbg)
 
-The Smudedbg extension is an optional extension available when Smmdedbg or Smsdedbg or Smvsdedbg is implemented. It introduces the `USEDBGALW` field (bit TBD) in CSR <<msdcfgdbgreg,`msdcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) debuggability when M-mode or S/HS-mode or VS-mode external debug are disallowed.
+The Smudedbg extension is an optional extension available when Smmdedbg or Smsdedbg or Smvsdedbg is implemented. It introduces the `USEDBGALW` field in CSR <<mdtcfgreg,`mdtcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) debuggability when M-mode or S/HS-mode or VS-mode external debug are disallowed.
 
 The `USEDBGALW` field only takes effect when both `mdbgen`=0 and `SDEDBGALW`=0 and `VSEDBGALW`=0.
 
@@ -398,30 +401,14 @@ The following tables summarize control signals/fields introduced by the trace se
 |================================================
 | Extension          | Trace Control        | Target Modes
 | Smmdetrc           | mtrcen               | M-mode
-| Smsdetrc           | msdcfg.SDETRCALW     | S/HS-mode  
-| Smvsdetrc          | msdcfg.VSETRCALW     | VS-mode
-| Smudetrc           | msdcfg.USETRCALW     | U-Mode or VU-mode
+| Smsdetrc           | mdtcfg.SDETRCALW     | S/HS-mode  
+| Smvsdetrc          | mdtcfg.VSETRCALW     | VS-mode
+| Smudetrc           | mdtcfg.USETRCALW     | U-Mode or VU-mode
 |================================================
 
-The following fields in `msdcfg` control trace security. Other fields in `msdcfg` are defined by other extensions. If an optional extension is not implemented, the corresponding field is read-only 0.
+The following fields in <<mdtcfgreg,`mdtcfg`>> control trace security. If an optional extension is not implemented, the corresponding field is read-only 0.
 
-[caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
-[title="Trace security fields in `msdcfg`"]
-[id=msdcfgtrcreg]
-[wavedrom, ,svg]
-....
-{reg: [
-  {bits:  8, name:  'other ext.', type: 1},
-  {bits:  1, name:  'SDETRCALW'},
-  {bits:  1, name:  'other ext.', type: 1},
-  {bits:  1, name:  'VSETRCALW'},
-  {bits:  1, name:  'other ext.', type: 1},
-  {bits:  1, name:  'USETRCALW'},
-  {bits: 19, name:  'other ext.', type: 1},
-], config:{lanes: 3, hspace:1024}}
-....
-
-.Details of trace security fields in `msdcfg`
+.Details of trace security fields in `mdtcfg`
 [options="header"]
 [cols="15%,55%,15%,15%"]
 |=================================================================================================================================================================
@@ -430,9 +417,6 @@ The following fields in `msdcfg` control trace security. Other fields in `msdcfg
 | VSETRCALW   | VS-mode external trace allowed. When set to 1, VS-mode trace is allowed when `mtrcen` is 0 and `SDETRCALW` is 0. Introduced by Smvsdetrc.  | WARL   | 0
 | USETRCALW   | U-mode/VU-mode external trace allowed. When set to 1, U-mode or VU-mode trace is allowed when `mtrcen`=0, `SDETRCALW`=0, and `VSETRCALW`=0. Introduced by Smudetrc.  | WARL   | 0
 |=================================================================================================================================================================
-
-[NOTE]
-The bit positions of `VSETRCALW` and `USETRCALW` shown above are tentative and have not been officially allocated. The final bit assignments will be determined during the ratification process.
 
 ==== M-mode Trace Security Extension (Smmdetrc)
 
@@ -446,7 +430,7 @@ When `mtrcen` is set to 1, trace is allowed for all privilege modes. When `mtrce
 
 ==== S/HS-mode Trace Security Extension (Smsdetrc)
 
-The Smsdetrc extension is an optional extension available when Smmdetrc is implemented. It introduces the `SDETRCALW` field (bit 8) in CSR <<msdcfgtrcreg,`msdcfg`>>, and controls S/HS-mode trace output when M-mode trace is disallowed.
+The Smsdetrc extension is an optional extension available when Smmdetrc is implemented. It introduces the `SDETRCALW` field in CSR <<mdtcfgreg,`mdtcfg`>>, and controls S/HS-mode trace output when M-mode trace is disallowed.
 
 The `SDETRCALW` field only takes effect when `mtrcen` is 0.
 
@@ -454,7 +438,7 @@ When `SDETRCALW` is set to 1, trace is allowed for all privilege modes except M-
 
 ==== VS-mode Trace Security Extension (Smvsdetrc)
 
-The Smvsdetrc extension is an optional extension available when Smsdetrc is implemented. It introduces the `VSETRCALW` field (bit TBD) in CSR <<msdcfgtrcreg,`msdcfg`>>, and controls VS-mode trace output when S/HS-mode trace is disallowed.
+The Smvsdetrc extension is an optional extension available when Smsdetrc is implemented. It introduces the `VSETRCALW` field in CSR <<mdtcfgreg,`mdtcfg`>>, and controls VS-mode trace output when S/HS-mode trace is disallowed.
 
 The `VSETRCALW` field only takes effect when both `mtrcen` is 0 and `SDETRCALW` is 0.
 
@@ -462,7 +446,7 @@ When `VSETRCALW` is set to 1, trace is allowed for VS-mode and VU-mode. When `VS
 
 ==== U-mode and VU-mode Trace Security Extension (Smudetrc)
 
-The Smudetrc extension is an optional extension available when Smmdetrc or Smsdetrc or Smvsdetrc is implemented. It introduces the `USETRCALW` field (bit TBD) in CSR <<msdcfgtrcreg,`msdcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) trace output when M-mode or S/HS-mode or VS-mode trace is disallowed.
+The Smudetrc extension is an optional extension available when Smmdetrc or Smsdetrc or Smvsdetrc is implemented. It introduces the `USETRCALW` field in CSR <<mdtcfgreg,`mdtcfg`>>, and controls U-mode or VU-mode (when virtualization mode is 1) trace output when M-mode or S/HS-mode or VS-mode trace is disallowed.
 
 The `USETRCALW` field only takes effect when both `mtrcen`=0 and `SDETRCALW`=0 and `VSETRCALW`=0.
 
