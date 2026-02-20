@@ -5,12 +5,12 @@ This chapter explains the theory of operation for the External Debug Security Ex
 
 === External Debug Security Control
 
-The dedicated debug security policy for a hart is enforced through a hierarchical control model using M-mode control state `mdbgen` and optional lower privilege mode control fields (`SDEDBGALW`, `VSEDBGALW`, `USEDBGALW`) in the `msdcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses. Moreover, the platform state `nsecdbg` can be used to override the debug security policy at the platform level and provide unrestricted debug access for all privilege modes.
+The dedicated debug security policy for a hart is enforced through a hierarchical control model using M-mode control state `mdbgen` and optional lower privilege mode control fields (`SDEDBGALW`, `VSEDBGALW`, `USEDBGALW`) in the `mdtcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses. Moreover, the platform state `nsecdbg` can be used to override the debug security policy at the platform level and provide unrestricted debug access for all privilege modes.
 
 The debug security control logic validates all debug requests and triggers (with ACTION=1) against the current privilege level of the hart and the configured debug control states. The validation procedure involves two steps: 1) checking the platform state `nsecdbg` to determine if unrestricted debug access is allowed; 2) checking the hierarchical controls to determine if external debug is allowed at the hart's current privilege level. Debug requests that fail validation will either be dropped or kept pending until the hart transitions to a debug-allowed privilege mode.
 
 [[extdbg]]
-image::external_debug_dm.png[title="The debug security control",align="center"]
+image::external_debug_dm.drawio.png[title="The debug security control",align="center"]
 
 The hierarchical control applies as follows:
 
@@ -47,12 +47,12 @@ Self-hosted debugging is also commonly used in application-level debugging, prov
 
 === Trace Security Control 
 
-The trace security policy for a hart is enforced through a hierarchical control model using M-mode control state `mtrcen` and optional lower privilege mode control fields (`SDETRCALW`, `VSETRCALW`, `USETRCALW`) in the `msdcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses. 
+The trace security policy for a hart is enforced through a hierarchical control model using M-mode control state `mtrcen` and optional lower privilege mode control fields (`SDETRCALW`, `VSETRCALW`, `USETRCALW`) in the `mdtcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses. 
 
 The security control logic asserts the `sec_inhibit` sideband signal to the trace encoder based on the current privilege level of the hart and the configured trace security control states. The validation procedure checks the hierarchical controls to determine if trace is allowed at the hart's current privilege level. Trace will be inhibited by asserting the `sec_inhibit` signal if the validation fails. 
 
 [[exttrace]]
-image::external_debug_trace.png[title="The trace security control",align="center"]
+image::external_debug_trace.drawio.png[title="The trace security control",align="center"]
 
 The hierarchical control applies as follows:
 
@@ -88,7 +88,7 @@ This section provides guidance on how software at different privilege levels can
 
 === M-mode Management 
 
-M-mode software is responsible for managing the `SDEDBGALW`, `VSEDBGALW`, and `USEDBGALW` fields in the `msdcfg` CSR for external debug, and the `SDETRCALW`, `VSETRCALW`, and `USETRCALW` fields in the `msdcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from a software perspective.
+M-mode software is responsible for managing the `SDEDBGALW`, `VSEDBGALW`, and `USEDBGALW` fields in the `mdtcfg` CSR for external debug, and the `SDETRCALW`, `VSETRCALW`, and `USETRCALW` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from a software perspective.
 
 M-mode software should:
 
