@@ -16,7 +16,7 @@ DATE ?= $(shell date +%Y-%m-%d)
 VERSION ?= v0.7.3
 REVMARK ?= Release Candidate for Internal Review
 DOCKER_RUN := docker run --rm -v ${PWD}:/build -w /build \
-riscvintl/riscv-docs-base-container-image:latest
+ghcr.io/riscv/riscv-docs-base-container-image:latest
 
 HEADER_SOURCE := header.adoc
 PDF_RESULT := external-debug-security.pdf
