@@ -13,8 +13,8 @@
 # the Doc Template for RISC-V Extensions.
 
 DATE ?= $(shell date +%Y-%m-%d)
-VERSION ?= v0.7.3
-REVMARK ?= Release Candidate for Internal Review
+VERSION ?= v0.7.4
+REVMARK ?= Release Candidate for ARC Review
 DOCKER_RUN := docker run --rm -v ${PWD}:/build -w /build \
 ghcr.io/riscv/riscv-docs-base-container-image:latest
 
