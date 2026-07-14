@@ -197,7 +197,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="7AM6fKu7Su1GF4IJaQDg-2" value="sdedbgalw" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                <mxCell id="7AM6fKu7Su1GF4IJaQDg-2" value="sedbgen" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="444" y="358" width="60" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="7AM6fKu7Su1GF4IJaQDg-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;endArrow=none;endFill=0;" parent="1" source="kFpus0cYX18OSGnglrjY-2" target="NKh4vI0Y_Na2G2xeZk5D-38" edge="1">
@@ -225,7 +225,7 @@
                 <mxCell id="tQeNZEuqyOLJJMkqUlfo-1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="130" y="240" width="80" height="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="tQeNZEuqyOLJJMkqUlfo-4" value="Debug security enabled with &lt;b&gt;nsecdbg&lt;/b&gt; = 0&amp;nbsp;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                <mxCell id="tQeNZEuqyOLJJMkqUlfo-4" value="Debug security enabled with &lt;b&gt;psecdbgen&lt;/b&gt; = 1&amp;nbsp;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="220" y="235" width="240" height="30" as="geometry"/>
                 </mxCell>
             </root>
@@ -342,7 +342,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="XOOPOzd-EA1kAR8ASHPs-34" value="sdetrcalw" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                <mxCell id="XOOPOzd-EA1kAR8ASHPs-34" value="setrcen" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="266" y="308" width="60" height="30" as="geometry"/>
                 </mxCell>
                 <mxCell id="ccdIS5b9glSX3GIqIRPP-3" value="privilege" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
@@ -360,7 +360,7 @@
                 <mxCell id="xGlLH2HLdgQkL_q0wLqX-1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="130" y="240" width="80" height="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="xGlLH2HLdgQkL_q0wLqX-2" value="Debug security enabled with &lt;b&gt;nsecdbg&lt;/b&gt; = 0&amp;nbsp;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
+                <mxCell id="xGlLH2HLdgQkL_q0wLqX-2" value="Debug security enabled with &lt;b&gt;psecdbgen&lt;/b&gt; = 1&amp;nbsp;" style="text;html=1;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="220" y="235" width="240" height="30" as="geometry"/>
                 </mxCell>
             </root>
@@ -433,7 +433,7 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="4XxLP4siFgw4NaL9qrDu-53" value="nsecdbg" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+                <mxCell id="4XxLP4siFgw4NaL9qrDu-53" value="psecdbgen" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="150" y="260" width="80" height="20" as="geometry"/>
                 </mxCell>
                 <mxCell id="iptms32gDKMvS_zmz09J-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.289;entryY=0.988;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="4XxLP4siFgw4NaL9qrDu-56" target="iptms32gDKMvS_zmz09J-2" edge="1">

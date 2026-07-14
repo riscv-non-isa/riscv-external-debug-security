@@ -13,7 +13,7 @@ If any hart in the system implements the Sdsec extension, the Debug Module must 
 
 === External Debug Security Extensions Discovery 
 
-The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the ALLSECURED and/or ANYSECURED bits in `dmstatus` <<regdmstatus>>. These bits will read as 0 when `nsecdbg` is set to 1, regardless of whether the harts implement the Sdsec extension. When `nsecdbg` is 0, ALLSECURED is set to 1 if all currently selected harts implement the Sdsec extension, and ANYSECURED is set to 1 if any currently selected hart implements the Sdsec extension. When any hart implements the Sdsec extension, it indicates that the Debug Module implements the Debug Module Security Extension as described in this chapter.
+The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the ALLSECURED and/or ANYSECURED bits in `dmstatus` <<regdmstatus>>. These bits will read as 0 when `psecdbgen` is 0, regardless of whether the harts implement the Sdsec extension. When `psecdbgen` is 1, ALLSECURED is set to 1 if all currently selected harts implement the Sdsec extension, and ANYSECURED is set to 1 if any currently selected hart implements the Sdsec extension. When any hart implements the Sdsec extension, it indicates that the Debug Module implements the Debug Module Security Extension as described in this chapter.
 
 === Halt 
 
@@ -23,7 +23,7 @@ The halt behavior for a hart is detailed in <<Sdsecextdbg>>. According to _The R
 
 The HARTRESET operation resets selected harts. When M-mode debugging is disallowed, the hart will raise a security fault error to the Debug Module on HARTRESET operations. The error can be detected through ALLSECFAULT and ANYSECFAULT in `dmstatus`.
 
-The NDMRESET operation is a system-level reset not tied to hart privilege levels and resets the entire system (excluding the Debug Module). The Debug Module Security Extension makes the NDMRESET field read-only 0 when <<nsecdbg, `nsecdbg`>> is 0. The debugger can determine support for the NDMRESET operation by setting the field to 1 and subsequently verifying the returned value upon reading.
+The NDMRESET operation is a system-level reset not tied to hart privilege levels and resets the entire system (excluding the Debug Module). The Debug Module Security Extension makes the NDMRESET field read-only 0 when <<psecdbgen, `psecdbgen`>> is 1. The debugger can determine support for the NDMRESET operation by setting the field to 1 and subsequently verifying the returned value upon reading.
 
 === Keepalive
 
@@ -52,7 +52,7 @@ Quick Access abstract commands initiate a halt, execute the Program Buffer, and 
 
 === System Bus Access 
 
-The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp] or WorldGuard cite:[worldguard]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sbcs`.SBERROR to 6 (security fault error).
+The System Bus Access must be checked by bus initiator protection mechanisms such as IOPMP cite:[iopmp] or RISC-V Worlds cite:[worlds]. The bus protection unit can return an error to the Debug Module on illegal accesses; in that case, the Debug Module will set `sbcs`.SBERROR to 6 (security fault error).
 
 [NOTE]
 Trusted entities like the RoT should configure IOPMP or equivalent protection before external debug is allowed.
@@ -63,16 +63,18 @@ A dedicated error code, security fault error (CMDERR 6), is included in `abstrac
 
 Error status bits are internally maintained for each hart. The ALLSECFAULT and ANYSECFAULT fields in `dmstatus` indicate the error status of the currently selected harts. These error statuses are sticky and can only be cleared by writing 1 to `dmcs2`.ACKSECFAULT <<regdmcs2>>.
 
-[[nsecdbg]]
-=== Non-secure Debug 
+[[psecdbgen]]
+=== Platform Debug Security Enable
 
-The state element `nsecdbg` is introduced to retain full debugging capabilities, as if the extensions in this specification were not implemented. When `nsecdbg` is set to 1:
+The platform state element `psecdbgen` is introduced to enable the debug security constraints defined by this specification. When `psecdbgen` is 0, the platform retains full debugging capabilities, as if the extensions in this specification were not implemented:
 
 * All <<dbops, debug operations>> are executed with M-mode privilege (equivalent to having `mdbgen` set to 1) for all harts in the system.
 * The NDMRESET operation is allowed.
 * The RELAXEDPRIV field may be configurable.
 * System Bus Access may bypass the bus initiator protections.
 * Trace output is enabled in all privilege modes.  
+
+When `psecdbgen` is 1, the security constraints in this specification apply.
 
 === Update of Debug Module Registers
 
@@ -100,8 +102,8 @@ The Debug Module Security Extension introduces new fields in the Debug Module re
 [options="header"]
 |================================================================================================================================================
 | Field       | Description                                                                                                       | Access | Reset
-| ALLSECURED  | The field is 0 when `nsecdbg` is 1. When `nsecdbg` is 0, this field is 1 if all currently selected harts implement the Sdsec extension.         | R      | -    
-| ANYSECURED  | The field is 0 when `nsecdbg` is 1. When `nsecdbg` is 0, this field is 1 if any currently selected hart implements the Sdsec extension.         | R      | -    
+| ALLSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if all currently selected harts implement the Sdsec extension.         | R      | -
+| ANYSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if any currently selected hart implements the Sdsec extension.         | R      | -
 | ALLSECFAULT | The field is 1 when all currently selected harts have raised a security fault due to reset or keepalive operation | R      | -    
 | ANYSECFAULT | The field is 1 when any currently selected hart has raised a security fault due to reset or keepalive operation   | R      | -    
 |================================================================================================================================================

@@ -5,13 +5,15 @@ Debugging and tracing are essential for developers to identify and rectify softw
 
 This specification defines <<dmextsec, Debug Module Security Extension (non-ISA extension)>> and <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
+At a high level, the Debug Module Security Extension provides platform-level controls, including `psecdbgen`, to enable or bypass the security constraints. The Sdsec ISA extension provides per-hart debug and trace enable controls, including platform-controlled `mdbgen` and `mtrcen` states for M-mode and lower-privilege enable fields in `mdtcfg`. Together, these controls determine whether external debug or trace is allowed at the hart's current privilege mode.
+
 A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.
 
     - *Per-Hart Debug Control:* Introduce per-hart states to control whether external debug is allowed for each privilege mode.
     - *Per-Hart Trace Control:* Introduce per-hart states to control whether tracing is allowed for each privilege mode.
-    - *Non-secure debug:* Add a non-secure debug state to relax security constraints for backward compatibility.
+    - *Platform debug security enable:* Add a platform state to enable the security constraints or bypass them for backward compatibility.
     - *Debug Mode entry:* An external debugger can only halt the hart and enter Debug Mode when external debug is allowed in the current privilege mode.
-    - *Memory Access:* Memory access from a hart's point of view, using the Program Buffer or an Abstract Command, must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege level>>; memory access from the Debug Module using System Bus Access (SBA) must be checked by a system memory protection mechanism, such as IOPMP or WorldGuard.
+    - *Memory Access:* Memory access from a hart's point of view, using the Program Buffer or an Abstract Command, must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege level>>; memory access from the Debug Module using System Bus Access (SBA) must be checked by a system memory protection mechanism, such as IOPMP or RISC-V Worlds.
     - *Register Access:* Register access using the Program Buffer or an Abstract Command works as if the hart is running at <<dbgaccpriv, debug access privilege level>> instead of the M-mode privilege level. The debug CSRs (`dcsr` and `dpc` ) are shadowed in lower privilege modes. 
 
 === Terminology
@@ -28,5 +30,6 @@ A summary of the changes introduced by _The RISC-V External Debug Security Speci
 | PMA                    | Physical Memory Attributes                                                                                                 
 | PMP                    | Physical Memory Protection unit                                                                                            
 | Program buffer         | A mechanism that allows the Debug Module to execute arbitrary instructions on a hart                                                       
+| RISC-V Worlds          | A system-level isolation mechanism that constrains physical-address access by harts and other bus initiators
 | Trace encoder          | A piece of hardware that takes in instruction execution information from a RISC-V hart and transforms it into trace packets
 |=====================================================================================================================================================
