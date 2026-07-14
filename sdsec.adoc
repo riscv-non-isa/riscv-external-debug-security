@@ -29,14 +29,14 @@ External debug operations can modify system state and expose sensitive informati
 
 ==== External Debug Security Control States and CSRs
 
-The following table defines the external debug control states and associated CSRs introduced by the external debug security extensions. In this specification, _control state_ covers platform-level control state, such as `psecdbgen`, per-hart platform-controlled states, such as `mdbgen`, and CSR fields, such as `mdtcfg.SEDBGEN`.
+The following table summarizes the external debug control states and associated CSRs introduced by the Debug Module Security Extension and the Sdsec external debug security extensions. In this specification, _control state_ covers platform-level control state, such as `psecdbgen`, per-hart platform-controlled states, such as `mdbgen`, and CSR fields, such as `mdtcfg.SEDBGEN`.
 
 [[Sdseccsr]]
 .External Debug Control States and CSRs
 [cols="24%,36%,20%,20%", options="header"]
 |=====================================================================
 | Extension                             | External Debug Control State | New CSRs      | Scope
-| Smmdedbg                              | psecdbgen                    | None          | Platform/all modes
+| Debug Module Security Extension       | psecdbgen                    | None          | Platform/all modes
 | Smmdedbg                              | mdbgen                       | mdtcfg        | M-mode
 | Smsdedbg                              | mdtcfg.SEDBGEN               | sdcsr, sdpc   | S/HS-mode
 | Smvsdedbg                             | mdtcfg.VSEDBGEN              | None          | VS-mode

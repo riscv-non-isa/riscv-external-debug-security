@@ -1,4 +1,5 @@
 [appendix]
+[[theory_operation]]
 == Theory of Operation 
 
 This chapter explains the theory of operation for the External Debug Security Extension. The subsequent diagrams illustrate reference implementations of security control for external debug and trace for one hart.

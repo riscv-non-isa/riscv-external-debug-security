@@ -7,6 +7,8 @@ This specification defines <<dmextsec, Debug Module Security Extension (non-ISA 
 
 At a high level, the Debug Module Security Extension provides a platform-level control state, `psecdbgen`, to enable or bypass the security constraints. The Sdsec ISA extension provides per-hart debug and trace control states, including platform-controlled `mdbgen` and `mtrcen` states for M-mode and lower-privilege control states in `mdtcfg`. Together, these control states determine whether external debug or trace is allowed at the hart's current privilege mode.
 
+Operationally, the platform-level control state selects between backward-compatible behavior and the security-constrained behavior defined by this specification. When the constraints are enabled, each hart evaluates its debug and trace control states for its current privilege mode. Debug operations are permitted only when the corresponding debug control state allows access at that mode; otherwise the request is rejected or remains pending as specified later. Trace output is similarly enabled only for modes allowed by the trace control states and is inhibited otherwise. <<theory_operation,Appendix A>> provides an informative reference for the theory of operation.
+
 A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.
 
     - *Per-Hart Debug Control:* Introduce per-hart states to control whether external debug is allowed for each privilege mode.
