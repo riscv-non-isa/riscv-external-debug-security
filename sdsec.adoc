@@ -27,34 +27,24 @@ Debug and trace extensions can be implemented independently. For example, a syst
 
 External debug operations can modify system state and expose sensitive information. The following extensions provide hierarchical privilege-based controls to restrict debug access, preventing unauthorized debugging of higher-privilege software.
 
-When external debug is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional debug extension is not implemented, the corresponding enable field behaves as 0; the field may either be absent or read-only 0 in such cases.
+==== External Debug Security Control States and CSRs
 
-
-==== Debug Operations
-
-[[sdsecextdbg]]
-Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional external debug operations. The operations listed below are affected by the Sdsec extension; other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
-
-Debug operations affected by Sdsec: 
-[[dbops]]
-* Halting the hart to enter Debug Mode
-* Executing the Program Buffer
-* Serving abstract commands (Access Register, Access Memory)
-
-==== External Debug Security Control Signals/Fields and CSRs
-
-The following table summarizes control signals/fields and associated CSRs introduced by the external debug security extensions.
+The following table defines the external debug control states and associated CSRs introduced by the external debug security extensions. In this specification, _control state_ covers platform-level control state, such as `psecdbgen`, per-hart platform-controlled states, such as `mdbgen`, and CSR fields, such as `mdtcfg.SEDBGEN`.
 
 [[Sdseccsr]]
-.External Debug Control and CSRs
-[cols="20%,35%,20%,25%", options="header"]
+.External Debug Control States and CSRs
+[cols="24%,36%,20%,20%", options="header"]
 |=====================================================================
-| Extension          | External Debug Control    | New CSRs      | Target Modes
-| Smmdedbg           | mdbgen                    | mdtcfg        | M-mode
-| Smsdedbg           | mdtcfg.SEDBGEN           | sdcsr, sdpc   | S/HS-mode
-| Smvsdedbg          | mdtcfg.VSEDBGEN          | None          | VS-mode
-| Smudedbg           | mdtcfg.UEDBGEN           | udcsr, udpc   | U-Mode or VU-mode
+| Extension                             | External Debug Control State | New CSRs      | Scope
+| Smmdedbg                              | psecdbgen                    | None          | Platform/all modes
+| Smmdedbg                              | mdbgen                       | mdtcfg        | M-mode
+| Smsdedbg                              | mdtcfg.SEDBGEN               | sdcsr, sdpc   | S/HS-mode
+| Smvsdedbg                             | mdtcfg.VSEDBGEN              | None          | VS-mode
+| Smudedbg                              | mdtcfg.UEDBGEN               | udcsr, udpc   | U-Mode or VU-mode
 |=====================================================================
+
+When external debug is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional debug extension is not implemented, the corresponding control state behaves as 0; for lower-privilege modes, the `mdtcfg` field representing that control state may either be absent or read-only 0.
+
 
 [[mdtcfg_reg]]
 The `mdtcfg` (Machine Debug and Trace Configuration) is a machine-mode read/write CSR (address TBD) introduced by this specification. It holds configuration fields for external debug and trace security control.
@@ -76,9 +66,9 @@ The `mdtcfg` (Machine Debug and Trace Configuration) is a machine-mode read/writ
 ], config:{lanes: 3, hspace:1024}}
 ....
 
-The following fields in `mdtcfg` control external debug security. The trace security fields are described in <<sdsectrc>>.
+The following fields in `mdtcfg` provide lower-privilege external debug control states. The trace control states are described in <<sdsectrc>>.
 
-.Details of external debug fields in `mdtcfg`
+.Details of external debug control states in `mdtcfg`
 [options="header"]
 [cols="15%,55%,15%,15%"]
 |=================================================================================================================================================================
@@ -90,6 +80,17 @@ The following fields in `mdtcfg` control external debug security. The trace secu
 
 [NOTE]
 The bit positions shown above are tentative and have not been officially allocated. The final bit assignments will be determined during the ratification process.
+
+==== Debug Operations
+
+[[sdsecextdbg]]
+Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional external debug operations. The operations listed below are affected by the Sdsec extension; other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
+
+Debug operations affected by Sdsec:
+[[dbops]]
+* Halting the hart to enter Debug Mode
+* Executing the Program Buffer
+* Serving abstract commands (Access Register, Access Memory)
 
 [[dbgaccpriv]]
 ==== Debug Access Privilege
@@ -388,29 +389,29 @@ The `udcsr` register exposes a subset of `dcsr`, formatted as shown in <<udcsr32
 
 When trace is implemented, trace output can expose sensitive information across privilege boundaries. The extensions below provide security controls to restrict trace output based on privilege levels.
 
-When trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional trace extension is not implemented, the corresponding enable field behaves as 0; the field may either be absent or read-only 0 in such cases.
+==== Trace Security Control States
 
-[NOTE]
-The availability of trace output is controlled through signals defined in the RISC-V hart-trace interface (RHTI) cite:[hti]. The logical `sec_inhibit` signal can be converted to the canonical trace interface signals by implementation.
-
-==== Trace Security Control Signals/Fields 
-
-The following tables summarize control signals/fields introduced by the trace security extensions.
+The following table defines the trace control states introduced by the trace security extensions. In this specification, _control state_ covers both platform-controlled states, such as `mtrcen`, and CSR fields, such as `mdtcfg.SETRCEN`.
 
 [[trcctlcsr]]
-.Trace Control Signals/Fields
+.Trace Control States
 [cols="30%,35%,35%", options="header"]
 |================================================
-| Extension          | Trace Control        | Target Modes
-| Smmdetrc           | mtrcen               | M-mode
+| Extension          | Trace Control State | Target Modes
+| Smmdetrc           | mtrcen              | M-mode
 | Smsdetrc           | mdtcfg.SETRCEN      | S/HS-mode
 | Smvsdetrc          | mdtcfg.VSETRCEN     | VS-mode
 | Smudetrc           | mdtcfg.UETRCEN      | U-Mode or VU-mode
 |================================================
 
-The following fields in <<mdtcfgreg,`mdtcfg`>> control trace security. If an optional extension is not implemented, the corresponding field is read-only 0. The `mdtcfg` CSR must be implemented when Smmdetrc is implemented, even if Smmdedbg is not implemented.
+When trace is allowed for a privilege mode, it is allowed for all lower privilege modes as well. If an optional trace extension is not implemented, the corresponding control state behaves as 0; for lower-privilege modes, the `mdtcfg` field representing that control state may either be absent or read-only 0.
 
-.Details of trace security fields in `mdtcfg`
+[NOTE]
+The availability of trace output is controlled through signals defined in the RISC-V hart-trace interface (RHTI) cite:[hti]. The logical `sec_inhibit` signal can be converted to the canonical trace interface signals by implementation.
+
+The following `mdtcfg` fields provide lower-privilege trace control states. The `mdtcfg` CSR must be implemented when Smmdetrc is implemented, even if Smmdedbg is not implemented.
+
+.Details of trace security control states in `mdtcfg`
 [options="header"]
 [cols="15%,55%,15%,15%"]
 |=================================================================================================================================================================

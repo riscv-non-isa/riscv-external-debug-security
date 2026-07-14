@@ -5,7 +5,7 @@ Debugging and tracing are essential for developers to identify and rectify softw
 
 This specification defines <<dmextsec, Debug Module Security Extension (non-ISA extension)>> and <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
-At a high level, the Debug Module Security Extension provides platform-level controls, including `psecdbgen`, to enable or bypass the security constraints. The Sdsec ISA extension provides per-hart debug and trace enable controls, including platform-controlled `mdbgen` and `mtrcen` states for M-mode and lower-privilege enable fields in `mdtcfg`. Together, these controls determine whether external debug or trace is allowed at the hart's current privilege mode.
+At a high level, the Debug Module Security Extension provides a platform-level control state, `psecdbgen`, to enable or bypass the security constraints. The Sdsec ISA extension provides per-hart debug and trace control states, including platform-controlled `mdbgen` and `mtrcen` states for M-mode and lower-privilege control states in `mdtcfg`. Together, these control states determine whether external debug or trace is allowed at the hart's current privilege mode.
 
 A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.
 
