@@ -104,8 +104,8 @@ The Debug Module Security Extension introduces new fields in the Debug Module re
 | Field       | Description                                                                                                       | Access | Reset
 | ALLSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if all currently selected harts implement the Sdsec extension.         | R      | -
 | ANYSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if any currently selected hart implements the Sdsec extension.         | R      | -
-| ALLSECFAULT | The field is 1 when all currently selected harts have raised a security fault due to reset or keepalive operation | R      | -    
-| ANYSECFAULT | The field is 1 when any currently selected hart has raised a security fault due to reset or keepalive operation   | R      | -    
+| ALLSECFAULT | The field is 1 when all currently selected harts have raised a security fault due to reset operation | R      | -
+| ANYSECFAULT | The field is 1 when any currently selected hart has raised a security fault due to reset operation   | R      | -
 |================================================================================================================================================
 
 
@@ -134,4 +134,3 @@ The Debug Module Security Extension introduces new fields in the Debug Module re
 | W1      | -    
 
 |================================================================================================================================================
-

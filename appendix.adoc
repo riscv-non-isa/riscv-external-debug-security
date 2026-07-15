@@ -29,16 +29,16 @@ The table <<validimplcomb>> below shows valid implementation combinations for di
 [cols="25%,75%", options="header"]
 |=====================================================================
 | Architecture    | Valid Debug Extension Combinations           
-| M-only          | • Smmdedbg 
-| M/U             | • Smmdedbg +
-                    • Smmdedbg + Smudedbg         
-| M/S/U           | • Smmdedbg +
-                    • Smmdedbg + Smsdedbg +
-                    • Smmdedbg + Smsdedbg + Smudedbg                     
-| M/S/VS/VU/U     | • Smmdedbg +
-                    • Smmdedbg + Smsdedbg +
-                    • Smmdedbg + Smsdedbg + Smvsdedbg +
-                    • Smmdedbg + Smsdedbg + Smvsdedbg + Smudedbg                 
+| M-only          | • Smmsecedbg
+| M/U             | • Smmsecedbg +
+                    • Smmsecedbg + Smusecedbg
+| M/S/U           | • Smmsecedbg +
+                    • Smmsecedbg + Smssecedbg +
+                    • Smmsecedbg + Smssecedbg + Smusecedbg
+| M/S/VS/VU/U     | • Smmsecedbg +
+                    • Smmsecedbg + Smssecedbg +
+                    • Smmsecedbg + Smssecedbg + Smvssecedbg +
+                    • Smmsecedbg + Smssecedbg + Smvssecedbg + Smusecedbg
 |=====================================================================
 
 The debug security control logic must ensure that both the validation and execution of debug requests occur under the same privilege level and the same debug security control states to prevent Time-of-Check Time-of-Use (TOCTOU) vulnerabilities. Failing to do so may allow debug requests to bypass security controls.
@@ -71,16 +71,16 @@ The table <<validtrccomb>> below shows valid implementation combinations for dif
 [cols="25%,75%", options="header"]
 |=====================================================================
 | Architecture    | Valid Trace Extension Combinations           
-| M-only          | • Smmdetrc 
-| M/U             | • Smmdetrc +
-                    • Smmdetrc + Smudetrc         
-| M/S/U           | • Smmdetrc +
-                    • Smmdetrc + Smsdetrc +
-                    • Smmdetrc + Smsdetrc + Smudetrc                     
-| M/S/VS/VU/U     | • Smmdetrc +
-                    • Smmdetrc + Smsdetrc +
-                    • Smmdetrc + Smsdetrc + Smvsdetrc +
-                    • Smmdetrc + Smsdetrc + Smvsdetrc + Smudetrc                 
+| M-only          | • Smmsecetrc
+| M/U             | • Smmsecetrc +
+                    • Smmsecetrc + Smusecetrc
+| M/S/U           | • Smmsecetrc +
+                    • Smmsecetrc + Smssecetrc +
+                    • Smmsecetrc + Smssecetrc + Smusecetrc
+| M/S/VS/VU/U     | • Smmsecetrc +
+                    • Smmsecetrc + Smssecetrc +
+                    • Smmsecetrc + Smssecetrc + Smvssecetrc +
+                    • Smmsecetrc + Smssecetrc + Smvssecetrc + Smusecetrc
 |=====================================================================
 
 [appendix]
