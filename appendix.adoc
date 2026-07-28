@@ -2,18 +2,18 @@
 [[theory_operation]]
 == Theory of Operation 
 
-This chapter explains the theory of operation for the External Debug Security Extension. The subsequent diagrams illustrate reference implementations of security control for external debug and trace for one hart.
+This chapter explains the theory of operation for the External Debug Security Extension. The subsequent diagrams illustrate reference implementations of the security controls for external debug and trace on a single hart.
 
 === External Debug Security Control
 
-The dedicated debug security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mdbgen` state for M-mode and optional lower privilege mode control states (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, `VUEDBGEN`) in the `mdtcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses. The platform control state `psecdbgen` enables the debug security policy at the platform level; when `psecdbgen` is 0, the platform provides unrestricted debug access for all privilege modes.
+The debug security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mdbgen` state for M-mode and optional lower privilege mode control states (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, `VUEDBGEN`) in the `mdtcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart and managed through platform-specific mechanisms such as Debug Module registers, a Root of Trust (RoT) handshake, or lifecycle fuses. The platform control state `psecdbgen` enables the debug security policy at the platform level; when `psecdbgen` is 0, the platform provides unrestricted debug access for all privilege modes.
 
-The debug security control logic validates all debug requests and triggers (with ACTION=1) against the current privilege level of the hart and the configured debug security control states. The validation procedure involves two steps: 1) checking the platform control state `psecdbgen` to determine whether the debug security policy is enabled; 2) checking the hierarchical control states to determine if external debug is allowed at the hart's current privilege level. Debug requests that fail validation will either be dropped or kept pending until the hart transitions to a debug-allowed privilege mode.
+The debug security control logic validates all debug requests and triggers whose `ACTION`=1 against the hart's current privilege level and the configured debug security control states. The validation procedure involves two steps: (1) checking the platform control state `psecdbgen` to determine whether the debug security policy is enabled and (2) checking the hierarchical control states to determine whether external debug is allowed at the hart's current privilege level. Debug requests that fail validation are either dropped or kept pending until the hart transitions to a debug-allowed privilege mode.
 
 [[extdbg]]
 image::external_debug_dm.drawio.png[title="The debug security control",align="center"]
 
-The hierarchical control applies as follows for one hart:
+The hierarchical control applies as follows for a single hart:
 
 - When `psecdbgen`=0, external debug is allowed for all privilege modes.
 - When `psecdbgen`=1 and `mdbgen`=1, external debug is allowed for all privilege modes.
@@ -23,7 +23,7 @@ The hierarchical control applies as follows for one hart:
 - When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, `VSEDBGEN`=0, and `VUEDBGEN`=1 (if implemented), external debug is allowed for VU-mode. `UEDBGEN` does not affect VU-mode debug permission.
 - External debug is disallowed in a privilege mode when none of the control states applicable to that mode allow debug.
 
-The table <<validimplcomb>> below shows valid implementation combinations for different architectures for external debug:
+Table <<validimplcomb>> shows valid external debug extension combinations for different architectures:
 
 [[validimplcomb]]
 .Valid External Debug Extension Combinations
@@ -38,37 +38,36 @@ The table <<validimplcomb>> below shows valid implementation combinations for di
                     • Smmedbgsec + Smsedbgsec + Smuedbgsec
 | M/S/VS/VU/U     | • Smmedbgsec +
                     • Smmedbgsec + Smsedbgsec +
-                    • Smmedbgsec + Smsedbgsec + Smuedbgsec
+                    • Smmedbgsec + Smsedbgsec + Smuedbgsec +
                     • Smmedbgsec + Smsedbgsec + Smvsedbgsec +
                     • Smmedbgsec + Smsedbgsec + Smvsedbgsec + Smuedbgsec
-                    • Smmedbgsec + Smsedbgsec + Smuedbgsec + Smvsedbgsec + Smuedbgsec
 |=====================================================================
 
-The debug security control logic must ensure that both the validation and execution of debug requests occur under the same privilege level and the same debug security control states to prevent Time-of-Check Time-of-Use (TOCTOU) vulnerabilities. Failing to do so may allow debug requests to bypass security controls.
+The debug security control logic must ensure that debug requests are validated and executed at the same privilege level and with the same debug security control states to prevent time-of-check to time-of-use (TOCTOU) vulnerabilities. Failing to do so may allow debug requests to bypass security controls.
 
 [NOTE]
-Self-hosted debugging is also commonly used in application-level debugging, providing a pure software-based debugging solution without the need for an external debugger. It is orthogonal to the external debugging and will not be affected by the debug security controls.
+Self-hosted debugging is also commonly used for application-level debugging, providing a pure software-based solution that does not require an external debugger. It is orthogonal to external debugging and is not affected by the debug security controls.
 
 
 === Trace Security Control 
 
-The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mtrcen` state for M-mode and optional lower privilege mode control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) in the `mdtcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses.
+The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mtrcen` state for M-mode and optional lower privilege mode control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) in the `mdtcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart and managed through platform-specific mechanisms such as a Root of Trust (RoT) handshake or lifecycle fuses.
 
-The security control logic determines whether trace is allowed based on the current privilege level of the hart and the configured trace security control states. The `sec_inhibit` sideband signal to the trace encoder is asserted when trace is not allowed; equivalently, `sec_inhibit` is the inverse of the trace-allowed decision shown in the reference control logic. Trace will be inhibited by asserting the `sec_inhibit` signal if the validation fails.
+The security control logic determines whether trace is allowed based on the hart's current privilege level and the configured trace security control states. The `sec_inhibit` sideband signal to the trace encoder is asserted when trace is not allowed; equivalently, `sec_inhibit` is the inverse of the trace-allowed decision shown in the reference control logic.
 
 [[exttrace]]
 image::external_debug_trace.drawio.png[title="The trace security control",align="center"]
 
-The hierarchical control applies as follows for one hart:
+The hierarchical control applies as follows for a single hart:
 
-- When `mtrcen`=1, trace is allowed for all privilege modes
-- When `mtrcen`=0 and `SETRCEN`=1 (if implemented), trace is allowed for S/HS-mode and lower privilege modes; trace is inhibited for M-mode
-- When `mtrcen`=0, `SETRCEN`=0, and `VSETRCEN`=1 (if implemented), trace is allowed for VS-mode and VU-mode; trace is inhibited for M-mode and S/HS-mode
-- When `mtrcen`=0, `SETRCEN`=0, and `UETRCEN`=1 (if implemented), trace is allowed for U-mode. `VSETRCEN` and `VUETRCEN` do not affect U-mode trace permission
-- When `mtrcen`=0, `SETRCEN`=0, `VSETRCEN`=0, and `VUETRCEN`=1 (if implemented), trace is allowed for VU-mode. `UETRCEN` does not affect VU-mode trace permission
-- When all trace control states are 0, trace is completely inhibited for all privilege modes
+- When `mtrcen`=1, trace is allowed for all privilege modes.
+- When `mtrcen`=0 and `SETRCEN`=1 (if implemented), trace is allowed for S/HS-mode and lower privilege modes; trace is inhibited for M-mode.
+- When `mtrcen`=0, `SETRCEN`=0, and `VSETRCEN`=1 (if implemented), trace is allowed for VS-mode and VU-mode; trace is inhibited for M-mode and S/HS-mode.
+- When `mtrcen`=0, `SETRCEN`=0, and `UETRCEN`=1 (if implemented), trace is allowed for U-mode. `VSETRCEN` and `VUETRCEN` do not affect U-mode trace permission.
+- When `mtrcen`=0, `SETRCEN`=0, `VSETRCEN`=0, and `VUETRCEN`=1 (if implemented), trace is allowed for VU-mode. `UETRCEN` does not affect VU-mode trace permission.
+- When all trace control states are 0, trace is completely inhibited for all privilege modes.
 
-The table <<validtrccomb>> below shows valid implementation combinations for different architectures for trace:
+Table <<validtrccomb>> shows valid trace extension combinations for different architectures:
 
 [[validtrccomb]]
 .Valid Trace Extension Combinations
@@ -85,8 +84,7 @@ The table <<validtrccomb>> below shows valid implementation combinations for dif
                     • Smmetrcsec + Smsetrcsec +
                     • Smmetrcsec + Smsetrcsec + Smuetrcsec +
                     • Smmetrcsec + Smsetrcsec + Smvsetrcsec +
-                    • Smmetrcsec + Smsetrcsec + Smvsetrcsec + Smvuetrcsec + 
-                    • Smmetrcsec + Smsetrcsec + Smuetrcsec + Smvsetrcsec + Smvuetrcsec
+                    • Smmetrcsec + Smsetrcsec + Smvsetrcsec + Smuetrcsec
 |=====================================================================
 
 [appendix]
@@ -96,33 +94,33 @@ This section provides guidance on how software at different privilege levels can
 
 === M-mode Management 
 
-M-mode software is responsible for managing the `SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, and `VUEDBGEN` fields in the `mdtcfg` CSR for external debug, and the `SETRCEN`, `VSETRCEN`, `UETRCEN`, and `VUETRCEN` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from a software perspective.
+M-mode software is responsible for managing the `SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, and `VUEDBGEN` fields in the `mdtcfg` CSR for external debug, and the `SETRCEN`, `VSETRCEN`, `UETRCEN`, and `VUETRCEN` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware, such as an RoT or lifecycle fuses, and are read-only from a software perspective.
 
 M-mode software should:
 
-1. Initialize debug/trace security policy for lower privilege modes based on security requirements
-2. Provide interfaces for dynamic debug/trace security policy updates (e.g., through SBI calls from lower privilege modes)
-3. Context-switch debug/trace security policies when switching between supervisor software
-4. Save and restore trigger context (using DMODE access when `mdbgen`=0) during supervisor software context switches to prevent side-channel attacks
+1. Initialize debug/trace security policy for lower privilege modes based on security requirements.
+2. Provide interfaces for dynamic debug/trace security policy updates (e.g., through SBI calls from lower privilege modes).
+3. Save and restore debug/trace security policies when switching between supervisor software contexts.
+4. Save and restore trigger context (using DMODE access when `mdbgen`=0) during supervisor software context switches to prevent side-channel attacks.
 
 === S/HS-mode Management
 
-S/HS-mode software is responsible for managing debug/trace security policy for lower privilege modes:
+S/HS-mode software is responsible for managing the debug/trace security policy for lower privilege modes:
 
-1. Call M-mode to apply the debug/trace security policy before launching an application or VM.  
+1. Call M-mode to apply the debug/trace security policy before launching an application or VM.
 2. Provide interfaces to handle dynamic debug/trace security policy update requests (e.g., SBI calls from VMs) and call M-mode to apply the security policy accordingly.
-3. Context-switch debug/trace security policies when switching between applications or VMs
+3. Save and restore debug/trace security policies when switching between applications or VMs.
 
 === VS-mode Management
 
-VS-mode software is responsible for managing debug/trace security policy for applications in VU-mode:
+VS-mode software is responsible for managing the debug/trace security policy for applications in VU-mode:
 
-1. Call S/HS-mode to apply the debug/trace security policy before launching an application.  
-2. Context-switch debug/trace security policies when switching between applications
+1. Call S/HS-mode to apply the debug/trace security policy before launching an application.
+2. Save and restore debug/trace security policies when switching between applications.
 
 [appendix]
-== Execution Based Implementation with Sdsec
+== Execution-Based Implementation with Sdsec
 
-In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access memory and CSRs. However, once execution is dispatched to an Abstract Command or the Program Buffer, the privilege level for accessing memory and CSR should be restricted to <<dbgaccpriv, debug access privilege>>. 
+In an execution-based implementation, the code executing the "park loop" can always run with M-mode privilege to access memory and CSRs. However, once execution is dispatched to an Abstract Command or the Program Buffer, the privilege level used to access memory and CSRs should be restricted to the <<dbgaccpriv, debug access privilege>>.
 
-To achieve this, a Debug Mode only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 by the final instruction of the park loop, right before execution is transferred to an Abstract Command or the program buffer.
+To achieve this, a Debug-Mode-only state element (e.g., a field in a custom CSR) may be introduced to control the privilege level in Debug Mode. When the state is set to 1, Debug Mode allows M-mode privilege; when cleared to 0, it enforces the <<dbgaccpriv, debug access privilege>>. The hardware sets this state to 1 upon entering the park loop and clears it to 0 with the final instruction of the park loop, immediately before execution is transferred to an Abstract Command or the Program Buffer.
