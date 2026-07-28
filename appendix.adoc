@@ -6,7 +6,7 @@ This chapter explains the theory of operation for the External Debug Security Ex
 
 === External Debug Security Control
 
-The dedicated debug security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mdbgen` state for M-mode and optional lower privilege mode control states (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`) in the `mdtcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses. The platform control state `psecdbgen` enables the debug security policy at the platform level; when `psecdbgen` is 0, the platform provides unrestricted debug access for all privilege modes.
+The dedicated debug security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mdbgen` state for M-mode and optional lower privilege mode control states (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, `VUEDBGEN`) in the `mdtcfg` CSR. The `mdbgen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Debug Module registers, Root of Trust (RoT) handshake, or lifecycle fuses. The platform control state `psecdbgen` enables the debug security policy at the platform level; when `psecdbgen` is 0, the platform provides unrestricted debug access for all privilege modes.
 
 The debug security control logic validates all debug requests and triggers (with ACTION=1) against the current privilege level of the hart and the configured debug security control states. The validation procedure involves two steps: 1) checking the platform control state `psecdbgen` to determine whether the debug security policy is enabled; 2) checking the hierarchical control states to determine if external debug is allowed at the hart's current privilege level. Debug requests that fail validation will either be dropped or kept pending until the hart transitions to a debug-allowed privilege mode.
 
@@ -19,8 +19,9 @@ The hierarchical control applies as follows for one hart:
 - When `psecdbgen`=1 and `mdbgen`=1, external debug is allowed for all privilege modes.
 - When `psecdbgen`=1, `mdbgen`=0, and `SEDBGEN`=1 (if implemented), external debug is allowed for S/HS-mode and lower privilege modes.
 - When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=1 (if implemented), external debug is allowed for VS-mode and VU-mode.
-- When `psecdbgen`=1 and all higher-privilege control states are 0 and `UEDBGEN`=1 (if implemented), external debug is allowed for U-mode or VU-mode (when virtualization mode is 1) only.
-- When `psecdbgen`=1 and all debug control states are 0, external debug is completely disallowed.
+- When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, and `UEDBGEN`=1 (if implemented), external debug is allowed for U-mode. `VSEDBGEN` and `VUEDBGEN` do not affect U-mode debug permission.
+- When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, `VSEDBGEN`=0, and `VUEDBGEN`=1 (if implemented), external debug is allowed for VU-mode. `UEDBGEN` does not affect VU-mode debug permission.
+- External debug is disallowed in a privilege mode when none of the control states applicable to that mode allow debug.
 
 The table <<validimplcomb>> below shows valid implementation combinations for different architectures for external debug:
 
@@ -29,16 +30,18 @@ The table <<validimplcomb>> below shows valid implementation combinations for di
 [cols="25%,75%", options="header"]
 |=====================================================================
 | Architecture    | Valid Debug Extension Combinations           
-| M-only          | • Smmsecedbg
-| M/U             | • Smmsecedbg +
-                    • Smmsecedbg + Smusecedbg
-| M/S/U           | • Smmsecedbg +
-                    • Smmsecedbg + Smssecedbg +
-                    • Smmsecedbg + Smssecedbg + Smusecedbg
-| M/S/VS/VU/U     | • Smmsecedbg +
-                    • Smmsecedbg + Smssecedbg +
-                    • Smmsecedbg + Smssecedbg + Smvssecedbg +
-                    • Smmsecedbg + Smssecedbg + Smvssecedbg + Smusecedbg
+| M-only          | • Smmedbgsec
+| M/U             | • Smmedbgsec +
+                    • Smmedbgsec + Smuedbgsec
+| M/S/U           | • Smmedbgsec +
+                    • Smmedbgsec + Smsedbgsec +
+                    • Smmedbgsec + Smsedbgsec + Smuedbgsec
+| M/S/VS/VU/U     | • Smmedbgsec +
+                    • Smmedbgsec + Smsedbgsec +
+                    • Smmedbgsec + Smsedbgsec + Smuedbgsec
+                    • Smmedbgsec + Smsedbgsec + Smvsedbgsec +
+                    • Smmedbgsec + Smsedbgsec + Smvsedbgsec + Smuedbgsec
+                    • Smmedbgsec + Smsedbgsec + Smuedbgsec + Smvsedbgsec + Smuedbgsec
 |=====================================================================
 
 The debug security control logic must ensure that both the validation and execution of debug requests occur under the same privilege level and the same debug security control states to prevent Time-of-Check Time-of-Use (TOCTOU) vulnerabilities. Failing to do so may allow debug requests to bypass security controls.
@@ -49,7 +52,7 @@ Self-hosted debugging is also commonly used in application-level debugging, prov
 
 === Trace Security Control 
 
-The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mtrcen` state for M-mode and optional lower privilege mode control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`) in the `mdtcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses.
+The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled `mtrcen` state for M-mode and optional lower privilege mode control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) in the `mdtcfg` CSR. The `mtrcen` state can be implemented as an input signal to the hart, managed through platform-specific mechanisms such as Root of Trust (RoT) handshake or lifecycle fuses.
 
 The security control logic determines whether trace is allowed based on the current privilege level of the hart and the configured trace security control states. The `sec_inhibit` sideband signal to the trace encoder is asserted when trace is not allowed; equivalently, `sec_inhibit` is the inverse of the trace-allowed decision shown in the reference control logic. Trace will be inhibited by asserting the `sec_inhibit` signal if the validation fails.
 
@@ -61,7 +64,8 @@ The hierarchical control applies as follows for one hart:
 - When `mtrcen`=1, trace is allowed for all privilege modes
 - When `mtrcen`=0 and `SETRCEN`=1 (if implemented), trace is allowed for S/HS-mode and lower privilege modes; trace is inhibited for M-mode
 - When `mtrcen`=0, `SETRCEN`=0, and `VSETRCEN`=1 (if implemented), trace is allowed for VS-mode and VU-mode; trace is inhibited for M-mode and S/HS-mode
-- When all higher-privilege control states are 0 and `UETRCEN`=1 (if implemented), trace is allowed for U-mode or VU-mode (when virtualization mode is 1) only; trace is inhibited for all higher privilege modes
+- When `mtrcen`=0, `SETRCEN`=0, and `UETRCEN`=1 (if implemented), trace is allowed for U-mode. `VSETRCEN` and `VUETRCEN` do not affect U-mode trace permission
+- When `mtrcen`=0, `SETRCEN`=0, `VSETRCEN`=0, and `VUETRCEN`=1 (if implemented), trace is allowed for VU-mode. `UETRCEN` does not affect VU-mode trace permission
 - When all trace control states are 0, trace is completely inhibited for all privilege modes
 
 The table <<validtrccomb>> below shows valid implementation combinations for different architectures for trace:
@@ -71,16 +75,18 @@ The table <<validtrccomb>> below shows valid implementation combinations for dif
 [cols="25%,75%", options="header"]
 |=====================================================================
 | Architecture    | Valid Trace Extension Combinations           
-| M-only          | • Smmsecetrc
-| M/U             | • Smmsecetrc +
-                    • Smmsecetrc + Smusecetrc
-| M/S/U           | • Smmsecetrc +
-                    • Smmsecetrc + Smssecetrc +
-                    • Smmsecetrc + Smssecetrc + Smusecetrc
-| M/S/VS/VU/U     | • Smmsecetrc +
-                    • Smmsecetrc + Smssecetrc +
-                    • Smmsecetrc + Smssecetrc + Smvssecetrc +
-                    • Smmsecetrc + Smssecetrc + Smvssecetrc + Smusecetrc
+| M-only          | • Smmetrcsec
+| M/U             | • Smmetrcsec +
+                    • Smmetrcsec + Smuetrcsec
+| M/S/U           | • Smmetrcsec +
+                    • Smmetrcsec + Smsetrcsec +
+                    • Smmetrcsec + Smsetrcsec + Smuetrcsec
+| M/S/VS/VU/U     | • Smmetrcsec +
+                    • Smmetrcsec + Smsetrcsec +
+                    • Smmetrcsec + Smsetrcsec + Smuetrcsec +
+                    • Smmetrcsec + Smsetrcsec + Smvsetrcsec +
+                    • Smmetrcsec + Smsetrcsec + Smvsetrcsec + Smvuetrcsec + 
+                    • Smmetrcsec + Smsetrcsec + Smuetrcsec + Smvsetrcsec + Smvuetrcsec
 |=====================================================================
 
 [appendix]
@@ -90,7 +96,7 @@ This section provides guidance on how software at different privilege levels can
 
 === M-mode Management 
 
-M-mode software is responsible for managing the `SEDBGEN`, `VSEDBGEN`, and `UEDBGEN` fields in the `mdtcfg` CSR for external debug, and the `SETRCEN`, `VSETRCEN`, and `UETRCEN` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from a software perspective.
+M-mode software is responsible for managing the `SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, and `VUEDBGEN` fields in the `mdtcfg` CSR for external debug, and the `SETRCEN`, `VSETRCEN`, `UETRCEN`, and `VUETRCEN` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware (RoT, lifecycle fuses) and are read-only from a software perspective.
 
 M-mode software should:
 
