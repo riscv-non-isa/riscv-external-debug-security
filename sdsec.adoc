@@ -222,7 +222,7 @@ When `SEDBGEN` is 1, the `sdcsr` and `sdpc` registers provide S/HS-mode read/wri
 The `sdcsr` register exposes a subset of `dcsr`, formatted as shown in <<sdcsr32>>, while the `sdpc` register provides full access to `dpc`.
 
 [NOTE]
-Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have an S/HS-mode access mechanism, and external debuggers with S/HS-mode privilege cannot use them.
+Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have an S/HS-mode access mechanism, and external debuggers with S/HS-mode privilege cannot use them. In _The RISC-V Debug Specification_ cite:[dbgspec], `dscratch*` are optional scratch registers that implementations may use internally; `hartinfo`.NSCRATCH indicates how many are available, and a debugger must not write to these registers unless `hartinfo` explicitly mentions them. Compliant debug flows already work without `dscratch` (for example, Access Register, GPRs, and data registers). Sdsec shadows only the required control state at each privilege level (`dcsr`/`dpc` → `sdcsr`/`sdpc` and, when applicable, `udcsr`/`udpc`); no `sdscratch` registers are defined. In an execution-based implementation, the park loop runs at M-mode and may use existing `dscratch` registers, while Abstract Commands and the Program Buffer run at the <<dbgaccpriv, debug access privilege>>.
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="S/HS-mode debug control and status register (sdcsr)"]
