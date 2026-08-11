@@ -5,14 +5,63 @@ Debugging and tracing are essential for developers to identify and rectify softw
 
 This specification defines <<dmextsec, Debug Module Security Extension (non-ISA extension)>> and <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
 
+At a high level, the Debug Module Security Extension provides a platform-level control state, <<psecdbgen,`psecdbgen`>>, to enable or bypass the security constraints. The Sdsec ISA extension provides per-hart debug and trace control states, including platform-controlled <<mdbgctl,`mdbgen`>> and <<trcctlcsr,`mtrcen`>> states for M-mode and lower-privilege control states in <<mdtcfgreg,`mdtcfg`>>. Together, these control states determine whether external debug or trace is allowed at the hart's current privilege mode.
+
 A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.
 
     - *Per-Hart Debug Control:* Introduce per-hart states to control whether external debug is allowed for each privilege mode.
     - *Per-Hart Trace Control:* Introduce per-hart states to control whether tracing is allowed for each privilege mode.
-    - *Non-secure debug:* Add a non-secure debug state to relax security constraints for backward compatibility.
+    - *Platform debug security enable:* Add a platform state to enable the security constraints or bypass them for backward compatibility.
     - *Debug Mode entry:* An external debugger can only halt the hart and enter Debug Mode when external debug is allowed in the current privilege mode.
-    - *Memory Access:* Memory access from a hart's point of view, using the Program Buffer or an Abstract Command, must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege level>>; memory access from the Debug Module using System Bus Access (SBA) must be checked by a system memory protection mechanism, such as IOPMP or WorldGuard.
+    - *Memory Access:* Memory access from a hart's point of view, using the Program Buffer or an Abstract Command, must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege level>>; memory access from the Debug Module using System Bus Access (SBA) must be checked by a system memory protection mechanism, such as IOPMP or RISC-V Worlds.
     - *Register Access:* Register access using the Program Buffer or an Abstract Command works as if the hart is running at <<dbgaccpriv, debug access privilege level>> instead of the M-mode privilege level. The debug CSRs (`dcsr` and `dpc` ) are shadowed in lower privilege modes. 
+
+[[theory_operation]]
+=== Control Hierarchy
+
+Operationally, the platform-level control state selects between backward-compatible behavior and the security-constrained behavior defined by this specification. When the constraints are enabled, each hart evaluates its debug and trace control states for its current privilege mode. Debug operations are permitted only when the corresponding debug control state allows access at that mode; otherwise the request is rejected or remains pending. Trace output is similarly enabled only for modes allowed by the trace control states and is inhibited otherwise.
+
+==== External Debug Security Control
+
+The debug security policy for a hart is enforced through a hierarchical control model using the platform-controlled <<mdbgctl,`mdbgen` state>> for M-mode and optional lower-privilege control states (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, `VUEDBGEN`) in the <<mdtcfgreg,`mdtcfg` CSR>>. The `mdbgen` state can be implemented as an input signal to the hart and managed through platform-specific mechanisms such as Debug Module registers, a Root of Trust (RoT) handshake, or lifecycle fuses. The <<psecdbgen,`psecdbgen` platform control state>> enables the debug security policy at the platform level; when `psecdbgen` is 0, the platform provides unrestricted debug access for all privilege modes.
+
+The debug security control logic validates all debug requests and triggers whose `ACTION`=1 against the hart's current privilege level and the configured debug security control states. The validation procedure involves two steps: (1) checking `psecdbgen` to determine whether the debug security policy is enabled and (2) checking the hierarchical control states to determine whether external debug is allowed at the hart's current privilege level. Debug requests that fail validation are either dropped or kept pending until the hart transitions to a debug-allowed privilege mode. <<Sdsecextdbg,External Debug Security Extensions>> defines the detailed behavior.
+
+[[extdbg]]
+image::external_debug_dm.drawio.png[title="The debug security control for one hart",align="center"]
+
+The hierarchical control applies as follows for a single hart:
+
+- When `psecdbgen`=0, external debug is allowed for all privilege modes.
+- When `psecdbgen`=1 and `mdbgen`=1, external debug is allowed for all privilege modes.
+- When `psecdbgen`=1, `mdbgen`=0, and `SEDBGEN`=1 (if implemented), external debug is allowed for S/HS-mode and lower privilege modes.
+- When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=1 (if implemented), external debug is allowed for VS-mode and VU-mode.
+- When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, and `UEDBGEN`=1 (if implemented), external debug is allowed for U-mode. `VSEDBGEN` and `VUEDBGEN` do not affect U-mode debug permission.
+- When `psecdbgen`=1, `mdbgen`=0, `SEDBGEN`=0, `VSEDBGEN`=0, and `VUEDBGEN`=1 (if implemented), external debug is allowed for VU-mode. `UEDBGEN` does not affect VU-mode debug permission.
+- External debug is disallowed in a privilege mode when none of the control states applicable to that mode allow debug.
+
+The debug security control logic must ensure that debug requests are validated and executed at the same privilege level and with the same debug security control states to prevent time-of-check to time-of-use (TOCTOU) vulnerabilities. Failing to do so may allow debug requests to bypass security controls.
+
+[NOTE]
+Self-hosted debugging is also commonly used for application-level debugging, providing a pure software-based solution that does not require an external debugger. It is orthogonal to external debugging and is not affected by the debug security controls.
+
+==== Trace Security Control
+
+The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled <<trcctlcsr,`mtrcen` state>> for M-mode and optional lower-privilege control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) in the <<mdtcfgreg,`mdtcfg` CSR>>. The `mtrcen` state can be implemented as an input signal to the hart and managed through platform-specific mechanisms such as a Root of Trust (RoT) handshake or lifecycle fuses.
+
+The security control logic determines whether trace is allowed based on the hart's current privilege level and the configured trace security control states. The `sec_inhibit` sideband signal to the trace encoder is asserted when trace is not allowed; equivalently, `sec_inhibit` is the inverse of the trace-allowed decision shown in the reference control logic. <<sdsectrc,Trace Security Extensions>> defines the detailed behavior.
+
+[[exttrace]]
+image::external_debug_trace.drawio.png[title="The trace security control for one hart",align="center"]
+
+The hierarchical control applies as follows for a single hart:
+
+- When `mtrcen`=1, trace is allowed for all privilege modes.
+- When `mtrcen`=0 and `SETRCEN`=1 (if implemented), trace is allowed for S/HS-mode and lower privilege modes; trace is inhibited for M-mode.
+- When `mtrcen`=0, `SETRCEN`=0, and `VSETRCEN`=1 (if implemented), trace is allowed for VS-mode and VU-mode; trace is inhibited for M-mode and S/HS-mode.
+- When `mtrcen`=0, `SETRCEN`=0, and `UETRCEN`=1 (if implemented), trace is allowed for U-mode. `VSETRCEN` and `VUETRCEN` do not affect U-mode trace permission.
+- When `mtrcen`=0, `SETRCEN`=0, `VSETRCEN`=0, and `VUETRCEN`=1 (if implemented), trace is allowed for VU-mode. `UETRCEN` does not affect VU-mode trace permission.
+- When all trace control states are 0, trace is completely inhibited for all privilege modes.
 
 === Terminology
 
@@ -28,5 +77,6 @@ A summary of the changes introduced by _The RISC-V External Debug Security Speci
 | PMA                    | Physical Memory Attributes                                                                                                 
 | PMP                    | Physical Memory Protection unit                                                                                            
 | Program buffer         | A mechanism that allows the Debug Module to execute arbitrary instructions on a hart                                                       
+| RISC-V Worlds          | A system-level isolation mechanism that constrains physical-address access by harts and other bus initiators
 | Trace encoder          | A piece of hardware that takes in instruction execution information from a RISC-V hart and transforms it into trace packets
 |=====================================================================================================================================================
