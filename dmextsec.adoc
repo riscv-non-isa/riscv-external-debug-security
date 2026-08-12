@@ -79,6 +79,29 @@ The platform state element `psecdbgen` is introduced to enable the debug securit
 
 When `psecdbgen` is 1, the security constraints in this specification apply.
 
+[[authhandoff]]
+=== Authorization Handoff
+
+An *authorization handoff* occurs when the platform ends debug for one principal or domain, or admits a different one. That includes one S-mode domain finishing debug before another starts.
+
+A hart entering or leaving a debug-allowed privilege mode is not a handoff, as long as the same principal or domain still holds debug authority. Changing <<psecdbgen, `psecdbgen`>> or a hart's <<dbgaccpriv, debug access privilege>> is not a handoff by itself.
+
+After a handoff, the newly admitted debugger must not observe or use Debug Module state obtained under authorization it does not have. An operation issued before the handoff must not complete afterwards in a way that makes such state observable or usable.
+
+The platform must complete sanitization before the succeeding debugger is admitted. The mechanism is implementation-specific.
+
+[NOTE]
+====
+The following state needs an explicit hardware or software clear/invalidate path across a handoff:
+
+* Must sanitize: `data*`; `progbuf*` if it is DMI-readable; `sbdata*`.
+* Should also review: `sbaddress*` (last SBA address); `command` (e.g. `regno`); `abstractauto`; and the SBA auto bits in `sbcs` (`sbreadondata`, `sbreadonaddr`, `sbautoincrement`). Leftover control can re-issue an earlier access or reveal what was touched.
+
+Clearing existing register contents is insufficient if an earlier operation can later repopulate them.
+
+One option is to set `dmcontrol`.DMACTIVE to 0 and wait for the state change to complete, which resets Debug Module state. NDMRESET does not reset the Debug Module. Software sanitization is another option. Writing zero to the affected registers is not a generic sanitization procedure: when `abstractauto` is set, accessing `data` or `progbuf` may execute `command`, and writing `sbdata0` starts a system bus write.
+====
+
 === Update of Debug Module Registers
 
 The Debug Module Security Extension introduces new fields in the Debug Module registers. In `dmstatus`, ANYSECURED and ALLSECURED are added at bit 20 and bit 21 respectively, while ANYSECFAULT and ALLSECFAULT are added at bit 25 and bit 26. The ACKSECFAULT field is added to `dmcs2` at bit 12.
