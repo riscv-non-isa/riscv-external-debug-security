@@ -79,6 +79,22 @@ The platform state element `psecdbgen` is introduced to enable the debug securit
 
 When `psecdbgen` is 1, the security constraints in this specification apply.
 
+[[authhandoff]]
+=== Authorization Handoff
+
+An *authorization handoff* occurs when the platform replaces one debug authorization context with another. Examples include ending one authenticated debug session and later starting another, or changing <<psecdbgen, `psecdbgen`>> or the external debug security controls to transfer debug authority between domains. A change in the <<dbgaccpriv, debug access privilege>> of a hart is not by itself an authorization handoff.
+
+After a handoff, the succeeding context must not be able to observe or use Debug Module state that was obtained or produced using authorization unavailable to it. An operation issued before the handoff must not complete afterwards in a way that makes such state observable or usable.
+
+[NOTE]
+====
+For example, `data` or `progbuf` may retain state from the preceding context. `sbdata` may retain state obtained while `psecdbgen` was 0 and System Bus Access could bypass the bus initiator protections.
+
+Clearing existing register contents is insufficient if an earlier operation can later repopulate them.
+
+The mechanism is implementation-specific. One option is to set `dmcontrol`.DMACTIVE to 0 and wait for the state change to complete, which resets Debug Module state. NDMRESET does not reset the Debug Module. Software sanitization is another option. Writing zero to the affected registers is not a generic sanitization procedure: when `abstractauto` is set, accessing `data` or `progbuf` may execute `command`, and writing `sbdata0` starts a system bus write.
+====
+
 === Update of Debug Module Registers
 
 The Debug Module Security Extension introduces new fields in the Debug Module registers. In `dmstatus`, ANYSECURED and ALLSECURED are added at bit 20 and bit 21 respectively, while ANYSECFAULT and ALLSECFAULT are added at bit 25 and bit 26. The ACKSECFAULT field is added to `dmcs2` at bit 12.
