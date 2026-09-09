@@ -20,7 +20,7 @@
 :reproducible:
 //:WaveDromEditorApp: app/wavedrom-editor.app
 :imagesoutdir: images
-//:bibtex-file: example.bib
+:bibtex-file: example.bib
 //:bibtex-order: alphabetical
 //:bibtex-style: apa
 :icons: font
@@ -64,6 +64,9 @@ include::contributors.adoc[]
 include::intro.adoc[]
 include::threat_model.adoc[]
 include::sdsec.adoc[]
+include::smtdeleg.adoc[]
+include::sucsrind.adoc[]
+include::sutcfg.adoc[]
 include::dmextsec.adoc[]
 include::appendix.adoc[]
 

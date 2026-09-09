@@ -1,0 +1,190 @@
+[[sutcfg]]
+== Sutcfg (ISA Extension)
+
+This chapter specifies the Sutcfg ISA extension, which provides U-mode and VU-mode access to Sdtrig cite:[dbgspec] triggers using the user-level indirect CSR interface defined by <<sucsrind, Sucsrind>>. Sutcfg is not a member of the Secure Debug or Secure Trace families.
+
+When S-mode is implemented, U-mode access requires `mstateen0`.TR=1 and `sstateen0`.TR=1. When V=1, VU-mode access additionally requires `hstateen0`.TR=1 and virtual `sstateen0`.TR=1. When S-mode is not implemented, `mstateen0`.TR directly controls U-mode access.
+
+Sutcfg enables:
+
+* U-mode and VU-mode self-hosted debuggers to access triggers using `utselect`, `uiselect`, and `uireg*`.
+* An external debugger to access triggers through `utselect`, `uiselect`, and `uireg*` when a Secure Debug extension is implemented and Debug Mode has less than M-mode privilege.
+
+Sutcfg is a distinct extension. Its implementation requires Sucsrind. When S-mode is implemented, Sutcfg also requires <<smtdeleg, Smtdeleg and Sstcfg>>.
+
+[[utselect]]
+=== User Trigger Select (`utselect`)
+
+.User Trigger Select CSR
+[width="100%",cols="15%,12%,12%,15%,46%",options="header",]
+|===
+|*Number* |*Privilege* |*Width* |*Name* |*Description*
+| address TBD | URW | XLEN | `utselect` | User trigger select
+|===
+
+`utselect` provides U-mode read/write access to the trigger selection index. `utselect` and `tselect` access the same underlying state: writing `utselect` updates the trigger index that `tselect` reads, and vice versa. When S-mode is implemented, `stselect` also accesses this same shared state.
+
+Software must save and restore this selection state when switching trigger access between M-mode, S/HS-mode, VS-mode, and U/VU-mode. Higher-privilege software must not assume that `tselect` or `stselect` retains its value across delegated U-mode accesses.
+
+`utselect` is WARL and follows the same legal-value conversion as Sdtrig `tselect`. Writes of values greater than or equal to the number of supported triggers may result in a different value in `utselect` than what was written, or may select a trigger where `tdata1`.TYPE=0. To verify that a written index is valid, software can read back `utselect` and check that it holds the written value, then read `uireg` while `uiselect` holds the trigger access value and check that TYPE is non-zero.
+
+[[utrig-access]]
+=== User Trigger Access
+
+[NOTE]
+The `uiselect` value for trigger access is to be allocated from the Sucsrind select address space. When <<smtdeleg, Smtdeleg and Sstcfg>> are implemented, the same value is used for `siselect` trigger access. Throughout this document, this value is referred to as the _trigger access value_. See <<trig-access-value>>.
+
+While `uiselect` holds the trigger access value, the `uireg*` registers provide user-mode read/write access to register state associated with the trigger selected by `utselect`, the same state accessed by M-mode CSRs `tdata*` and `tinfo`. The register mapping is shown below.
+
+.Indirect Trigger Register Mappings When `uiselect` Holds the Trigger Access Value
+[cols="30%,70%", options="header"]
+|===
+| Indirect CSR | State Accessed
+| `uireg`  | Same as `tdata1`
+| `uireg2` | Same as `tdata2`
+| `uireg3` | Same as `tdata3`
+| `uireg4` | Same as `tinfo` (read-only; writes ignored), with type bits restricted as specified in <<utrig-type-constraints>>
+|===
+
+While `uiselect` holds the trigger access value, attempts to access `uireg5` or `uireg6` raise an illegal-instruction exception.
+
+==== Virtualization
+
+When V=1, accesses from VS-mode or VU-mode to `uiselect` and `uireg*` follow <<sucsrind, Sucsrind>> virtualization rules. Field relocations that apply to VS-mode or VU-mode accesses are specified in <<utrig-field-mods>>.
+
+[[utrig-field-mods]]
+=== User Trigger State Access Modifications
+
+`uireg*` provides access to a subset of the fields in the native trigger registers, and in some cases fields are relocated. The field modifications that apply when trigger registers are accessed via `uireg*` are documented below.
+
+.U-mode and VS/VU-mode Trigger CSR Field Modifications
+[cols="30%,35%,35%", options="header"]
+|===
+| Sdtrig Register(s) | `uireg*` Field Modifications (U-mode) | `uireg*` Field Modifications (VS/VU-mode)
+
+| `mcontrol6`, `icount`
+
+(accessed by `uireg`)
+| M, S, VS, and VU are read-only 0
+| M, S, VS, and VU are read-only 0 +
+The U field maps to the underlying VU field in `tdata1`
+
+| `textra32`, `textra64`
+
+(accessed by `uireg3`)
+| MHVALUE, MHSELECT, SVALUE, SSELECT, and SBYTEMASK are read-only 0
+| MHVALUE, MHSELECT, SVALUE, SSELECT, and SBYTEMASK are read-only 0
+|===
+
+[NOTE]
+The bit positions for the M, S, U, VS, and VU fields vary based on the trigger type specified by `tdata1`.TYPE; see _The RISC-V Debug Specification_ cite:[dbgspec], Chapter 5.7.
+
+[[utrig-type-constraints]]
+==== Type Delegation Constraints
+
+The trigger types supported through `utselect`, `uiselect`, and `uireg*` are `mcontrol6`, `icount`, and disabled (Sdtrig type 15). When the selected trigger's `tdata1`.TYPE is any other value, including `mcontrol`, `itrigger`, `etrigger`, `tmexttrigger`, legacy, custom, and reserved types, accesses through `uireg`, `uireg2`, `uireg3`, and `uireg4` are read-only 0 and writes are ignored.
+
+When `tdata1`.TYPE is a supported type, `uireg4` reads `tinfo` with bits corresponding to types not supported through this interface read-only 0. Writes to `tdata1`.TYPE through `uireg` are WARL and may only select a type supported through this interface.
+
+[NOTE]
+`mcontrol` is deprecated and is not supported through this interface. Use `mcontrol6` for address/control triggers.
+
+[[utrig-dmode]]
+==== DMODE Interaction
+
+When `tdata1`.DMODE = 1 for the trigger selected by `utselect`, the trigger is reserved for Debug Mode use. If the hart is not in Debug Mode, accesses through `uireg`, `uireg2`, `uireg3`, and `uireg4` by VS-mode, U-mode, or VU-mode software while `uiselect` holds the trigger access value are read-only 0. S/HS-mode accesses through these aliases, when permitted by the access-control rules below, are manager accesses to U-mode trigger state and are not forced to read-only 0. If the hart is in Debug Mode, VS-mode, U-mode, and VU-mode accesses are not forced to read-only 0; they follow the field modifications in this section together with the base Sdtrig `DMODE` rules.
+
+For an S/HS-mode access to `uireg` while `uiselect` holds the trigger access value, `DMODE` is read/write. An S/HS-mode write through `uireg` of a disabled-trigger encoding (`TYPE`=15, `DMODE`=0, and `ACTION`=0) is permitted even when the selected trigger previously had `DMODE`=1 and atomically disables that trigger. Other S/HS-mode writes through `uireg` are permitted to update `DMODE` and `ACTION` in the same `tdata1` write. If an S/HS-mode write through `uireg` would result in `DMODE`=0 and `ACTION`=1, the implementation must set `ACTION` to 0. All other field modifications, type constraints, and type-specific constraints in this chapter continue to apply. VS-mode, U-mode, and VU-mode software remain subject to the read-only-0 rule above.
+
+When switching between U-mode application contexts, S/HS-mode software should save `utselect`, `uiselect`, and the exposed `uireg` through `uireg4` state. It should first write `uireg` with the disabled-trigger encoding (`TYPE`=15, `DMODE`=0, and `ACTION`=0), which is permitted even when the selected trigger previously had `DMODE`=1, so the selected trigger cannot match while its state is being changed. The mode-enable fields hidden by the U-mode view must already be clear by cooperative trigger allocation. S/HS-mode software can then clear the applicable U-mode enable field, write `uireg2` and `uireg3`, followed by the final `uireg` value; the final write may restore `DMODE`=1 and `ACTION`=1 together when that was the saved configuration. It should restore `utselect` and `uiselect` after the context switch. VU-mode context is managed through the HS-mode `vsireg*` path specified in <<sstcfg-lower-dmode>>.
+
+[NOTE]
+When the hart is not in Debug Mode and `uireg` through `uireg4` all read as zero for a trigger index held by `utselect`, VS-mode, U-mode, or VU-mode software cannot use the selected slot through this interface. The slot may be reserved by Debug Mode (`DMODE`=1), may have an unsupported `tdata1`.TYPE, or may have `tdata1`.TYPE=0. Software should try the next trigger index. An all-zero read of aliases 1–4 does not distinguish these cases. S/HS-mode manager accesses are governed separately above. Sdtrig `chain` WARL on a visible trigger still depends on a neighboring trigger's `DMODE`; this interface does not redefine that WARL. An external debugger whose <<dbgaccpriv, debug access privilege>> is U-mode or VU-mode uses the same interface from Debug Mode, where `DMODE`=1 is visible and writable, so it can program `ACTION`=1 in accordance with Sdtrig.
+
+=== User Trigger State Access Control
+
+When S-mode is implemented, U-mode access requires `mstateen0`.TR=1 and `sstateen0`.TR=1. When V=1, VU-mode access additionally requires `hstateen0`.TR=1. The access control is checked in the following order:
+
+. If the privilege mode is less privileged than M-mode and `mstateen0`.TR=0, attempts to access `utselect`, or to access `uireg`, `uireg2`, `uireg3`, or `uireg4` while `uiselect` holds the trigger access value, raise an illegal-instruction exception.
+. Otherwise, if V=1 and the privilege mode is VS or VU and `hstateen0`.TR=0, attempts to access `utselect`, or to access `uireg`, `uireg2`, `uireg3`, or `uireg4` while `uiselect` holds the trigger access value, raise a virtual-instruction exception.
+. Otherwise, if V=0 and the privilege mode is U and `sstateen0`.TR=0, attempts to access `utselect`, or to access `uireg`, `uireg2`, `uireg3`, or `uireg4` while `uiselect` holds the trigger access value, raise an illegal-instruction exception.
+. Otherwise, if V=1 and the privilege mode is VU and virtual `sstateen0`.TR=0, attempts to access `utselect`, or to access `uireg`, `uireg2`, `uireg3`, or `uireg4` while `uiselect` holds the trigger access value, raise a virtual-instruction exception.
+
+When S-mode is implemented, VS-mode accesses through this interface use the VU-mode field view and are controlled by `hstateen0`.TR; U-mode accesses are controlled by `sstateen0`.TR; and VU-mode accesses are controlled by both `hstateen0`.TR and virtual `sstateen0`.TR. S/HS-mode manager accesses use `mstateen0`.CSRIND and `mstateen0`.TR and are not restricted by these lower-level state-enable bits.
+
+When S-mode is not implemented, `sstateen0` does not exist. In this case, `mstateen0`.TR alone controls U-mode access to `utselect` and to `uireg` through `uireg4` while `uiselect` holds the trigger access value. An illegal-instruction exception is raised for those accesses when `mstateen0`.TR=0.
+
+M-mode accesses to `utselect` and to `uireg` through `uireg4` while `uiselect` holds the trigger access value are not restricted by TR and are permitted. When S-mode is implemented and `mstateen0`.TR=1, S/HS-mode manager accesses to those CSRs are likewise permitted. Those accesses use the U-mode field modifications and type constraints in this chapter, including the S/HS-mode manager access to `DMODE` described above.
+
+S/HS-mode manager accesses are architectural accesses and do not require an SBI. When Smstateen is implemented, they remain subject to `mstateen0`.CSRIND and `mstateen0`.TR. `sstateen0`.TR and `hstateen0`.TR control VS-mode, U-mode, and VU-mode software access; they do not restrict the S/HS-mode manager.
+
+When `mstateen0`.TR=0, `sstateen0`.TR is read-only 0. When V=1 and `hstateen0`.TR=0, virtual `sstateen0`.TR is read-only 0.
+
+The TR bit is bit 3 in `sstateen0`.
+
+[NOTE]
+See the Sscsrind and Sucsrind specifications cite:[indirectcsr] for how bit 60 (CSRIND) in `mstateen0` and `hstateen0` can also restrict access to `uiselect` and `uireg*` from privilege modes less privileged than M-mode, including VU-mode when V=1. The CSRIND bit provides blanket control over indirect CSR infrastructure, while TR provides trigger-specific delegation control.
+
+=== Access to `tcontrol`
+
+The `tcontrol` CSR is not accessible through the delegated indirect interface. `tcontrol` remains M-mode only.
+
+When a delegated trigger with ACTION=0 fires in U-mode or VU-mode, a breakpoint exception is taken through the normal privilege trap mechanism. ACTION=1 follows Sdtrig and enters Debug Mode, except that it does not match or fire while external debug is disallowed for the hart's current privilege mode, as specified in <<Sdsecextdbg>>. Other ACTION values retain the behavior defined by Sdtrig.
+
+[NOTE]
+`tcontrol`.MTE and `tcontrol`.MPTE affect only triggers with ACTION=0 while the hart is in M-mode, as specified by Sdtrig. They do not disable triggers that match or fire in a less-privileged mode, and they do not affect ACTION=1. Delegated ACTION=0 triggers follow Sdtrig's native-trigger match and reentrancy rules. Because `tcontrol` is not accessible from S-mode, it does not provide a less-privileged analogue of the M-mode handler-reentrancy control.
+
+=== Debugger Access from U-mode and VU-mode
+
+When Smuedbgsec is implemented, `mdbgen`=0, `SEDBGEN`=0, and `UEDBGEN`=1, an external debugger whose <<dbgaccpriv, debug access privilege>> is U-mode can access triggers through the `utselect` + `uiselect`/`uireg*` interface, provided that the applicable TR bits permit access (`mstateen0`.TR=1 and, when S-mode is implemented, `sstateen0`.TR=1).
+
+When Smuedbgsec is implemented, `mdbgen`=0, `SEDBGEN`=0, `VSEDBGEN`=0, and `VUEDBGEN`=1, an external debugger whose debug access privilege is VU-mode uses the same interface, provided that `mstateen0`.TR=1, `hstateen0`.TR=1, and virtual `sstateen0`.TR=1.
+
+[NOTE]
+This access path is one of the primary motivations for Sutcfg: without it, an external debugger restricted to U-mode or VU-mode privilege has no path to trigger state.
+
+=== Trigger Allocation
+
+When the applicable TR bits permit access, U-mode and VU-mode can access delegated trigger state through `utselect` and `uiselect`/`uireg*` (subject to DMODE restrictions and type-specific constraints). When S-mode is implemented and `mstateen0`.TR=1, S/HS-mode can use the same access path as a manager for U-mode trigger context.
+
+DMODE takes priority over delegated VS-mode, U-mode, and VU-mode access. When `tdata1`.DMODE=1:
+
+* Ordinary VS-mode, U-mode, and VU-mode software can write the trigger's `tdata*` fields only under the base Sdtrig rules. When `mdbgen`=0, M-mode writes to `tdata1`.DMODE follow <<mdbgen-dmode>>. S/HS-mode manager accesses to U-mode trigger state are the exception defined in <<utrig-dmode>> and may manage `DMODE`=1 state.
+* VS-mode, U-mode, and VU-mode accesses through `uireg*` follow <<utrig-dmode>>: they are read-only 0 if the hart is not in Debug Mode, and are not forced to read-only 0 if the hart is in Debug Mode. S/HS-mode manager accesses through the same aliases are not forced to read-only 0.
+
+Higher-privilege software can reconfigure triggers with `DMODE`=0 through its own interface, overriding lower-privilege configuration. A `DMODE`=1 trigger is not reclaimed by VS-mode, U-mode, or VU-mode software through the delegated interface while the hart is not in Debug Mode. S/HS-mode manager access can park and restore `DMODE`=1 trigger state assigned to U-mode contexts through `uireg*`; HS-mode manages VS/VU state through <<sstcfg-lower-dmode>>. Debug Mode can reclaim a trigger through the corresponding delegated interface. When `mdbgen`=0, M-mode can park or restore native trigger state as specified in <<mdbgen-dmode>>.
+
+Software must manage trigger allocation cooperatively. TR enables delegated trigger access but does not identify per-trigger ownership. There is no per-trigger hardware allocation. Before setting the applicable TR bit, higher-privilege software should clear its own mode-enable bits on any trigger it is exposing.
+
+* M-mode allocates triggers between its own use and lower-privilege delegation.
+* When S-mode is implemented, S/HS-mode software allocates triggers between its own use and U-mode delegation, and sets `sstateen0`.TR=1 once it is prepared to delegate trigger access to U-mode.
+* When S-mode is not implemented, M-mode firmware sets `mstateen0`.TR=1 once it is prepared to delegate trigger access to U-mode.
+
+=== Dependencies
+
+Sutcfg depends on the following extensions:
+
+* Sdtrig -- Base trigger extension defining trigger CSRs and types.
+* <<sucsrind, Sucsrind>> -- User-mode indirect CSR interface (`uiselect`/`uireg*`).
+* <<smtdeleg, Smtdeleg and Sstcfg>> (required when S-mode is implemented) -- Define S-mode trigger access through `stselect` and `siselect`/`sireg*`.
+* Smstateen / Ssstateen -- State enable framework for access control cite:[smstateen].
+* H extension (optional) -- Required for trigger delegation controls in VS/VU-mode.
+
+=== Summary of New State
+
+.New CSRs Introduced by Sutcfg
+[cols="20%,15%,15%,50%", options="header"]
+|===
+| CSR | Address | Privilege | Notes
+| `utselect` | address TBD | URW | User trigger select
+|===
+
+.New Smstateen Bits Introduced by Sutcfg
+[cols="30%,20%,50%", options="header"]
+|===
+| Register | Bit | Purpose
+| `sstateen0` | 3 (TR) | Controls U-mode delegated trigger access
+|===
+
+[NOTE]
+`mstateen0`.TR and `hstateen0`.TR are defined by <<smtdeleg, Smtdeleg>>. In implementations without S-mode, `mstateen0`.TR is defined directly by Sutcfg.

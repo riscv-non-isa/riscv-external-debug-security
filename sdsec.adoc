@@ -19,6 +19,8 @@ The Secure Trace family provides hierarchical privilege-based control of trace o
 
 Each family is optional and independent of the other: an implementer may implement the Secure Debug family, the Secure Trace family, or both. Implementing external debug or trace does not by itself require the corresponding family. Implementations may include some or all optional extensions of an implemented family. When an optional extension for a lower privilege mode is implemented, all extensions for implemented higher privilege modes of the same family must also be implemented. These extensions establish hierarchical controls that can restrict external debug access or trace output to specific privilege levels.
 
+Smtdeleg, Sstcfg, Sucsrind, and Sutcfg are distinct extensions specified in <<smtdeleg>>, <<sucsrind>>, and <<sutcfg>>. They are not members of either family. Sstcfg requires Smtdeleg. Sutcfg requires Sucsrind and, when S-mode is implemented, also requires Smtdeleg and Sstcfg. When implemented, these extensions provide S/HS-mode, VS-mode, and U/VU-mode access to Sdtrig trigger state for a lower-privilege debugger. Neither Secure Debug nor Secure Trace requires these extensions.
+
 [[Sdsecextdbg]]
 === External Debug Security Extensions
 
@@ -165,8 +167,25 @@ When `mdbgen` is set to 0 and the hart is running in M-mode, external debug is d
 - The configuration in `dcsr` will be ignored as if it were 0.
 - DMODE is read/write for accesses from M-mode when Sdtrig is implemented.
 
+[[mdbgen-dmode]]
+When `mdbgen`=0 and the hart is not in Debug Mode, M-mode may read the native trigger CSRs.
+
+If the selected trigger has `DMODE`=0, M-mode writes to `tdata1`, `tdata2`, and `tdata3` follow the base Sdtrig rules.
+
+If the selected trigger has `DMODE`=1:
+
+* Writes to `tdata2` and `tdata3` are ignored.
+* For a write to `tdata1`, changes to `DMODE` and `ACTION` are permitted.
+* A write of the disabled-trigger encoding (`TYPE`=15 and `DMODE`=0) is also permitted. The write shall be committed atomically as a disabled trigger, regardless of the previous `DMODE` value.
+* Other fields in `tdata1` are ignored unless the write is the disabled-trigger write described above.
+* If the resulting state would have `DMODE`=0 and `ACTION`=1, hardware shall set `ACTION` to 0.
+
+When `mdbgen`=1, the native M-mode exception above does not apply: the native `DMODE` field is writable only from Debug Mode. This rule does not restrict the trusted S/HS-mode manager accesses through delegated lower-level views.
+
 [NOTE]
-M-mode is given write access to DMODE when `mdbgen` is 0 to allow M-mode software to save and restore trigger context at S/HS-mode software boundaries. This capability is necessary to prevent triggers from serving as a side-channel attack vector against S/HS-mode software where external debugging is disallowed. Without this, an external debugger could indirectly observe states (such as PC and data addresses) from the debug-disallowed software, potentially leading to information leakage or Denial of Service (DoS). By enabling M-mode to switch trigger contexts at privilege mode boundaries, such attacks can be prevented. When `mdbgen` is 1, DMODE remains accessible only from Debug Mode.
+This `DMODE` write access allows M-mode software to save and restore trigger context at lower-privilege software boundaries. After setting `DMODE`=0, software should disable the trigger or clear its mode-enable bits before a lower-privilege context runs. To restore a saved `DMODE`=1 configuration, write the saved `tdata*` while `DMODE`=0, including `DMODE`=1 and `ACTION`=1 in a single `tdata1` write if that was the saved configuration. Without this access, an external debugger could leave `ACTION`=1 triggers that indirectly observe states (such as PC and data addresses) from the debug-disallowed software, potentially leading to information leakage or Denial of Service (DoS). When `mdbgen` is 1, `DMODE` remains accessible only from Debug Mode.
+
+S/HS-mode manager access to `DMODE`=1 trigger state for lower-privilege contexts is specified in <<sstcfg-lower-dmode>> and <<utrig-dmode>>. That access uses the applicable delegated view and does not provide S/HS-mode with native access to trigger state. The lower-privilege external debug enable fields control external debugger access and do not remove this trusted S/HS-mode manager access.
 
 If the hart is running in a debug-allowed lower privilege mode (e.g., S/HS-mode) when `mdbgen` is 0: 
 
@@ -182,7 +201,7 @@ This specification assumes that the debugger ensures `mdbgen` shall never be set
 [[smsdbgctl]]
 ==== S/HS-mode External Debug Security Extension (Smsedbgsec)
 
-The Smsedbgsec extension is optional and requires Smmedbgsec. It introduces the `SEDBGEN` field in CSR <<mdtcfgreg,`mdtcfg`>> and controls S/HS-mode debuggability when M-mode external debug is disallowed.
+The Smsedbgsec extension is optional and requires Smmedbgsec. When <<smtdeleg, Smtdeleg and Sstcfg>> are implemented, they provide the Sdtrig trigger access path for an S/HS-mode debugger. Smsedbgsec introduces the `SEDBGEN` field in CSR <<mdtcfgreg,`mdtcfg`>> and controls S/HS-mode debuggability when M-mode external debug is disallowed.
 
 The `SEDBGEN` field only takes effect when `mdbgen` is 0.
 
@@ -192,6 +211,7 @@ When `SEDBGEN` is set to 1, S/HS-mode external debug is allowed:
 - The <<dbops, debug operations>> are allowed when the hart executes in S/HS-mode, U-mode, VS-mode, or VU-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must raise an exception, stopping execution and setting `abstractcs`.CMDERR to 3.
 - The `sdcsr` and `sdpc` registers (<<smodecsr>>) are introduced in Smsedbgsec to provide an S/HS-mode debugger with access to `dcsr` and `dpc`.
+- When Smtdeleg and Sstcfg are implemented, an S/HS-mode debugger can access Sdtrig trigger state through the <<smtdeleg, Smtdeleg/Sstcfg>> interface (`stselect` and `siselect`/`sireg*`).
 - The *effective debug access privilege* of loads and stores in Debug Mode may be modified as described in <<effectivedbgpriv>>.
 - The <<maxdbgpriv, allowed resume privilege modes>> include S/HS-mode and all lower privilege modes.
 
@@ -283,7 +303,7 @@ The `sdcsr`.DMPRV does not affect the virtual-machine load/store instructions, H
 
 ==== VS-mode External Debug Security Extension (Smvsedbgsec)
 
-The Smvsedbgsec extension is optional and requires Smsedbgsec. It introduces the `VSEDBGEN` field in CSR <<mdtcfgreg,`mdtcfg`>> and controls VS-mode debuggability when S/HS-mode external debug is disallowed.
+The Smvsedbgsec extension is optional and requires Smsedbgsec. When Smtdeleg and Sstcfg are implemented, a VS-mode debugger can use the same delegated trigger interface with the Sscsrind substitution to `vsiselect`/`vsireg*`. Smvsedbgsec introduces the `VSEDBGEN` field in CSR <<mdtcfgreg,`mdtcfg`>> and controls VS-mode debuggability when S/HS-mode external debug is disallowed.
 
 The `VSEDBGEN` field only takes effect when both `mdbgen` is 0 and `SEDBGEN` is 0.
 
@@ -331,7 +351,7 @@ When `sdcsr`.DMPRV=0, the *effective debug access privilege* of loads and stores
 
 ==== U-mode and VU-mode External Debug Security Extension (Smuedbgsec)
 
-The Smuedbgsec extension is optional. It requires Smmedbgsec and, on harts that implement S/HS-mode, Smsedbgsec. When VU-mode control is implemented, Smuedbgsec also requires Smvsedbgsec. Smvsedbgsec is not required when only U-mode control is implemented and `VUEDBGEN` is read-only 0. Smuedbgsec introduces independent `UEDBGEN` and `VUEDBGEN` fields in CSR <<mdtcfgreg,`mdtcfg`>>. If a mode or its corresponding control is not implemented, the corresponding field is read-only 0.
+The Smuedbgsec extension is optional. It requires Smmedbgsec and, on harts that implement S/HS-mode, Smsedbgsec. When VU-mode control is implemented, Smuedbgsec also requires Smvsedbgsec. Smvsedbgsec is not required when only U-mode control is implemented and `VUEDBGEN` is read-only 0. Smuedbgsec introduces independent `UEDBGEN` and `VUEDBGEN` fields in CSR <<mdtcfgreg,`mdtcfg`>>. If a mode or its corresponding control is not implemented, the corresponding field is read-only 0. When <<sutcfg, Sutcfg>> is implemented, it provides the Sdtrig trigger access path for a U-mode or VU-mode debugger.
 
 ===== U-mode External Debug Control
 
@@ -343,6 +363,7 @@ When `UEDBGEN`=1, `mdbgen`=0, and `SEDBGEN`=0, U-mode external debug is allowed:
 - The <<dbops, debug operations>> are allowed when the hart executes in U-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must raise an exception, stopping execution and setting `abstractcs`.CMDERR to 3.
 - The `udcsr` and `udpc` registers described in <<umodecsr>> provide access to the permitted `dcsr` and `dpc` state.
+- When Sutcfg is implemented, a U-mode debugger can access Sdtrig trigger state through the <<sutcfg, Sutcfg>> interface (`utselect` and `uiselect`/`uireg*`).
 - U-mode is the only <<maxdbgpriv, allowed resume privilege mode>>.
 
 When `UEDBGEN` is set to 0 and the hart is running in U-mode, external debug is disallowed for U-mode:
@@ -365,6 +386,7 @@ When `VUEDBGEN`=1, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0, VU-mode external d
 - The <<dbops, debug operations>> are allowed when the hart executes in VU-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must raise an exception, stopping execution and setting `abstractcs`.CMDERR to 3.
 - The `udcsr` and `udpc` registers described in <<umodecsr>> provide access to the permitted `dcsr` and `dpc` state.
+- When Sutcfg is implemented, a VU-mode debugger can access Sdtrig trigger state through the <<sutcfg, Sutcfg>> interface (`utselect` and `uiselect`/`uireg*`).
 - VU-mode is the only <<maxdbgpriv, allowed resume privilege mode>>.
 
 When `VUEDBGEN` is set to 0 and the hart is running in VU-mode, external debug is disallowed for VU-mode:
@@ -390,8 +412,8 @@ The `udcsr` does not expose `dcsr`.V. A U-mode or VU-mode debugger therefore can
 [cols="25%,25%,50%"]
 |============================================================================================
 | Number   | Name       | Description
-| 0xaaa    | udcsr      | U-mode or VU-mode debug control and status register.
-| 0xaaa    | udpc       | U-mode or VU-mode debug program counter.
+| address TBD | udcsr      | U-mode or VU-mode debug control and status register.
+| address TBD | udpc       | U-mode or VU-mode debug program counter.
 |============================================================================================
 
 The `udcsr` register exposes a subset of `dcsr`, formatted as shown in <<udcsr32>>, while the `udpc` register provides full access to `dpc`.
