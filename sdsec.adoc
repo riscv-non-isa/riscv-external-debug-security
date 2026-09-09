@@ -390,8 +390,8 @@ The `udcsr` does not expose `dcsr`.V. A U-mode or VU-mode debugger therefore can
 [cols="25%,25%,50%"]
 |============================================================================================
 | Number   | Name       | Description
-| 0xaaa    | udcsr      | U-mode or VU-mode debug control and status register.
-| 0xaaa    | udpc       | U-mode or VU-mode debug program counter.
+| address TBD | udcsr      | U-mode or VU-mode debug control and status register.
+| address TBD | udpc       | U-mode or VU-mode debug program counter.
 |============================================================================================
 
 The `udcsr` register exposes a subset of `dcsr`, formatted as shown in <<udcsr32>>, while the `udpc` register provides full access to `dpc`.
