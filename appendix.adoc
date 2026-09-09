@@ -26,7 +26,7 @@ Table <<validimplcomb>> shows valid external debug extension combinations for di
                     • Smmedbgsec + Smsedbgsec + Smvsedbgsec + Smuedbgsec
 |=====================================================================
 
-Smtdeleg, Sstcfg, Sucsrind, and Sutcfg are distinct extensions specified in <<smtdeleg>>, <<sucsrind>>, and <<sutcfg>>. Sstcfg requires Smtdeleg. Sutcfg requires Sucsrind and, when S-mode is implemented, also requires Smtdeleg and Sstcfg. When implemented, these extensions provide S/HS-mode, VS-mode, and U/VU-mode access to Sdtrig trigger state for a lower-privilege debugger; none is a prerequisite for the combinations listed above.
+Smtdeleg, Sstcfg, Sucsrind, and Sutcfg are distinct extensions specified in <<smtdeleg>>, <<sucsrind>>, and <<sutcfg>>. Sstcfg requires Smtdeleg. Sutcfg requires Sucsrind and, when S-mode is implemented, also requires Smtdeleg and Sstcfg. Smtdeleg and Sstcfg provide S/HS-mode and VS-mode access to Sdtrig trigger state for a lower-privilege debugger, and Sutcfg provides U-mode and VU-mode access. None is a prerequisite for the combinations listed above.
 
 === Trace Security Extension Combinations
 

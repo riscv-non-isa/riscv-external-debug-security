@@ -7,7 +7,7 @@ Sdtrig CSRs are accessible only with M-mode privilege. A self-hosted debugger wi
 
 The Smtdeleg extension provides that path for S/HS-mode and VS-mode, using the indirect CSR interface (Sscsrind) cite:[indirectcsr]. It also controls S/HS-mode and VS-mode access to triggers using the State Enable extensions (Smstateen/Ssstateen) cite:[smstateen]. Sstcfg is the supervisor-level companion to Smtdeleg. Sstcfg is a distinct extension, and its implementation requires Smtdeleg.
 
-U-mode and VU-mode trigger access is specified by the distinct <<sucsrind, Sucsrind>> and <<sutcfg, Sutcfg>> extensions. Those extensions are not part of Smtdeleg or Sstcfg.
+U-mode and VU-mode trigger access is specified by the distinct <<sutcfg, Sutcfg>> extension, which requires <<sucsrind, Sucsrind>>. Those extensions are not part of Smtdeleg or Sstcfg.
 
 [NOTE]
 This specification treats S/HS-mode software as trusted to manage trigger state assigned to lower-privilege VS-mode, VU-mode, and U-mode contexts. The manager accesses defined in this chapter and in <<sutcfg, Sutcfg>> do not protect that lower-privilege trigger state from S/HS-mode software.
