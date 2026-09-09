@@ -1,0 +1,92 @@
+[[sucsrind]]
+== Sucsrind (ISA Extension)
+
+This chapter specifies the Sucsrind ISA extension, which extends the indirect CSR access mechanism defined by Smcsrind cite:[indirectcsr] to U-mode. Sucsrind is not a member of the Secure Debug or Secure Trace families.
+
+Sucsrind provides U-mode with its own set of indirect register select and alias CSRs. This enables extensions to expose register arrays to U-mode software without consuming large portions of the limited user-level CSR address space, mirroring the benefits Sscsrind provides at supervisor level.
+
+[NOTE]
+The Sscsrind specification reserves CSR address space for this extension: CSR address space is reserved for a possible future Sucsrind extension that extends indirect CSR access to user mode.
+
+Sucsrind requires Smcsrind. When S-mode is implemented, Sucsrind also requires Sscsrind. Smcsrind encompasses all added CSRs and all behavior modifications for a hart, over all privilege levels.
+
+[[uiselect]]
+=== User-level CSRs
+
+.User Indirect CSR Access CSRs
+[width="100%",cols="15%,12%,12%,15%,46%",options="header",]
+|===
+|*Number* |*Privilege* |*Width* |*Name* |*Description*
+| address TBD | URW | XLEN | `uiselect` | User indirect register select
+| address TBD | URW | XLEN | `uireg`  | User indirect register alias
+| address TBD | URW | XLEN | `uireg2` | User indirect register alias 2
+| address TBD | URW | XLEN | `uireg3` | User indirect register alias 3
+| address TBD | URW | XLEN | `uireg4` | User indirect register alias 4
+| address TBD | URW | XLEN | `uireg5` | User indirect register alias 5
+| address TBD | URW | XLEN | `uireg6` | User indirect register alias 6
+|===
+
+[NOTE]
+The `uireg*` CSR numbers are not consecutive because one address in the allocated range is reserved, consistent with the gap in the Sscsrind supervisor-level and machine-level indirect alias CSR numbering. Final CSR addresses are allocated by ARC.
+
+The value of `uiselect` determines which register is accessed upon read or write of each of the user indirect alias CSRs (`uireg*`). `uiselect` value ranges are allocated to dependent extensions, which specify the register state accessible via each `uireg*` register, for each `uiselect` value. `uiselect` is a WARL register.
+
+The `uiselect` register will support the value range 0..0xFFF at a minimum. A future extension may define a value range outside of this minimum range. Only if such an extension is implemented will `uiselect` be required to support larger values.
+
+[NOTE]
+Requiring a range of 0-0xFFF for `uiselect`, even though most or all of the space may be reserved or inaccessible, permits S-mode to emulate indirectly accessed registers in this implemented range, including registers that may be standardized in the future.
+
+Values of `uiselect` with the most-significant bit set (bit XLEN-1 = 1) are designated only for custom use. Values of `uiselect` with the most-significant bit clear are designated only for standard use and are reserved until allocated to a standard architecture extension. If XLEN is changed, the most-significant bit of `uiselect` moves to the new position, retaining its value from before.
+
+The behavior upon accessing `uireg*` from M-mode, S-mode, or U-mode, while `uiselect` holds a value that is not implemented at user level, is UNSPECIFIED.
+
+[NOTE]
+It is expected that implementations will typically raise an illegal-instruction exception for such accesses, so that, for example, they can be identified as software bugs.
+
+Attempts to access `uireg*` while `uiselect` holds a number in an allocated and implemented range results in a specific behavior that, for each combination of `uiselect` and `uireg*`, is defined by the extension to which the `uiselect` value is allocated.
+
+[NOTE]
+Ordinarily, each `uireg*` will access register state, access read-only 0 state, or raise an illegal-instruction exception.
+
+User-level, supervisor-level, and machine-level select values are separate address spaces from each other. An extension may define user-level and supervisor-level CSRs with the same select value as partial or full aliases, typically for state that can be delegated from supervisor-level to user-level.
+
+The widths of `uiselect` and `uireg*` are always the current XLEN.
+
+=== Virtualization
+
+Sucsrind does not define separate virtual-user `vu*` indirect CSRs.
+
+When V=1, accesses from VS-mode or VU-mode to `uiselect` and `uireg*` use the same CSR interface and semantics as U-mode accesses but applied to VU-mode. Higher privilege modes are expected to swap the content of these registers as needed.
+
+=== Access Control by the State-Enable CSRs
+
+If extension Smstateen is implemented together with Sucsrind, bit 60 (CSRIND) of state-enable register `mstateen0` controls access to `uiselect` and `uireg*`, in addition to the `siselect`, `sireg*`, `vsiselect`, and `vsireg*` CSRs it already controls under Sscsrind cite:[smstateen]. When `mstateen0`[60]=0, an attempt to access `uiselect` or `uireg*` from a privilege mode less privileged than M-mode results in an illegal-instruction exception.
+
+If the hypervisor extension is implemented, `hstateen0`[60] (CSRIND) also controls accesses from VS-mode or VU-mode to `uiselect` and `uireg*`. When `hstateen0`[60]=0 and `mstateen0`[60]=1, all attempts from VS-mode or VU-mode to access `uiselect` or `uireg*` raise a virtual-instruction exception.
+
+[NOTE]
+Individual extensions that use `uiselect`/`uireg*` to access specific register state may define additional `sstateen` bits to provide S-mode with fine-grained control over U-mode access to that state. <<sutcfg, Sutcfg>> defines `sstateen0`.TR to control U-mode access to trigger registers accessed through `uireg*`.
+
+=== Dependencies
+
+Sucsrind depends on the following extensions:
+
+* Smcsrind -- Machine-level indirect CSR access framework cite:[indirectcsr].
+* Sscsrind (required when S-mode is implemented) -- Supervisor-level indirect CSR access framework.
+* S-mode (optional) -- Required for `sstateen0` access control and for Sscsrind. In implementations without S-mode, `mstateen0` alone controls U-mode access to `uiselect`/`uireg*`. When Smstateen is not implemented, all indirect CSR state is accessible as defined by this extension.
+* H extension (optional) -- Required for VS/VU-mode virtualization support.
+
+=== Summary of New State
+
+.New CSRs Introduced by Sucsrind
+[cols="20%,15%,15%,50%", options="header"]
+|===
+| CSR | Address | Privilege | Notes
+| `uiselect` | address TBD | URW | User indirect register select
+| `uireg` | address TBD | URW | User indirect register alias
+| `uireg2` | address TBD | URW | User indirect register alias 2
+| `uireg3` | address TBD | URW | User indirect register alias 3
+| `uireg4` | address TBD | URW | User indirect register alias 4
+| `uireg5` | address TBD | URW | User indirect register alias 5
+| `uireg6` | address TBD | URW | User indirect register alias 6
+|===
