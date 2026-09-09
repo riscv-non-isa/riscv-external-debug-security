@@ -17,7 +17,7 @@ The Secure Trace family provides hierarchical privilege-based control of trace o
 * **Smvsetrcsec (Optional)**: Adds VS-mode trace control
 * **Smuetrcsec (Optional)**: Adds independent U-mode and VU-mode trace controls
 
-Each family is optional and independent of the other: an implementer may implement the Secure Debug family, the Secure Trace family, or both. Implementing external debug or trace does not by itself require the corresponding family. Implementations may include some or all optional extensions of an implemented family. When an optional extension for a lower privilege mode is implemented, all extensions for implemented higher privilege modes of the same family must also be implemented. These extensions establish hierarchical controls that can restrict external debug access or trace output to specific privilege levels.
+Each family is optional and independent of the other: an implementer may implement the Secure Debug family, the Secure Trace family, or both. Implementing external debug or trace does not by itself require the corresponding family. Implementations may include some or all optional extensions of an implemented family, subject to the valid combinations in <<valid_extension_combinations>>. These extensions establish hierarchical controls that can restrict external debug access or trace output to specific privilege levels.
 
 [[Sdsecextdbg]]
 === External Debug Security Extensions
