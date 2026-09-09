@@ -3,9 +3,9 @@
 Debugging and tracing are essential for developers to identify and rectify software and hardware issues, optimize performance, and ensure robust system functionality. The debugging and tracing extensions in the RISC-V ecosystem play a pivotal role in enabling these capabilities, allowing developers to monitor and control the execution of programs during the development, testing, and production phases. However, the current RISC-V Debug specification grants the external debugger the highest privilege in the system, regardless of the privilege level at which the target system is running, and tracing is also allowed in all privilege modes. This leads to privilege escalation and information leakage issues when multiple actors are present. 
 
 
-This specification defines <<dmextsec, Debug Module Security Extension (non-ISA extension)>> and <<Sdsec, Sdsec (ISA extension)>> to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace]. 
+This specification defines <<dmextsec, Debug Module Security Extension (non-ISA extension)>> and <<Sdsec, Secure Debug and Secure Trace ISA extensions>> (collectively referred to as Sdsec) to address the above security issues in the current _The RISC-V Debug Specification_ cite:[dbgspec] and trace specifications cite:[etrace] cite:[ntrace].
 
-At a high level, the Debug Module Security Extension provides a platform-level control state, <<psecdbgen,`psecdbgen`>>, to enable or bypass the security constraints. The Sdsec ISA extension provides per-hart debug and trace control states, including platform-controlled <<mdbgctl,`mdbgen`>> and <<trcctlcsr,`mtrcen`>> states for M-mode and lower-privilege control states in <<mdtcfgreg,`mdtcfg`>>. Together, these control states determine whether external debug or trace is allowed at the hart's current privilege mode.
+At a high level, the Debug Module Security Extension provides a platform-level control state, <<psecdbgen,`psecdbgen`>>, to enable or bypass the debug security constraints. The Secure Debug and Secure Trace ISA extensions provide per-hart debug and trace control states, including platform-controlled <<mdbgctl,`mdbgen`>> and <<trcctlcsr,`mtrcen`>> states for M-mode and lower-privilege control states in <<mdtcfgreg,`mdtcfg`>>. Together, these control states determine whether external debug or trace is allowed at the hart's current privilege mode. `psecdbgen` does not control trace. Implementation of either ISA family is optional even when the corresponding external debug or trace facility is present.
 
 A summary of the changes introduced by _The RISC-V External Debug Security Specification_ follows.
 
@@ -14,12 +14,12 @@ A summary of the changes introduced by _The RISC-V External Debug Security Speci
     - *Platform debug security enable:* Add a platform state to enable the security constraints or bypass them for backward compatibility.
     - *Debug Mode entry:* An external debugger can only halt the hart and enter Debug Mode when external debug is allowed in the current privilege mode.
     - *Memory Access:* Memory access from a hart's point of view, using the Program Buffer or an Abstract Command, must be checked by the hart's memory protection mechanisms as if the hart is running at <<dbgaccpriv, debug access privilege level>>; memory access from the Debug Module using System Bus Access (SBA) must be checked by a system memory protection mechanism, such as IOPMP or RISC-V Worlds.
-    - *Register Access:* Register access using the Program Buffer or an Abstract Command works as if the hart is running at <<dbgaccpriv, debug access privilege level>> instead of the M-mode privilege level. The debug CSRs (`dcsr` and `dpc` ) are shadowed in lower privilege modes. 
+    - *Register Access:* Register access using the Program Buffer or an Abstract Command works as if the hart is running at <<dbgaccpriv, debug access privilege level>> instead of the M-mode privilege level. The debug CSRs (`dcsr` and `dpc` ) are shadowed in lower privilege modes.
 
 [[theory_operation]]
 === Control Hierarchy
 
-Operationally, the platform-level control state selects between backward-compatible behavior and the security-constrained behavior defined by this specification. When the constraints are enabled, each hart evaluates its debug and trace control states for its current privilege mode. Debug operations are permitted only when the corresponding debug control state allows access at that mode; otherwise the request is rejected or remains pending. Trace output is similarly enabled only for modes allowed by the trace control states and is inhibited otherwise.
+Operationally, <<psecdbgen,`psecdbgen`>> selects between backward-compatible debug behavior and the debug security constraints defined by this specification. When those constraints are enabled, each hart evaluates its debug control states for its current privilege mode. Debug operations are permitted only when the corresponding debug control state allows access at that mode; otherwise the request is rejected or remains pending. Trace output is independent of `psecdbgen` and is enabled only for modes allowed by the trace control states.
 
 ==== External Debug Security Control
 
@@ -47,7 +47,7 @@ Self-hosted debugging is also commonly used for application-level debugging, pro
 
 ==== Trace Security Control
 
-The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled <<trcctlcsr,`mtrcen` state>> for M-mode and optional lower-privilege control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) in the <<mdtcfgreg,`mdtcfg` CSR>>. The `mtrcen` state can be implemented as an input signal to the hart and managed through platform-specific mechanisms such as a Root of Trust (RoT) handshake or lifecycle fuses.
+The trace security policy for a hart is enforced through a hierarchical control model using the platform-controlled <<trcctlcsr,`mtrcen` state>> for M-mode and optional lower-privilege control states (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) in the <<mdtcfgreg,`mdtcfg` CSR>>. The `mtrcen` state can be implemented as an input signal to the hart and managed through platform-specific mechanisms such as a Root of Trust (RoT) handshake or lifecycle fuses. Trace has no privilege mode above M-mode, so this specification does not introduce a platform-level enable analogous to <<psecdbgen,`psecdbgen`>>; `psecdbgen` does not control trace.
 
 The security control logic determines whether trace is allowed based on the hart's current privilege level and the configured trace security control states. The `sec_inhibit` sideband signal to the trace encoder is asserted when trace is not allowed; equivalently, `sec_inhibit` is the inverse of the trace-allowed decision shown in the reference control logic. <<sdsectrc,Trace Security Extensions>> defines the detailed behavior.
 

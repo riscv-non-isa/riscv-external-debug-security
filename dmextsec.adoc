@@ -9,11 +9,11 @@ This chapter defines the required security enhancements for the Debug Module. Th
 * Abstract commands (Access Register, Quick Access, Access Memory)
 * System bus access
 
-If any hart in the system implements the Sdsec extension, the Debug Module must also implement the Debug Module Security Extension.
+If any hart in the system implements Smmedbgsec, the Debug Module must also implement the Debug Module Security Extension.
 
 === External Debug Security Extensions Discovery 
 
-The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the ALLSECURED and/or ANYSECURED bits in `dmstatus` <<regdmstatus>>. These bits will read as 0 when `psecdbgen` is 0, regardless of whether the harts implement the Sdsec extension. When `psecdbgen` is 1, ALLSECURED is set to 1 if all currently selected harts implement the Sdsec extension, and ANYSECURED is set to 1 if any currently selected hart implements the Sdsec extension. When any hart implements the Sdsec extension, it indicates that the Debug Module implements the Debug Module Security Extension as described in this chapter.
+The ISA and non-ISA external debug security extensions impose security constraints and introduce non-backward-compatible changes. The presence of the extensions can be determined by polling the ALLSECURED and/or ANYSECURED bits in `dmstatus` <<regdmstatus>>. These bits will read as 0 when `psecdbgen` is 0, regardless of whether the harts implement Smmedbgsec. When `psecdbgen` is 1, ALLSECURED is set to 1 if all currently selected harts implement Smmedbgsec, and ANYSECURED is set to 1 if any currently selected hart implements Smmedbgsec. When any hart implements Smmedbgsec, it indicates that the Debug Module implements the Debug Module Security Extension as described in this chapter.
 
 === Halt 
 
@@ -69,15 +69,17 @@ Error status bits are internally maintained for each hart. The ALLSECFAULT and A
 [[psecdbgen]]
 === Platform Debug Security Enable
 
-The platform state element `psecdbgen` is introduced to enable the debug security constraints defined by this specification. When `psecdbgen` is 0, the platform retains full debugging capabilities, as if the extensions in this specification were not implemented:
+The platform state element `psecdbgen` is introduced to enable the debug security constraints defined by this specification. When `psecdbgen` is 0, the platform retains full debugging capabilities, as if the Secure Debug extensions were not implemented:
 
 * All <<dbops, debug operations>> are executed with M-mode privilege (equivalent to having `mdbgen` set to 1) for all harts in the system.
 * The NDMRESET operation is allowed.
 * The RELAXEDPRIV field may be configurable.
 * System Bus Access may bypass the bus initiator protections.
-* Trace output is enabled in all privilege modes.  
 
-When `psecdbgen` is 1, the security constraints in this specification apply.
+When `psecdbgen` is 1, the debug security constraints in this specification apply.
+
+[NOTE]
+If `mdtcfg` is implemented, it remains accessible to M-mode software when `psecdbgen` is 0. Implemented debug-related fields retain their specified WARL behavior, but their values do not constrain external debug; the unrestricted debug behavior defined above applies. The trace-related fields remain independent of `psecdbgen` and retain their specified effect.
 
 [[authhandoff]]
 === Authorization Handoff
@@ -128,8 +130,8 @@ The Debug Module Security Extension introduces new fields in the Debug Module re
 [options="header"]
 |================================================================================================================================================
 | Field       | Description                                                                                                       | Access | Reset
-| ALLSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if all currently selected harts implement the Sdsec extension.         | R      | -
-| ANYSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if any currently selected hart implements the Sdsec extension.         | R      | -
+| ALLSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if all currently selected harts implement Smmedbgsec.         | R      | -
+| ANYSECURED  | The field is 0 when `psecdbgen` is 0. When `psecdbgen` is 1, this field is 1 if any currently selected hart implements Smmedbgsec.         | R      | -
 | ALLSECFAULT | The field is 1 when all currently selected harts have raised a security fault due to reset operation | R      | -
 | ANYSECFAULT | The field is 1 when any currently selected hart has raised a security fault due to reset operation   | R      | -
 |================================================================================================================================================

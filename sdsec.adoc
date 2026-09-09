@@ -1,26 +1,23 @@
 [[Sdsec]]
-== Sdsec (ISA extension)
+== Secure Debug and Secure Trace (ISA Extensions)
 
-This chapter introduces the Sdsec ISA extension, which adds security enhancements to the Sdext/Sdtrig cite:[dbgspec] and trace functionality cite:[etrace] cite:[ntrace]. The Sdsec extension is only applicable when external debug (Sdext/Sdtrig) or trace functionality (E-Trace/N-Trace) is implemented in the system. The extension provides mandatory M-mode external debug and trace control, along with optional extensions for lower privilege modes.
+This chapter specifies ISA extensions that add security controls to external debug (Sdext/Sdtrig) cite:[dbgspec] and to trace cite:[etrace] cite:[ntrace]. Sdsec is not an extension of its own; it is the umbrella name for two families of extensions: Secure Debug and Secure Trace.
 
-When external debug is implemented, the following external debug control extensions are defined:
+The Secure Debug family provides hierarchical privilege-based control of external debug. When this family is implemented, the following extensions are defined:
 
-* **Smmedbgsec (Base)**: Mandatory base extension providing M-mode external debug control
+* **Smmedbgsec (Base)**: M-mode external debug control
 * **Smsedbgsec (Optional)**: Extends Smmedbgsec to add S/HS-mode external debug control
-* **Smvsedbgsec (Optional)**: Extends Smmedbgsec to add VS-mode external debug control
-* **Smuedbgsec (Optional)**: Extends Smmedbgsec to add independent U-mode and VU-mode external debug controls
+* **Smvsedbgsec (Optional)**: Adds VS-mode external debug control
+* **Smuedbgsec (Optional)**: Adds independent U-mode and VU-mode external debug controls
 
-When trace is implemented, the following trace control extensions are defined:
+The Secure Trace family provides hierarchical privilege-based control of trace output. When this family is implemented, the following extensions are defined:
 
-* **Smmetrcsec (Base)**: Mandatory base extension providing M-mode trace control
+* **Smmetrcsec (Base)**: M-mode trace control
 * **Smsetrcsec (Optional)**: Extends Smmetrcsec to add S/HS-mode trace control
-* **Smvsetrcsec (Optional)**: Extends Smmetrcsec to add VS-mode trace control
-* **Smuetrcsec (Optional)**: Extends Smmetrcsec to add independent U-mode and VU-mode trace controls
+* **Smvsetrcsec (Optional)**: Adds VS-mode trace control
+* **Smuetrcsec (Optional)**: Adds independent U-mode and VU-mode trace controls
 
-The Smmedbgsec base extension is mandatory when external debug is implemented. The Smmetrcsec base extension is mandatory when trace is implemented. If a system implements both external debug and trace, both base extensions must be implemented. Implementations may choose to implement some or all of the optional extensions depending on their system requirements. When implementing extensions for lower privilege modes, all extensions for implemented higher privilege modes of the same type (external debug or trace) must also be implemented. These extensions work together to establish hierarchical external debug and trace controls where external debug access or trace output can be restricted to specific privilege levels.
-
-[NOTE]
-Debug and trace extensions can be implemented independently. For example, a system may implement Smmedbgsec without Smmetrcsec, or vice versa.
+Each family is optional and independent of the other: an implementer may implement the Secure Debug family, the Secure Trace family, or both. Implementing external debug or trace does not by itself require the corresponding family. Implementations may include some or all optional extensions of an implemented family. When an optional extension for a lower privilege mode is implemented, all extensions for implemented higher privilege modes of the same family must also be implemented. These extensions establish hierarchical controls that can restrict external debug access or trace output to specific privilege levels.
 
 [[Sdsecextdbg]]
 === External Debug Security Extensions
@@ -47,7 +44,18 @@ When external debug is allowed for a privilege mode, it is allowed for all lower
 
 
 [[mdtcfg_reg]]
-The `mdtcfg` (Machine Debug and Trace Configuration) is a machine-mode read/write CSR (address TBD) introduced by this specification. It holds configuration fields for external debug and trace security control.
+The `mdtcfg` (Machine Debug and Trace Configuration) is a machine-mode read/write CSR (address TBD). It is a single CSR shared by the Secure Debug and Secure Trace families. Debug-related fields (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, `VUEDBGEN`) and trace-related fields (`SETRCEN`, `VSETRCEN`, `UETRCEN`, `VUETRCEN`) are independent: an implementation may implement Secure Debug, Secure Trace, or both without coupling the two functions through this CSR.
+
+`mdtcfg` is implemented if Smmedbgsec, Smmetrcsec, or any optional extension in either family is implemented. Fields associated with an unimplemented family or optional extension are WARL and read-only 0.
+
+The M-mode external debug and trace enables are the platform-controlled <<mdbgctl,`mdbgen`>> and <<trcctlcsr,`mtrcen`>> states. They are not fields of `mdtcfg` and are not writable by M-mode software. Writing `mdtcfg` therefore cannot enable or disable M-mode external debug or M-mode trace; M-mode software uses `mdtcfg` only to configure lower-privilege debug and trace enables.
+
+.Machine Debug and Trace Configuration CSR
+[width="100%",cols="15%,12%,12%,15%,46%",options="header",]
+|===
+|*Number* |*Privilege* |*Width* |*Name* |*Description*
+|address TBD |MRW |XLEN |`mdtcfg` |Machine debug and trace configuration
+|===
 
 [caption="Register {counter:rimage}: ", reftext="Register {rimage}"]
 [title="`mdtcfg` register"]
@@ -87,9 +95,9 @@ The bit positions shown above are tentative and have not been officially allocat
 ==== Debug Operations
 
 [[sdsecextdbg]]
-Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional external debug operations. The operations listed below are affected by the Sdsec extension; other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
+Chapter 3 of _The RISC-V Debug Specification_ cite:[dbgspec] outlines all mandatory and optional external debug operations. The operations listed below are affected by the Secure Debug extensions; other operations remain unaffected. In the context of this chapter, *debug operations* refer to those listed below.
 
-Debug operations affected by Sdsec:
+Debug operations affected by the Secure Debug extensions:
 [[dbops]]
 * Halting the hart to enter Debug Mode
 * Executing the Program Buffer
@@ -133,7 +141,7 @@ The privilege modes that can be configured in `dcsr`.PRV and `dcsr`.V are determ
 [[mdbgctl]]
 ==== M-mode External Debug Security Extension (Smmedbgsec)
 
-The Smmedbgsec extension is the mandatory base extension when external debug is implemented.
+The Smmedbgsec extension is the base extension of the Secure Debug family.
 
 [NOTE]
 The `mdbgen` state is a per-hart platform-controlled state that controls whether M-mode external debug capabilities are available. It may be delivered to the hart through various methods, such as a new input port, a handshake with the system Root of Trust (RoT), or other methods. The `mdbgen` state for the Root of Trust (RoT) itself should be managed by SoC hardware, likely depending on lifecycle fusing.
@@ -448,11 +456,12 @@ The following `mdtcfg` fields provide trace control states for privilege modes o
 
 ==== M-mode Trace Security Extension (Smmetrcsec)
 
-The Smmetrcsec extension is the mandatory base extension when trace is implemented.
+The Smmetrcsec extension is the base extension of the Secure Trace family.
 
 [NOTE]
 The `mtrcen` state is a per-hart platform-controlled state that controls whether M-mode trace output is enabled. It may be delivered to the hart through various methods, such as a new input port, a handshake with the system Root of Trust (RoT), or other methods. The `mtrcen` state for the Root-of-Trust (RoT) itself should be managed by SoC hardware, likely dependent on lifecycle fusing.
 The implementation can choose to group several harts together and use one signal to drive their `mtrcen` state or assign each hart its own dedicated state. For example, a homogeneous computing system can use a signal to drive all `mtrcen` states to enforce a unified trace policy across all harts.
+Unlike external debug, trace has no privilege mode above M-mode, so this specification does not introduce a platform-level enable analogous to <<psecdbgen,`psecdbgen`>>. The `psecdbgen` state does not control trace.
 
 When `mtrcen` is set to 1, trace is allowed for all privilege modes. When `mtrcen` is set to 0, trace is inhibited for M-mode by asserting the logical `sec_inhibit` signal to the trace encoder when the hart is executing in M-mode.
 
