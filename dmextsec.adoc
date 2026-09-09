@@ -76,10 +76,9 @@ The platform state element `psecdbgen` is introduced to enable the debug securit
 * The RELAXEDPRIV field may be configurable.
 * System Bus Access may bypass the bus initiator protections.
 
-When `psecdbgen` is 1, the debug security constraints in this specification apply.
-
-[NOTE]
 If `mdtcfg` is implemented, it remains accessible to M-mode software when `psecdbgen` is 0. Implemented debug-related fields retain their specified WARL behavior, but their values do not constrain external debug; the unrestricted debug behavior defined above applies. The trace-related fields remain independent of `psecdbgen` and retain their specified effect.
+
+When `psecdbgen` is 1, the debug security constraints in this specification apply.
 
 [[authhandoff]]
 === Authorization Handoff
