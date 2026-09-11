@@ -3,7 +3,7 @@
 :description: RISC-V External Debug Security Specification
 :company: RISC-V.org
 :revdate: April 19, 2024
-:revnumber: 1.0
+:revnumber: 0.7.6-arc
 :url-riscv: http://riscv.org
 :doctype: book
 :pdf-theme: docs-resources/themes/riscv-pdf.yml
@@ -64,7 +64,7 @@ include::contributors.adoc[]
 include::intro.adoc[]
 include::threat_model.adoc[]
 include::sdsec.adoc[]
-include::dmextsec.adoc[]
+include::dmsec.adoc[]
 include::appendix.adoc[]
 
 // The index must precede the bibliography

@@ -13,13 +13,13 @@
 # the Doc Template for RISC-V Extensions.
 
 DATE ?= $(shell date +%Y-%m-%d)
-VERSION ?= v0.7.5
+VERSION ?= 0.7.6-arc
 REVMARK ?= Updated Release Candidate for ARC Review
 DOCKER_RUN := docker run --rm -v ${PWD}:/build -w /build \
 ghcr.io/riscv/riscv-docs-base-container-image:latest
 
 HEADER_SOURCE := header.adoc
-PDF_RESULT := external-debug-security.pdf
+PDF_RESULT := riscv-external-debug-security-$(VERSION).pdf
 
 ASCIIDOCTOR_PDF := asciidoctor-pdf
 OPTIONS := --trace \
@@ -51,7 +51,7 @@ build:
 
 build-container:
 	@echo "Starting build inside Docker container..."
-	$(DOCKER_RUN) /bin/sh -c "$(ASCIIDOCTOR_PDF) $(OPTIONS) $(REQUIRES) --out-file=$(PDF_RESULT) $(HEADER_SOURCE)"
+	$(DOCKER_RUN) $(ASCIIDOCTOR_PDF) $(OPTIONS) $(REQUIRES) --out-file=$(PDF_RESULT) $(HEADER_SOURCE)
 	@echo "Build completed successfully inside Docker container."
 
 build-no-container:
