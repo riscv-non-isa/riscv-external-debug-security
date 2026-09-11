@@ -3,7 +3,7 @@
 :description: RISC-V External Debug Security Specification
 :company: RISC-V.org
 :revdate: April 19, 2024
-:revnumber: v0.7.7
+:revnumber: 0.7.7-Arc-Review
 :url-riscv: http://riscv.org
 :doctype: book
 :pdf-theme: docs-resources/themes/riscv-pdf.yml
