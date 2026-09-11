@@ -26,6 +26,8 @@ Table <<validimplcomb>> shows valid external debug extension combinations for di
                     • Smmedbgsec + Smsedbgsec + Smvsedbgsec + Smuedbgsec
 |=====================================================================
 
+Smtdeleg, Sstcfg, Sucsrind, and Sutcfg are distinct extensions specified in <<smtdeleg>>, <<sucsrind>>, and <<sutcfg>>. Sstcfg requires Smtdeleg. Sutcfg requires Sucsrind and, when S-mode is implemented, also requires Smtdeleg and Sstcfg. Smtdeleg and Sstcfg provide S/HS-mode and VS-mode access to Sdtrig trigger state for a lower-privilege debugger, and Sutcfg provides U-mode and VU-mode access. None is a prerequisite for the combinations listed above.
+
 === Trace Security Extension Combinations
 
 Table <<validtrccomb>> shows valid trace extension combinations for different architectures:
@@ -62,7 +64,10 @@ M-mode software should:
 1. Initialize debug/trace security policy for lower privilege modes based on security requirements.
 2. Provide interfaces for dynamic debug/trace security policy updates (e.g., through SBI calls from lower privilege modes).
 3. Save and restore debug/trace security policies when switching between supervisor software contexts.
-4. Save and restore trigger context (using DMODE access when `mdbgen`=0) during supervisor software context switches to prevent side-channel attacks.
+4. When `mdbgen`=0, save and restore trigger context at lower-privilege software boundaries using the M-mode `DMODE` access in <<mdbgen-dmode>>. Read and save `tselect` and `tdata*` for each trigger. To park a `DMODE`=1 trigger, write `tdata1` with a disabled-trigger encoding (`TYPE`=15 where supported, `DMODE`=0, and `ACTION`=0), so the trigger cannot match while its state is being changed; if the write would otherwise leave `ACTION`=1, the implementation sets `ACTION` to 0. Clear its mode-enable bits before the next lower-privilege context runs. To restore a saved configuration, first write the disabled-trigger encoding, then write `tdata2` and `tdata3`, and finally write the saved `tdata1`, including `DMODE`=1 and `ACTION`=1 in a single `tdata1` write if that was the saved configuration.
+5. When Smtdeleg is implemented, set `mstateen0`.TR when prepared to delegate trigger access to S/HS-mode.
+6. Save and restore `tselect` around delegated trigger accesses because `stselect`, `utselect`, and `tselect` share the same selection state.
+7. When Sutcfg is implemented without S-mode, set `mstateen0`.TR when prepared to delegate trigger access to U-mode.
 
 === S/HS-mode Management
 
@@ -71,6 +76,9 @@ S/HS-mode software is responsible for managing the debug/trace security policy f
 1. Call M-mode to apply the debug/trace security policy before launching an application or VM.
 2. Provide interfaces to handle dynamic debug/trace security policy update requests (e.g., SBI calls from VMs) and call M-mode to apply the security policy accordingly.
 3. Save and restore debug/trace security policies when switching between applications or VMs.
+4. When Sstcfg is implemented and `mstateen0`.TR=1, save and restore the visible delegated S/HS-mode trigger context (typically `DMODE`=0) through `stselect` and `siselect`/`sireg*` when switching supervisor contexts. For each visible S/HS-mode trigger, save and restore `stselect` and `siselect`, write `sireg` with the disabled-trigger encoding (`TYPE`=15, `DMODE`=0, and `ACTION`=0) before writing `sireg2` or `sireg3`, and then write the final `sireg` value; `sireg5` and `sireg6` are illegal for this access. When HS-mode manages VS-mode or VU-mode contexts, save and restore their trigger context through `stselect` and `vsiselect`/`vsireg*`, including `DMODE`=1 state, as specified in <<sstcfg-lower-dmode>>.
+5. When Sstcfg is implemented and the hart is not in Debug Mode, skip a trigger index if `sireg` through `sireg4` all read as zero. The slot is reserved by Debug Mode (`DMODE`=1) or is otherwise unavailable. An S/HS-mode external debugger programs `DMODE`=1 and `ACTION`=1 through the same interface from Debug Mode; see <<sstcfg-dmode>>. A `DMODE`=1 slot in the S/HS view is not reclaimed through `sireg*`; request M-mode assistance as in <<mdbgen-dmode>>.
+6. When Sutcfg is implemented, set `sstateen0`.TR when prepared to delegate trigger access to U-mode, and save and restore U-mode trigger context through `utselect` and `uiselect`/`uireg*`, including `DMODE`=1 state, because `utselect` shares the same selection state.
 
 === VS-mode Management
 
@@ -78,6 +86,12 @@ VS-mode software is responsible for managing the debug/trace security policy for
 
 1. Call S/HS-mode to apply the debug/trace security policy before launching an application.
 2. Save and restore debug/trace security policies when switching between applications.
+3. When Sstcfg is implemented and the hart is not in Debug Mode, skip a trigger index if `vsireg` through `vsireg4` all read as zero. The slot is reserved by Debug Mode (`DMODE`=1) or is otherwise unavailable. A VS-mode external debugger programs `DMODE`=1 and `ACTION`=1 through `stselect` with `vsiselect`/`vsireg*` from Debug Mode; see <<sstcfg-dmode>>. A `DMODE`=1 slot is not reclaimed by VS-mode through `vsireg*`; HS-mode can manage VS/VU trigger state through direct `vsireg*` accesses as specified in <<sstcfg-lower-dmode>>.
+4. When Sutcfg is implemented and `hstateen0`.TR=1, set virtual `sstateen0`.TR when prepared to delegate trigger access to VU-mode, and save and restore `stselect` around delegated VU-mode accesses.
+
+=== U-mode and VU-mode Management
+
+When Sutcfg is implemented and the applicable TR bits permit access, VS-mode, U-mode, and VU-mode software can access delegated trigger state through `utselect` and `uiselect`/`uireg*`. VS-mode, U-mode, and VU-mode software should save and restore visible trigger context (typically `DMODE`=0) when switching application contexts that use delegated triggers. When the hart is not in Debug Mode, skip a trigger index if `uireg` through `uireg4` all read as zero; the slot is reserved by Debug Mode (`DMODE`=1) or is otherwise unavailable. A U-mode or VU-mode external debugger programs `DMODE`=1 and `ACTION`=1 through the same interface from Debug Mode; see <<utrig-dmode>>. A `DMODE`=1 slot is not reclaimed by VS-mode, U-mode, or VU-mode software through `uireg*`; S/HS-mode can manage U-mode trigger state through `uireg*`, and HS-mode can manage VU-mode trigger state through `vsireg*`, as specified in <<sstcfg-lower-dmode>>.
 
 [appendix]
 == Execution-Based Implementation with Sdsec
