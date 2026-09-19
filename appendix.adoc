@@ -2,7 +2,7 @@
 [[valid_extension_combinations]]
 == Valid Extension Combinations
 
-This appendix lists valid external debug and trace extension combinations for the supported privilege-mode architectures.
+This appendix lists valid external debug and trace extension combinations for the supported privilege-mode architectures. The two families are independent, so each table applies only to the family it covers.
 
 === External Debug Security Extension Combinations
 
@@ -55,7 +55,7 @@ This section provides guidance on how software at different privilege levels can
 
 === M-mode Management 
 
-M-mode software is responsible for managing the `SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, and `VUEDBGEN` fields in the `mdtcfg` CSR for external debug, and the `SETRCEN`, `VSETRCEN`, `UETRCEN`, and `VUETRCEN` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are typically controlled by platform hardware, such as an RoT or lifecycle fuses, and are read-only from a software perspective.
+M-mode software is responsible for managing the `SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, and `VUEDBGEN` fields in the `mdtcfg` CSR for external debug, and the `SETRCEN`, `VSETRCEN`, `UETRCEN`, and `VUETRCEN` fields in the `mdtcfg` CSR for trace. The `mdbgen` and `mtrcen` states are read-only to software and are typically controlled by platform hardware, such as an RoT or lifecycle fuses.
 
 M-mode software should:
 
