@@ -281,7 +281,9 @@ Unlike `dcsr` and `dpc`, the `dscratch0/1` registers do not have an S/HS-mode ac
 ....
 
 [NOTE]
-The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are configurable only by M-mode; they are masked in `sdcsr`, while PRV[1] is hardwired to 0 in `sdcsr`. The field for MPRVEN is reclaimed by DMPRV in the `sdcsr` layout to avoid wasting fields. 
+The NMIP, MPRVEN, STOPTIME, STOPCOUNT, EBREAKM, and CETRIG fields in `dcsr` are configurable only by M-mode; they are masked in `sdcsr`, while PRV[1] is hardwired to 0 in `sdcsr`. The field for MPRVEN is reclaimed by DMPRV in the `sdcsr` layout to avoid wasting fields.
+
+`sdcsr`.PELP aliases `dcsr`.pelp. The field is present only when the Zicfilp extension is implemented; otherwise it is read-only 0. When Zicfilp is implemented, entry to Debug Mode sets this field to the hart's current `ELP` state and sets `ELP` to `NO_LP_EXPECTED`. On resume, if Zicfilp is enabled at the resumed privilege mode, `ELP` is set from this field; otherwise `ELP` is set to `NO_LP_EXPECTED`. The field is then set to `NO_LP_EXPECTED`. This follows _The RISC-V Debug Specification_ cite:[dbgspec].
 
 [[dmprv]]
 .Details of the `dmprv` field in `sdcsr`
