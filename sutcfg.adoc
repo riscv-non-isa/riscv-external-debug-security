@@ -84,6 +84,9 @@ The bit positions for the M, S, U, VS, and VU fields vary based on the trigger t
 
 The trigger types supported through `utselect`, `uiselect`, and `uireg*` are `mcontrol6`, `icount`, and disabled (Sdtrig type 15). When the selected trigger's `tdata1`.TYPE is any other value, including `mcontrol`, `itrigger`, `etrigger`, `tmexttrigger`, legacy, custom, and reserved types, accesses through `uireg`, `uireg2`, `uireg3`, and `uireg4` are read-only 0 and writes are ignored.
 
+[NOTE]
+`itrigger` and `etrigger` are excluded because Sdtrig fires them just before the first instruction of the trap handler, and each `tdata2` bit selects a cause number interpreted in the mode in which that handler executes. The S/HS and VS views can filter those bits with `mideleg`/`medeleg` or `hideleg`/`hedeleg`, as specified in <<sstcfg-type-constraints>>. U-mode and VU-mode do not execute trap handlers and have no equivalent delegation register, so this interface does not define a writable subset of `tdata2`.
+
 When `tdata1`.TYPE is a supported type, `uireg4` reads `tinfo` with bits corresponding to types not supported through this interface read-only 0. Writes to `tdata1`.TYPE through `uireg` are WARL and may only select a type supported through this interface.
 
 [NOTE]
