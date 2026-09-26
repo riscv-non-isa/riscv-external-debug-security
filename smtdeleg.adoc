@@ -63,7 +63,7 @@ While `siselect` holds the trigger access value, the `sireg*` registers provide 
 |===
 
 [NOTE]
-This method requires one new CSR (`stselect`) and one `siselect` index. Allocating a range of `siselect` values to select the trigger, bypassing `tselect`, would add no new CSRs but would cap the number of triggers accessible in S/HS-mode. `tselect` supports up to 2^MXLEN^ triggers, while a dedicated `siselect` range would likely cover only a practical subset.
+This method requires one new CSR (`stselect`) and one `siselect` index. Allocating a range of `siselect` values to select the trigger, bypassing `tselect`, would add no new CSRs but would cap the number of triggers accessible in S/HS-mode. `tselect` supports up to 2^MXLEN^ triggers, while a dedicated `siselect` range would likely cover only a practical subset. The indirect alias window is used for `tdata1`/`tdata2`/`tdata3`/`tinfo` because they form a register group that maps onto `sireg` through `sireg4`. `stselect` is a single index rather than a register group, so it remains a direct CSR; accessing it indirectly would add a `siselect` write to every trigger access without conserving a corresponding block of CSR addresses.
 
 While the privilege mode is M-mode or S/HS-mode and `siselect` holds the trigger access value, illegal-instruction exceptions are raised for attempts to access `sireg5` or `sireg6`.
 

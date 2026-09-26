@@ -8,7 +8,7 @@ Sucsrind provides U-mode with its own set of indirect register select and alias 
 [NOTE]
 The Sscsrind specification reserves CSR address space for this extension: CSR address space is reserved for a possible future Sucsrind extension that extends indirect CSR access to user mode.
 
-Sucsrind requires Smcsrind. When S-mode is implemented, Sucsrind also requires Sscsrind. Smcsrind encompasses all added CSRs and all behavior modifications for a hart, over all privilege levels.
+Sucsrind requires Smcsrind, which provides the machine-level indirect CSR interface and the machine-level behavior for the hart. When S-mode is implemented, Sucsrind also requires Sscsrind.
 
 [[uiselect]]
 === User-level CSRs
@@ -60,9 +60,11 @@ When V=1, accesses from VS-mode or VU-mode to `uiselect` and `uireg*` use the sa
 
 === Access Control by the State-Enable CSRs
 
-If extension Smstateen is implemented together with Sucsrind, bit 60 (CSRIND) of state-enable register `mstateen0` controls access to `uiselect` and `uireg*`, in addition to the `siselect`, `sireg*`, `vsiselect`, and `vsireg*` CSRs it already controls under Sscsrind cite:[smstateen]. When `mstateen0`[60]=0, an attempt to access `uiselect` or `uireg*` from a privilege mode less privileged than M-mode results in an illegal-instruction exception.
+If extension Smstateen is implemented together with Sucsrind, bit 4 (UCSRIND) of state-enable register `mstateen0` controls access to `uiselect` and `uireg*`. When `mstateen0`.UCSRIND=0, an attempt to access `uiselect` or `uireg*` from a privilege mode less privileged than M-mode results in an illegal-instruction exception. Bit 60 (CSRIND) of `mstateen0` continues to control only the Sscsrind CSRs (`siselect`, `sireg*`, `vsiselect`, and `vsireg*`) and does not gate `uiselect` or `uireg*`.
 
-If the hypervisor extension is implemented, `hstateen0`[60] (CSRIND) also controls accesses from VS-mode or VU-mode to `uiselect` and `uireg*`. When `hstateen0`[60]=0 and `mstateen0`[60]=1, all attempts from VS-mode or VU-mode to access `uiselect` or `uireg*` raise a virtual-instruction exception.
+If the hypervisor extension is implemented, `hstateen0`.UCSRIND also controls accesses from VS-mode or VU-mode to `uiselect` and `uireg*`. When `hstateen0`.UCSRIND=0 and `mstateen0`.UCSRIND=1, all attempts from VS-mode or VU-mode to access `uiselect` or `uireg*` raise a virtual-instruction exception.
+
+When S-mode is implemented, `sstateen0`.UCSRIND controls accesses from U-mode to `uiselect` and `uireg*`, and, when V=1, virtual `sstateen0`.UCSRIND controls accesses from VU-mode. `sstateen0`.UCSRIND is read-only 0 when `mstateen0`.UCSRIND=0, and virtual `sstateen0`.UCSRIND is read-only 0 when `hstateen0`.UCSRIND=0. Allocating the enable at bit 4 keeps it in the low end of `sstateen0`, with the same bit position in `mstateen0` and `hstateen0`, as required for state accessible at user level cite:[smstateen].
 
 [NOTE]
 Individual extensions that use `uiselect`/`uireg*` to access specific register state may define additional `sstateen` bits to provide S-mode with fine-grained control over U-mode access to that state. <<sutcfg, Sutcfg>> defines `sstateen0`.TR to control U-mode access to trigger registers accessed through `uireg*`.
@@ -89,4 +91,13 @@ Sucsrind depends on the following extensions:
 | `uireg4` | address TBD | URW | User indirect register alias 4
 | `uireg5` | address TBD | URW | User indirect register alias 5
 | `uireg6` | address TBD | URW | User indirect register alias 6
+|===
+
+.New Smstateen Bits Introduced by Sucsrind
+[cols="30%,20%,50%", options="header"]
+|===
+| Register | Bit | Purpose
+| `mstateen0` | 4 (UCSRIND) | Controls access to `uiselect` and `uireg*` below M-mode
+| `hstateen0` | 4 (UCSRIND) | Controls access to `uiselect` and `uireg*` in VS/VU-mode when V=1
+| `sstateen0` | 4 (UCSRIND) | Controls U-mode access to `uiselect` and `uireg*`
 |===

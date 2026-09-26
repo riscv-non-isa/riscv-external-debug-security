@@ -126,7 +126,7 @@ When `mstateen0`.TR=0, `sstateen0`.TR is read-only 0. When V=1 and `hstateen0`.T
 The TR bit is bit 3 in `sstateen0`.
 
 [NOTE]
-See the Sscsrind and Sucsrind specifications cite:[indirectcsr] for how bit 60 (CSRIND) in `mstateen0` and `hstateen0` can also restrict access to `uiselect` and `uireg*` from privilege modes less privileged than M-mode, including VU-mode when V=1. The CSRIND bit provides blanket control over indirect CSR infrastructure, while TR provides trigger-specific delegation control.
+See the Sscsrind and Sucsrind specifications cite:[indirectcsr] for how bit 60 (CSRIND) in `mstateen0` and `hstateen0` restricts access to `siselect` and `sireg*` from privilege modes less privileged than M-mode, including VS-mode when V=1. Access to `uiselect` and `uireg*` is gated by the UCSRIND bit (bit 4) of `mstateen0`, `hstateen0`, and `sstateen0`, as specified in <<sucsrind, Sucsrind>>. The CSRIND bit provides blanket control over the Sscsrind indirect CSR infrastructure, while TR provides trigger-specific delegation control.
 
 === Access to `tcontrol`
 
