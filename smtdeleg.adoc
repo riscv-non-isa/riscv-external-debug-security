@@ -10,7 +10,7 @@ The Smtdeleg extension provides that path for S/HS-mode and VS-mode, using the i
 U-mode and VU-mode trigger access is specified by the distinct <<sutcfg, Sutcfg>> extension, which requires <<sucsrind, Sucsrind>>. Those extensions are not part of Smtdeleg or Sstcfg.
 
 [NOTE]
-This specification treats S/HS-mode software as trusted to manage trigger state assigned to lower-privilege VS-mode, VU-mode, and U-mode contexts. The management accesses defined in <<dmode-mgmt>> do not protect that lower-privilege trigger state from S/HS-mode software.
+This specification treats S/HS-mode software as trusted to manage trigger state assigned to lower-privilege VS-mode, VU-mode, and U-mode contexts when external debug is disallowed for S/HS-mode. The management accesses defined in <<dmode-mgmt>> do not protect that lower-privilege trigger state from S/HS-mode software. They do not let S/HS-mode software change a `DMODE`=1 trigger configured by an external debugger with M-mode or S/HS-mode debug access privilege.
 
 [[sstcfg-scope]]
 === Sstcfg Scope
@@ -68,7 +68,7 @@ Software must save and restore the selection index when switching trigger access
 
 When V=1, accesses from VS-mode to `siselect` and `sireg*` are substituted by `vsiselect` and `vsireg*`, as specified by Sscsrind. Field relocations that apply to VS-mode accesses are specified in <<sstcfg-field-mods>>. The trigger selection index accessed through `vsireg5` is shared with S/HS-mode, as specified in <<sstcfg-trigger-select>>.
 
-When HS-mode accesses `vsiselect` and `vsireg*` directly, the accesses use the VS-mode field modifications and type constraints in this chapter. These accesses provide HS-mode management of VS-mode and VU-mode trigger context as specified in <<sstcfg-lower-dmode>>.
+When HS-mode accesses `vsiselect` and `vsireg*` directly, the accesses use the VS-mode field modifications and type constraints in this chapter. When external debug is disallowed for S/HS-mode, these accesses provide HS-mode management of VS-mode and VU-mode trigger context as specified in <<sstcfg-lower-dmode>>.
 
 [[sstcfg-field-mods]]
 === Supervisor Trigger State Access Modifications
@@ -136,7 +136,7 @@ When the hart is not in Debug Mode and the selected trigger has `tdata1`.DMODE=1
 [[sstcfg-lower-dmode]]
 ==== HS-mode Management of VS/VU Trigger Context
 
-HS-mode accesses to `vsireg` through `vsireg4` while `vsiselect` holds the trigger access value are management accesses in the VS view, as specified in <<dmode-mgmt>>. The VS view covers the VS and VU mode-enable fields, so HS-mode can save, park, and restore `DMODE`=1 triggers that match only in VS-mode or VU-mode. These accesses use the VS-mode field modifications, type constraints, and type-specific constraints in this chapter, and they do not provide HS-mode with native access to fields masked by the VS view.
+When `mdbgen`=0 and `SEDBGEN`=0, HS-mode accesses to `vsireg` through `vsireg4` while `vsiselect` holds the trigger access value are management accesses in the VS view, as specified in <<dmode-mgmt>>. The VS view covers the VS and VU mode-enable fields, so HS-mode can save, park, and restore `DMODE`=1 triggers that match only in VS-mode or VU-mode. When `mdbgen`=1 or `SEDBGEN`=1, these accesses are not management accesses and follow the owner rule in <<dmode-mgmt>>. These accesses use the VS-mode field modifications, type constraints, and type-specific constraints in this chapter, and they do not provide HS-mode with native access to fields masked by the VS view.
 
 These HS-mode management accesses are architectural accesses and do not require an SBI. When Smstateen is implemented, they remain subject to `mstateen0`.CSRIND and `mstateen0`.TR. `hstateen0`.TR controls VS-mode and VU-mode software access; it does not restrict HS-mode management accesses.
 
@@ -185,9 +185,9 @@ This access path is one of the primary motivations for Smtdeleg: without it, an 
 
 === Trigger Allocation
 
-Smtdeleg uses Smstateen bits for delegation control. When `mstateen0`.TR=1, S/HS-mode can access delegated trigger state through `siselect`/`sireg*` (subject to DMODE restrictions and type-specific constraints). When V=1 and `hstateen0`.TR=1, VS-mode uses the same selection state with the Sscsrind substitution to `vsiselect`/`vsireg*`. HS-mode can also use direct `vsiselect`/`vsireg*` accesses to manage VS-mode and VU-mode trigger context as specified in <<sstcfg-lower-dmode>>.
+Smtdeleg uses Smstateen bits for delegation control. When `mstateen0`.TR=1, S/HS-mode can access delegated trigger state through `siselect`/`sireg*` (subject to DMODE restrictions and type-specific constraints). When V=1 and `hstateen0`.TR=1, VS-mode uses the same selection state with the Sscsrind substitution to `vsiselect`/`vsireg*`. When external debug is disallowed for S/HS-mode, HS-mode can also use direct `vsiselect`/`vsireg*` accesses to manage VS-mode and VU-mode trigger context as specified in <<sstcfg-lower-dmode>>.
 
-`DMODE` takes priority over delegated S/HS-mode and VS-mode access, as specified in <<dmode-mgmt>>. Higher-privilege software can reconfigure triggers with `DMODE`=0 through its own interface, overriding lower-privilege configuration. A `DMODE`=1 trigger that enables S/HS-mode is within only the native view, so S/HS-mode software cannot release it outside Debug Mode and requests M-mode assistance. HS-mode can manage `DMODE`=1 triggers within the VS view as specified in <<sstcfg-lower-dmode>>. Debug Mode can reclaim a trigger through the corresponding delegated interface.
+`DMODE` takes priority over delegated S/HS-mode and VS-mode access, as specified in <<dmode-mgmt>>. Higher-privilege software can reconfigure triggers with `DMODE`=0 through its own interface, overriding lower-privilege configuration. A `DMODE`=1 trigger that enables S/HS-mode is within only the native view, so S/HS-mode software cannot release it outside Debug Mode and requests M-mode assistance. When external debug is disallowed for S/HS-mode, HS-mode can manage `DMODE`=1 triggers within the VS view as specified in <<sstcfg-lower-dmode>>. Debug Mode can reclaim a trigger through the corresponding delegated interface.
 
 Software must manage trigger allocation cooperatively. TR enables delegated trigger access but does not identify per-trigger ownership. There is no per-trigger hardware allocation. Before setting the applicable TR bit, higher-privilege software should clear its own mode-enable bits on any trigger it is exposing.
 

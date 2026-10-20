@@ -94,14 +94,20 @@ When `tdata1`.TYPE is a supported type, `uireg4` reads `tinfo` with bits corresp
 [[utrig-dmode]]
 ==== DMODE Interaction
 
-When the hart is not in Debug Mode and the selected trigger has `tdata1`.DMODE=1, the trigger is reserved for Debug Mode use. VS-mode, U-mode, and VU-mode accesses through `uireg` through `uireg4` follow the owner rule in <<dmode-mgmt>>: they read 0 and writes are ignored. When the hart is in Debug Mode, these accesses follow the field modifications in this section together with the base Sdtrig `DMODE` rules.
+When the hart is not in Debug Mode and the selected trigger has `tdata1`.DMODE=1, the trigger is reserved for Debug Mode use. U-mode and VU-mode accesses through `uireg` through `uireg4` follow the owner rule in <<dmode-mgmt>>: they read 0 and writes are ignored. M-mode, S/HS-mode, and VS-mode accesses follow the owner rule unless they are management accesses, as specified below. When the hart is in Debug Mode, these accesses follow the field modifications in this section together with the base Sdtrig `DMODE` rules.
 
-M-mode and S/HS-mode accesses to `uireg` through `uireg4` while `uiselect` holds the trigger access value are management accesses in the U view, as specified in <<dmode-mgmt>>. The U view covers only the U mode-enable field, so S/HS-mode can save, park, and restore `DMODE`=1 triggers that match only in U-mode. These accesses use the U-mode field modifications and type constraints in this chapter.
+The following accesses to `uireg` through `uireg4` while `uiselect` holds the trigger access value are management accesses, as specified in <<dmode-mgmt>>:
 
-When switching between U-mode application contexts, S/HS-mode software should follow the procedure in <<dmode-mgmt>> using `uiselect` and `uireg` through `uireg5`. VU-mode context is managed by HS-mode through the VS view, as specified in <<sstcfg-lower-dmode>>.
+* M-mode accesses when `mdbgen`=0, in the U view.
+* S/HS-mode accesses when `mdbgen`=0 and `SEDBGEN`=0, in the U view.
+* VS-mode accesses (V=1) when `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0, in the VU view.
+
+The U view covers only the U mode-enable field, so S/HS-mode can save, park, and restore `DMODE`=1 triggers that match only in U-mode. These accesses use the U-mode field modifications and type constraints in this chapter. VS-mode accesses use the VU-mode field modifications, in which the U field maps to the underlying VU field. The VU view therefore covers only the VU mode-enable field, so VS-mode can save, park, and restore `DMODE`=1 triggers that match only in VU-mode. VS-mode management accesses remain subject to `hstateen0`.TR, so HS-mode controls whether VS-mode can manage VU-mode trigger context.
+
+When switching between U-mode application contexts, S/HS-mode software should follow the procedure in <<dmode-mgmt>> using `uiselect` and `uireg` through `uireg5`. When switching between VU-mode application contexts, VS-mode software should follow the same procedure. HS-mode can also manage VU-mode context through the VS view, as specified in <<sstcfg-lower-dmode>>.
 
 [NOTE]
-When the hart is not in Debug Mode and `uireg` through `uireg4` all read as zero for the trigger index held in `uireg5`, VS-mode, U-mode, or VU-mode software cannot use the selected slot through this interface. The slot may be reserved by Debug Mode (`DMODE`=1), may have an unsupported `tdata1`.TYPE, or may have `tdata1`.TYPE=0. Software should try the next trigger index. An all-zero read of aliases 1–4 does not distinguish these cases. S/HS-mode management accesses are governed separately above. Sdtrig `chain` WARL on a visible trigger still depends on a neighboring trigger's `DMODE`; this interface does not redefine that WARL. An external debugger whose <<dbgaccpriv, debug access privilege>> is U-mode or VU-mode uses the same interface from Debug Mode, where `DMODE`=1 is visible and writable, so it can program `ACTION`=1 in accordance with Sdtrig.
+When the hart is not in Debug Mode and `uireg` through `uireg4` all read as zero for the trigger index held in `uireg5`, VS-mode, U-mode, or VU-mode software cannot use the selected slot through this interface. The slot may be reserved by Debug Mode (`DMODE`=1), may have an unsupported `tdata1`.TYPE, or may have `tdata1`.TYPE=0. Software should try the next trigger index. An all-zero read of aliases 1–4 does not distinguish these cases. Management accesses are governed separately above. Sdtrig `chain` WARL on a visible trigger still depends on a neighboring trigger's `DMODE`; this interface does not redefine that WARL. An external debugger whose <<dbgaccpriv, debug access privilege>> is U-mode or VU-mode uses the same interface from Debug Mode, where `DMODE`=1 is visible and writable, so it can program `ACTION`=1 in accordance with Sdtrig.
 
 === User Trigger State Access Control
 
@@ -147,9 +153,9 @@ This access path is one of the primary motivations for Sutcfg: without it, an ex
 
 === Trigger Allocation
 
-When the applicable TR bits permit access, U-mode and VU-mode can access delegated trigger state through `uiselect`/`uireg*` (subject to DMODE restrictions and type-specific constraints). When S-mode is implemented and `mstateen0`.TR=1, S/HS-mode can use the same access path to manage U-mode trigger context.
+When the applicable TR bits permit access, U-mode and VU-mode can access delegated trigger state through `uiselect`/`uireg*` (subject to DMODE restrictions and type-specific constraints). When S-mode is implemented and `mstateen0`.TR=1, S/HS-mode can use the same access path to manage U-mode trigger context, as specified in <<utrig-dmode>>.
 
-`DMODE` takes priority over delegated VS-mode, U-mode, and VU-mode access, as specified in <<dmode-mgmt>>. Higher-privilege software can reconfigure triggers with `DMODE`=0 through its own interface, overriding lower-privilege configuration. S/HS-mode can manage `DMODE`=1 triggers within the U view as specified in <<utrig-dmode>>, and HS-mode manages VS-mode and VU-mode trigger context as specified in <<sstcfg-lower-dmode>>. Debug Mode can reclaim a trigger through the corresponding delegated interface.
+`DMODE` takes priority over delegated VS-mode, U-mode, and VU-mode access, as specified in <<dmode-mgmt>>. Higher-privilege software can reconfigure triggers with `DMODE`=0 through its own interface, overriding lower-privilege configuration. When external debug is disallowed for the managing mode, S/HS-mode can manage `DMODE`=1 triggers within the U view, VS-mode can manage `DMODE`=1 triggers within the VU view, as specified in <<utrig-dmode>>, and HS-mode can manage VS-mode and VU-mode trigger context as specified in <<sstcfg-lower-dmode>>. Debug Mode can reclaim a trigger through the corresponding delegated interface.
 
 Software must manage trigger allocation cooperatively. TR enables delegated trigger access but does not identify per-trigger ownership. There is no per-trigger hardware allocation. Before setting the applicable TR bit, higher-privilege software should clear its own mode-enable bits on any trigger it is exposing.
 
