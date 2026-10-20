@@ -461,10 +461,9 @@ S/HS-mode software has no management access to its own S/HS view; a `DMODE`=1 tr
 A management access to a trigger within its view behaves as follows:
 
 * Reads return the trigger state through the field modifications and type constraints of the view.
-* `DMODE` is read/write.
-* If the selected trigger has `DMODE`=1, writes to `tdata2` and `tdata3` (alias 2 and alias 3) are ignored. For a write to `tdata1` (alias 1), changes to `DMODE` and `ACTION` are permitted and other fields are ignored, except that a write of the disabled-trigger encoding (`TYPE`=15 and `DMODE`=0) is committed atomically as a disabled trigger.
-* If the selected trigger has `DMODE`=0, writes follow the field modifications and type constraints of the view.
-* If a write would result in `DMODE`=0 and `ACTION`=1, hardware sets `ACTION` to 0.
+* `DMODE` is writable, as it is from Debug Mode.
+* If the selected trigger has `DMODE`=1, writes to `tdata1` (alias 1) are not ignored. Writes to `tdata2` and `tdata3` (alias 2 and alias 3) are ignored, as specified by Sdtrig, so software clears `DMODE` through a write to `tdata1` before changing them.
+* Writes follow the field modifications and type constraints of the view and the Sdtrig WARL rules for `tdata1`.
 
 A management access through a delegated view to a trigger that is not within that view follows the owner rule above when `DMODE`=1. When `DMODE`=0, it follows the field modifications and type constraints of the view, and `DMODE` is not writable.
 
@@ -481,10 +480,12 @@ Management accesses can write `DMODE`=1 and `ACTION`=1. Hardware does not check 
 In the following procedure, alias 1 through alias 5 are `tdata1`, `tdata2`, `tdata3`, `tinfo`, and `tselect` for the native view. For a delegated view, they are `uireg` through `uireg5` or `vsireg` through `vsireg5` while `uiselect` or `vsiselect` holds the trigger access value. Software that switches trigger context through a management access should:
 
 . For a delegated view, save the select CSR and write the trigger access value to it. Save the trigger selection index (alias 5).
-. For each trigger to be switched, write its index to alias 5, and save alias 1 through alias 3. Through a delegated view, a trigger whose alias 1 through alias 4 all read as 0 is not available to this access and is skipped.
-. Write alias 1 with the disabled-trigger encoding, so that the trigger cannot match while its state is being changed.
-. Write alias 2 and alias 3 of the incoming context, and then write alias 1 with its final value. The final write may set `DMODE`=1 and `ACTION`=1 together.
+. For each trigger to be switched, write its index to alias 5, save alias 1 through alias 3, and then write 0 to alias 1. As specified by Sdtrig, writing 0 to `tdata1` disables the trigger and leaves it in a state where `tdata2` and `tdata3` can be written. Through a delegated view, a trigger whose alias 1 through alias 4 all read as 0 is not available to this access and is skipped.
+. After all triggers to be switched are disabled, restore them in increasing index order. For each trigger, write its index to alias 5, write alias 2 and alias 3, and then write alias 1 with its final value, which may set `DMODE`=1 and `ACTION`=1 together. Read back alias 1 to confirm the written value, because `tdata1` is WARL.
 . Restore the trigger selection index, and then, for a delegated view, restore the select CSR.
+
+[NOTE]
+The restore steps follow the Sdtrig sequence for writing a trigger: write 0 to `tdata1`, write `tdata2` and `tdata3`, and then write `tdata1`. Disabling all switched triggers before restoring any of them, and restoring them in increasing index order, avoids the Sdtrig `chain` rules that depend on a neighboring trigger's `DMODE`: hardware must clear `chain` in a write that sets `DMODE` to 0 while the next trigger has `DMODE`=1, and should ignore a write that sets `DMODE` to 1 while the previous trigger has `DMODE`=0 and `chain`=1.
 
 Triggers with `DMODE`=0 are also subject to cooperative trigger allocation, as specified in <<smtdeleg>> and <<sutcfg>>.
 
