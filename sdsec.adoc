@@ -165,27 +165,13 @@ When `mdbgen` is set to 0 and the hart is running in M-mode, external debug is d
 - The external trigger outputs (with ACTION=8/9) will not match or fire.
 - Accesses to M-mode accessible CSRs (e.g., `dcsr`, `dpc`, and `dscratch0/1`) will fail and `abstractcs`.CMDERR is set to 3 (exception). 
 - The configuration in `dcsr` will be ignored as if it were 0.
-- DMODE is read/write for accesses from M-mode when Sdtrig is implemented.
+- When Sdtrig is implemented, M-mode can manage `DMODE`=1 triggers as specified in <<mdbgen-dmode>>.
 
 [[mdbgen-dmode]]
-When `mdbgen`=0 and the hart is not in Debug Mode, M-mode may read the native trigger CSRs.
-
-If the selected trigger has `DMODE`=0, M-mode writes to `tdata1`, `tdata2`, and `tdata3` follow the base Sdtrig rules.
-
-If the selected trigger has `DMODE`=1:
-
-* Writes to `tdata2` and `tdata3` are ignored.
-* For a write to `tdata1`, changes to `DMODE` and `ACTION` are permitted.
-* A write of the disabled-trigger encoding (`TYPE`=15 and `DMODE`=0) is also permitted. The write shall be committed atomically as a disabled trigger, regardless of the previous `DMODE` value.
-* Other fields in `tdata1` are ignored unless the write is the disabled-trigger write described above.
-* If the resulting state would have `DMODE`=0 and `ACTION`=1, hardware shall set `ACTION` to 0.
-
-When `mdbgen`=1, the native M-mode exception above does not apply: the native `DMODE` field is writable only from Debug Mode. This rule does not restrict the trusted S/HS-mode manager accesses through delegated lower-level views.
+When `mdbgen`=0 and the hart is not in Debug Mode, M-mode may read the native trigger CSRs, and M-mode accesses to `tdata1`, `tdata2`, and `tdata3` are management accesses in the native view, as specified in <<dmode-mgmt>>. When `mdbgen`=1, M-mode accesses to the native trigger CSRs are not management accesses, and the native `DMODE` field is writable only from Debug Mode, as in Sdtrig.
 
 [NOTE]
-This `DMODE` write access allows M-mode software to save and restore trigger context at lower-privilege software boundaries. After setting `DMODE`=0, software should disable the trigger or clear its mode-enable bits before a lower-privilege context runs. To restore a saved `DMODE`=1 configuration, write the saved `tdata*` while `DMODE`=0, including `DMODE`=1 and `ACTION`=1 in a single `tdata1` write if that was the saved configuration. Without this access, an external debugger could leave `ACTION`=1 triggers that indirectly observe states (such as PC and data addresses) from the debug-disallowed software, potentially leading to information leakage or Denial of Service (DoS). When `mdbgen` is 1, `DMODE` remains accessible only from Debug Mode.
-
-S/HS-mode manager access to `DMODE`=1 trigger state for lower-privilege contexts is specified in <<sstcfg-lower-dmode>> and <<utrig-dmode>>. That access uses the applicable delegated view and does not provide S/HS-mode with native access to trigger state. The lower-privilege external debug enable fields control external debugger access and do not remove this trusted S/HS-mode manager access.
+This management access allows M-mode software to save and restore trigger context at lower-privilege software boundaries. Without it, an external debugger could leave `ACTION`=1 triggers that indirectly observe states (such as PC and data addresses) from the debug-disallowed software, potentially leading to information leakage or Denial of Service (DoS).
 
 If the hart is running in a debug-allowed lower privilege mode (e.g., S/HS-mode) when `mdbgen` is 0: 
 
@@ -439,6 +425,68 @@ The `udcsr` register exposes a subset of `dcsr`, formatted as shown in <<udcsr32
   {bits:   4, name: 'DEBUGVER'}
 ], config:{lanes: 2, hspace:1024}}
 ....
+
+[[dmode-mgmt]]
+==== Trigger `DMODE` Management
+
+This section specifies how software outside Debug Mode can save, park, and restore triggers whose `tdata1`.DMODE is 1, for example when switching software contexts. It applies when Sdtrig is implemented. Each access path to trigger state exposes a _view_ of the trigger: the native view through `tselect` and `tdata*`, the S/HS view through `sireg*` (<<smtdeleg>>), the VS view through `vsireg*` (<<smtdeleg>>), and the U view through `uireg*` (<<sutcfg>>).
+
+===== Owner Accesses
+
+When the hart is not in Debug Mode and the selected trigger has `DMODE`=1, the following accesses read 0 and writes to them are ignored:
+
+* M-mode and S/HS-mode accesses to `sireg` through `sireg4` while `siselect` holds the trigger access value.
+* VS-mode accesses to `vsireg` through `vsireg4` while `vsiselect` holds the trigger access value.
+* VS-mode, U-mode, and VU-mode accesses to `uireg` through `uireg4` while `uiselect` holds the trigger access value.
+* Management accesses through a delegated view to a trigger that is not within that view, as defined below.
+
+The trigger selection index in alias 5 is not affected. When the hart is in Debug Mode, these accesses follow the base Sdtrig `DMODE` rules.
+
+===== Management Accesses
+
+The following accesses are _management accesses_. Each manages one view:
+
+[cols="40%,20%,40%", options="header"]
+|===
+| Access | Managed view | Mode-enable fields covered
+| M-mode accesses to `tdata1`, `tdata2`, and `tdata3` when `mdbgen`=0 and the hart is not in Debug Mode | Native | All
+| HS-mode accesses to `vsireg` through `vsireg4` while `vsiselect` holds the trigger access value | VS | VS and VU (exposed as S and U)
+| M-mode and S/HS-mode accesses to `uireg` through `uireg4` while `uiselect` holds the trigger access value | U | U
+|===
+
+A trigger is _within_ a managed view when every mode-enable field of the trigger (M, S, U, VS, and VU in `tdata1`) that the view does not cover is 0. A trigger whose type has no mode-enable fields, such as a disabled trigger, is within every view. Hardware evaluates this condition on the current state of the selected trigger for each management access.
+
+S/HS-mode software has no management access to its own S/HS view; a `DMODE`=1 trigger that enables S/HS-mode is within only the native view. VS-mode software has no management access; HS-mode manages VS-mode and VU-mode trigger context through the VS view.
+
+A management access to a trigger within its view behaves as follows:
+
+* Reads return the trigger state through the field modifications and type constraints of the view.
+* `DMODE` is read/write.
+* If the selected trigger has `DMODE`=1, writes to `tdata2` and `tdata3` (alias 2 and alias 3) are ignored. For a write to `tdata1` (alias 1), changes to `DMODE` and `ACTION` are permitted and other fields are ignored, except that a write of the disabled-trigger encoding (`TYPE`=15 and `DMODE`=0) is committed atomically as a disabled trigger.
+* If the selected trigger has `DMODE`=0, writes follow the field modifications and type constraints of the view.
+* If a write would result in `DMODE`=0 and `ACTION`=1, hardware sets `ACTION` to 0.
+
+A management access through a delegated view to a trigger that is not within that view follows the owner rule above when `DMODE`=1. When `DMODE`=0, it follows the field modifications and type constraints of the view, and `DMODE` is not writable.
+
+Management accesses through the U view and VS view do not depend on `mdbgen` or on the lower-privilege external debug enable fields (`SEDBGEN`, `VSEDBGEN`, `UEDBGEN`, and `VUEDBGEN`). They remain subject to the access controls of the corresponding interface in <<smtdeleg>> and <<sutcfg>>.
+
+[NOTE]
+When `mdbgen`=1, the external debugger has M-mode debug access privilege, and Sdtrig protects its native `DMODE`=1 triggers from M-mode software. A trigger within the U view or VS view matches only in the modes of that view, so it belongs to a lower-privilege software context, and the software that switches those contexts still needs to park and restore it. The within-view condition prevents a management access from affecting a trigger that also matches in M-mode, S/HS-mode, or the modes of another view.
+
+[NOTE]
+Management accesses can write `DMODE`=1 and `ACTION`=1. Hardware does not check that such a write restores a configuration created by an external debugger; this specification trusts M-mode and S/HS-mode software for the views they manage. A trigger with `ACTION`=1 does not match or fire while external debug is disallowed for the hart's current privilege mode.
+
+===== Context Switch Procedure
+
+In the following procedure, alias 1 through alias 5 are `tdata1`, `tdata2`, `tdata3`, `tinfo`, and `tselect` for the native view. For a delegated view, they are `uireg` through `uireg5` or `vsireg` through `vsireg5` while `uiselect` or `vsiselect` holds the trigger access value. Software that switches trigger context through a management access should:
+
+. For a delegated view, save the select CSR and write the trigger access value to it. Save the trigger selection index (alias 5).
+. For each trigger to be switched, write its index to alias 5, and save alias 1 through alias 3. Through a delegated view, a trigger whose alias 1 through alias 4 all read as 0 is not available to this access and is skipped.
+. Write alias 1 with the disabled-trigger encoding, so that the trigger cannot match while its state is being changed.
+. Write alias 2 and alias 3 of the incoming context, and then write alias 1 with its final value. The final write may set `DMODE`=1 and `ACTION`=1 together.
+. Restore the trigger selection index, and then, for a delegated view, restore the select CSR.
+
+Triggers with `DMODE`=0 are also subject to cooperative trigger allocation, as specified in <<smtdeleg>> and <<sutcfg>>.
 
 [[sdsectrc]]
 === Trace Security Extensions
