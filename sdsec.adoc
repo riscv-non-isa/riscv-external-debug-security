@@ -211,7 +211,7 @@ When `SEDBGEN` is set to 1, S/HS-mode external debug is allowed:
 - The <<dbops, debug operations>> are allowed when the hart executes in S/HS-mode, U-mode, VS-mode, or VU-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must raise an exception, stopping execution and setting `abstractcs`.CMDERR to 3.
 - The `sdcsr` and `sdpc` registers (<<smodecsr>>) are introduced in Smsedbgsec to provide an S/HS-mode debugger with access to `dcsr` and `dpc`.
-- When Smtdeleg and Sstcfg are implemented, an S/HS-mode debugger can access Sdtrig trigger state through the <<smtdeleg, Smtdeleg/Sstcfg>> interface (`stselect` and `siselect`/`sireg*`).
+- When Smtdeleg and Sstcfg are implemented, an S/HS-mode debugger can access Sdtrig trigger state through the <<smtdeleg, Smtdeleg/Sstcfg>> interface (`siselect`/`sireg*`).
 - The *effective debug access privilege* of loads and stores in Debug Mode may be modified as described in <<effectivedbgpriv>>.
 - The <<maxdbgpriv, allowed resume privilege modes>> include S/HS-mode and all lower privilege modes.
 
@@ -365,7 +365,7 @@ When `UEDBGEN`=1, `mdbgen`=0, and `SEDBGEN`=0, U-mode external debug is allowed:
 - The <<dbops, debug operations>> are allowed when the hart executes in U-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must raise an exception, stopping execution and setting `abstractcs`.CMDERR to 3.
 - The `udcsr` and `udpc` registers described in <<umodecsr>> provide access to the permitted `dcsr` and `dpc` state.
-- When Sutcfg is implemented, a U-mode debugger can access Sdtrig trigger state through the <<sutcfg, Sutcfg>> interface (`utselect` and `uiselect`/`uireg*`).
+- When Sutcfg is implemented, a U-mode debugger can access Sdtrig trigger state through the <<sutcfg, Sutcfg>> interface (`uiselect`/`uireg*`).
 - U-mode is the only <<maxdbgpriv, allowed resume privilege mode>>.
 
 When `UEDBGEN` is set to 0 and the hart is running in U-mode, external debug is disallowed for U-mode:
@@ -388,7 +388,7 @@ When `VUEDBGEN`=1, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0, VU-mode external d
 - The <<dbops, debug operations>> are allowed when the hart executes in VU-mode.
 - Privilege-changing instructions (other than EBREAK) executed in the Program Buffer must raise an exception, stopping execution and setting `abstractcs`.CMDERR to 3.
 - The `udcsr` and `udpc` registers described in <<umodecsr>> provide access to the permitted `dcsr` and `dpc` state.
-- When Sutcfg is implemented, a VU-mode debugger can access Sdtrig trigger state through the <<sutcfg, Sutcfg>> interface (`utselect` and `uiselect`/`uireg*`).
+- When Sutcfg is implemented, a VU-mode debugger can access Sdtrig trigger state through the <<sutcfg, Sutcfg>> interface (`uiselect`/`uireg*`).
 - VU-mode is the only <<maxdbgpriv, allowed resume privilege mode>>.
 
 When `VUEDBGEN` is set to 0 and the hart is running in VU-mode, external debug is disallowed for VU-mode:
