@@ -78,7 +78,7 @@ When Smstateen is implemented, the `mstateen0`.TR bit controls access to trigger
 
 If the H extension is implemented, the `hstateen0`.TR bit controls access to trigger state when V=1. `hstateen0`.TR is read-only 0 when `mstateen0`.TR=0. When `mstateen0`.TR=1 and `hstateen0`.TR=0, attempts from VS-mode to access `sireg` through `sireg5` (really `vsireg` through `vsireg5`) while `vsiselect` holds the trigger access value raise a virtual-instruction exception.
 
-The TR bit is bit 3 in `mstateen0` and `hstateen0`.
+The TR bit is bit 3 in `mstateen0` and `hstateen0`. The combination of Sstcfg and Ssstateen incorporates the TR bit of `hstateen0` but not that of `mstateen0`, since machine-level CSRs are not visible to supervisor level.
 
 [NOTE]
 See the Sscsrind specification cite:[indirectcsr] for how bit 60 (CSRIND) in `mstateen0` and `hstateen0` can also restrict access to `siselect`/`sireg*` and `vsiselect`/`vsireg*` from privilege modes less privileged than M-mode.

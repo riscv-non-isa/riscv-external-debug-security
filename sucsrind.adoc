@@ -61,7 +61,7 @@ If extension Smstateen is implemented together with Sucsrind, bit 4 (UCSRIND) of
 
 If the hypervisor extension is implemented, `hstateen0`.UCSRIND also controls accesses from VS-mode or VU-mode to `uiselect` and `uireg*`. When `hstateen0`.UCSRIND=0 and `mstateen0`.UCSRIND=1, all attempts from VS-mode or VU-mode to access `uiselect` or `uireg*` raise a virtual-instruction exception.
 
-When S-mode is implemented, `sstateen0`.UCSRIND controls accesses from U-mode and VU-mode to `uiselect` and `uireg*`. Allocating the enable at bit 4 keeps it in the low end of `sstateen0`, with the same bit position in `mstateen0` and `hstateen0`, as required for state accessible at user level cite:[smstateen].
+When S-mode is implemented, `sstateen0`.UCSRIND controls accesses from U-mode and VU-mode to `uiselect` and `uireg*`. Allocating the enable at bit 4 keeps it in the low end of `sstateen0`, with the same bit position in `mstateen0` and `hstateen0`, as required for state accessible at user level cite:[smstateen]. The combination of Sucsrind and Ssstateen incorporates the UCSRIND bit of `hstateen0` and `sstateen0` but not that of `mstateen0`, since machine-level CSRs are not visible to supervisor level.
 
 [NOTE]
 Individual extensions that use `uiselect`/`uireg*` to access specific register state may define additional `sstateen` bits to provide S-mode with fine-grained control over U-mode access to that state. <<sutcfg, Sutcfg>> defines `sstateen0`.TR to control U-mode access to trigger registers accessed through `uireg*`.

@@ -32,6 +32,9 @@ Through `uireg*`, a trigger whose `tdata1`.TYPE is not listed above and is not 1
 [NOTE]
 `itrigger` and `etrigger` are not available through `uireg*`. Sdtrig fires them just before the first instruction of a trap handler, and U-mode and VU-mode do not execute trap handlers.
 
+[[utrig-dmode]]
+=== DMODE
+
 When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode, `uireg` through `uireg4` read 0 and writes to them are ignored while `uiselect` holds the trigger access value. Software saves and restores U-mode and VU-mode trigger context through `tdata*` (<<mdbgctl>>) or through `sireg*` and `vsireg*` (<<sstcfg-dmode>>).
 
 [[utrig-access-control]]
@@ -43,7 +46,7 @@ When Smstateen is implemented, accesses to `uireg` through `uireg5` while `uisel
 . Otherwise, if V=1 and `hstateen0`.TR=0, a virtual-instruction exception is raised.
 . Otherwise, if the privilege mode is U-mode or VU-mode and `sstateen0`.TR=0, an illegal-instruction exception is raised from U-mode, and a virtual-instruction exception is raised from VU-mode.
 
-When S-mode is not implemented, `mstateen0`.TR alone controls U-mode access. `mstateen0`.TR and `hstateen0`.TR are defined in <<smtdeleg>>. The TR bit is bit 3 in `sstateen0`.
+When S-mode is not implemented, `mstateen0`.TR alone controls U-mode access. `mstateen0`.TR and `hstateen0`.TR are defined in <<smtdeleg>>. The TR bit is bit 3 in `sstateen0`. The combination of Sutcfg and Ssstateen incorporates the TR bit of `sstateen0`.
 
 === Debugger Access
 
