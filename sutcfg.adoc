@@ -16,10 +16,9 @@ The `uiselect` value for trigger access is the trigger access value defined in <
 | `mcontrol6`, `icount`
 
 (accessed by `tdata1`)
-| M, S, VS, and VU are read-only 0
-| M and S are read-only 0 +
-U accesses `tdata1`.VU +
-VS and VU are read-only 0
+| The M, S, VS, and VU fields of `uireg` are read-only 0
+| The U field of `uireg` accesses `tdata1`.VU +
+The M, S, VS, and VU fields of `uireg` are read-only 0
 
 | `textra32`, `textra64`
 
@@ -35,6 +34,7 @@ Through `uireg*`, a trigger whose `tdata1`.TYPE is not listed above and is not 1
 
 When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode, `uireg` through `uireg4` read 0 and writes to them are ignored while `uiselect` holds the trigger access value. Software saves and restores U-mode and VU-mode trigger context through `tdata*` (<<mdbgctl>>) or through `sireg*` and `vsireg*` (<<sstcfg-dmode>>).
 
+[[utrig-access-control]]
 === User Trigger State Access Control
 
 When Smstateen is implemented, accesses to `uireg` through `uireg5` while `uiselect` holds the trigger access value are checked in this order:
@@ -47,7 +47,7 @@ When S-mode is not implemented, `mstateen0`.TR alone controls U-mode access. `ms
 
 === Debugger Access
 
-When Smuedbgsec is implemented, an external debugger with U-mode debug access privilege (`UEDBGEN`=1) or VU-mode debug access privilege (`VUEDBGEN`=1) accesses triggers through `uiselect`/`uireg*`. In Debug Mode, `DMODE` is writable as specified by Sdtrig, so the debugger can program triggers with `ACTION`=1.
+When Smuedbgsec is implemented, an external debugger with U-mode debug access privilege (`UEDBGEN`=1) or VU-mode debug access privilege (`VUEDBGEN`=1) accesses triggers through `uiselect`/`uireg*`. These accesses are subject to the access control in <<utrig-access-control>>, so the debugger can access triggers only when the state-enable bits permit the access. In Debug Mode, `DMODE` is writable as specified by Sdtrig, so the debugger can program triggers with `ACTION`=1.
 
 === Summary of New State
 

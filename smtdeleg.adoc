@@ -41,12 +41,10 @@ Attempts to access `sireg6` while `siselect` holds the trigger access value, or 
 | `mcontrol6`, `icount`, `etrigger`, `itrigger`
 
 (accessed by `tdata1`)
-| M is read-only 0 +
-VS and VU are read-only 0
-| M is read-only 0 +
-S accesses `tdata1`.VS +
-U accesses `tdata1`.VU +
-VS and VU are read-only 0
+| The M, VS, and VU fields of `sireg` are read-only 0
+| The S field of `vsireg` accesses `tdata1`.VS +
+The U field of `vsireg` accesses `tdata1`.VU +
+The M, VS, and VU fields of `vsireg` are read-only 0
 
 | `textra32`, `textra64`
 
@@ -59,6 +57,9 @@ Through `sireg*` and `vsireg*`, a trigger whose `tdata1`.TYPE is not listed abov
 
 [NOTE]
 The bit positions for the M, S, U, VS, and VU fields vary based on the trigger type specified by `tdata1`.TYPE; see _The RISC-V Debug Specification_ cite:[dbgspec].
+
+[NOTE]
+VS-mode runs a guest OS that uses the S and U fields of `vsireg` for its own kernel and applications. The hart has no further virtualization level for the VS and VU fields of `vsireg` to control.
 
 [NOTE]
 A hypervisor enables trigger match in VS-mode or VU-mode through `vsiselect`/`vsireg*`. This simplifies support for nested virtualization. A nested hypervisor (running in VS-mode) that configures triggers to match in its guest attempts to access `vsiselect`/`vsireg*`, which traps to HS-mode, so the L0 hypervisor (running in HS-mode) can emulate the desired behavior.
@@ -87,7 +88,7 @@ TR delegates all triggers at once. While TR=1, the triggers are used by the less
 
 === Debugger Access
 
-When Smsedbgsec is implemented, `mdbgen`=0, and `SEDBGEN`=1, an external debugger with S/HS-mode debug access privilege accesses triggers through `siselect`/`sireg*`. When Smvsedbgsec is implemented, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=1, an external debugger with VS-mode debug access privilege accesses triggers through `vsiselect`/`vsireg*`. In Debug Mode, `DMODE` is writable as specified by Sdtrig, so the debugger can program triggers with `ACTION`=1.
+When Smsedbgsec is implemented, `mdbgen`=0, and `SEDBGEN`=1, an external debugger with S/HS-mode debug access privilege accesses triggers through `siselect`/`sireg*`. When Smvsedbgsec is implemented, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=1, an external debugger with VS-mode debug access privilege accesses triggers through `siselect`/`sireg*` (really `vsiselect`/`vsireg*`). An S/HS-mode debugger can also access `vsiselect`/`vsireg*` directly to configure triggers for VS-mode and VU-mode. These accesses are subject to the access control in <<sstcfg-access-control>>, so the debugger can access triggers only when the state-enable bits permit the access. In Debug Mode, `DMODE` is writable as specified by Sdtrig, so the debugger can program triggers with `ACTION`=1.
 
 === Dependencies
 
