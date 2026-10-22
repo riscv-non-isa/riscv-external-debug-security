@@ -1,0 +1,61 @@
+[[sutcfg]]
+== Sutcfg (ISA Extension)
+
+The Sutcfg extension lets U-mode and VU-mode access Sdtrig cite:[dbgspec] triggers through the user-level indirect CSR interface defined by <<sucsrind, Sucsrind>>. A U-mode or VU-mode self-hosted debugger uses it without a trap to a more privileged mode, and an external debugger with U-mode or VU-mode <<dbgaccpriv, debug access privilege>> uses it from Debug Mode. Sutcfg requires Sucsrind. When S-mode is implemented, Sutcfg also requires <<smtdeleg, Smtdeleg and Sstcfg>>. Sutcfg is not a member of the Secure Debug or Secure Trace families.
+
+[[utrig-access]]
+=== User Trigger Access
+
+The `uiselect` value for trigger access is the trigger access value defined in <<trig-access-value>>. While `uiselect` holds the trigger access value, `uireg` through `uireg5` access the same state as `sireg` through `sireg5` in <<trig-access-value>>, with the field modifications below. Attempts to access `uireg6` while `uiselect` holds the trigger access value raise an illegal-instruction exception.
+
+.User Trigger CSR Field Modifications
+[cols="30%,35%,35%", options="header"]
+|===
+| Sdtrig Register | Accesses with V=0 | Accesses with V=1
+
+| `mcontrol6`, `icount`
+
+(accessed by `tdata1`)
+| M, S, VS, and VU are read-only 0
+| M and S are read-only 0 +
+U accesses `tdata1`.VU +
+VS and VU are read-only 0
+
+| `textra32`, `textra64`
+
+(accessed by `tdata3`)
+| MHVALUE, MHSELECT, SVALUE, SSELECT, and SBYTEMASK are read-only 0
+| MHVALUE, MHSELECT, SVALUE, SSELECT, and SBYTEMASK are read-only 0
+|===
+
+Through `uireg*`, a trigger whose `tdata1`.TYPE is not listed above and is not 15 (disabled) reads 0, and writes to it are ignored. `tdata1`.TYPE is WARL and can select only a listed type or 15.
+
+[NOTE]
+`itrigger` and `etrigger` are not available through `uireg*`. Sdtrig fires them just before the first instruction of a trap handler, and U-mode and VU-mode do not execute trap handlers.
+
+When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode, `uireg` through `uireg4` read 0 and writes to them are ignored while `uiselect` holds the trigger access value. Software saves and restores U-mode and VU-mode trigger context through `tdata*` (<<mdbgctl>>) or through `sireg*` and `vsireg*` (<<sstcfg-dmode>>).
+
+=== User Trigger State Access Control
+
+When Smstateen is implemented, accesses to `uireg` through `uireg5` while `uiselect` holds the trigger access value are checked in this order:
+
+. If the privilege mode is less privileged than M-mode and `mstateen0`.TR=0, an illegal-instruction exception is raised.
+. Otherwise, if V=1 and `hstateen0`.TR=0, a virtual-instruction exception is raised.
+. Otherwise, if the privilege mode is U-mode or VU-mode and `sstateen0`.TR=0, an illegal-instruction exception is raised from U-mode, and a virtual-instruction exception is raised from VU-mode.
+
+When S-mode is not implemented, `mstateen0`.TR alone controls U-mode access. `mstateen0`.TR and `hstateen0`.TR are defined in <<smtdeleg>>. The TR bit is bit 3 in `sstateen0`.
+
+=== Debugger Access
+
+When Smuedbgsec is implemented, an external debugger with U-mode debug access privilege (`UEDBGEN`=1) or VU-mode debug access privilege (`VUEDBGEN`=1) accesses triggers through `uiselect`/`uireg*`. In Debug Mode, `DMODE` is writable as specified by Sdtrig, so the debugger can program triggers with `ACTION`=1.
+
+=== Summary of New State
+
+Sutcfg adds no CSRs. It uses the trigger access value in the `uiselect` select space and the following state-enable bit. When S-mode is not implemented, Sutcfg also defines `mstateen0`.TR (bit 3), as specified in <<smtdeleg>>.
+
+.New Smstateen Bits Introduced by Sutcfg
+[cols="30%,20%,50%", options="header"]
+|===
+| Register | Bit | Purpose
+| `sstateen0` | 3 (TR) | Controls U-mode and VU-mode trigger access
+|===
