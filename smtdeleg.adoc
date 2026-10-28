@@ -41,7 +41,7 @@ Trigger interfaces follow the normal CSR privilege and virtualization rules. Sof
 | `mcontrol6`, `icount`, `etrigger`, `itrigger`
 
 (accessed by `tdata1`)
-| The M, VS, and VU fields of `sireg` are read-only 0
+| The M field of `sireg` is read-only 0
 | The S field of `vsireg` accesses `tdata1`.VS +
 The U field of `vsireg` accesses `tdata1`.VU +
 The M, VS, and VU fields of `vsireg` are read-only 0
@@ -65,7 +65,7 @@ When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode
 * S/HS-mode with `mdbgen`=0 and `SEDBGEN`=0.
 * VS-mode with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
 
-For accesses meeting these conditions, `DMODE` and trigger state are readable and writable through any accessible trigger interface, including `uiselect`/`uireg*` when Sutcfg is implemented. The field mappings and access controls of the interface used still apply.
+For accesses meeting these conditions, `DMODE` and trigger state are readable and writable through any accessible trigger interface. VS-mode accesses to `sireg` through `sireg4` are substituted by Sscsrind to `vsireg` through `vsireg4`. The field mappings and access controls of the interface used still apply.
 
 [[trigger-context-switching,Trigger context switching]]
 [NOTE]

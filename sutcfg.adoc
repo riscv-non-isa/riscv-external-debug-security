@@ -38,7 +38,7 @@ While `uiselect` holds the trigger access value, `DMODE` and trigger state are r
 
 * M-mode accesses with `mdbgen`=0.
 * S/HS-mode accesses with `mdbgen`=0 and `SEDBGEN`=0.
-* VS-mode accesses with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
+* VS-mode accesses with `mdbgen`=0, `SEDBGEN`=0, `UEDBGEN`=0, and `VSEDBGEN`=0.
 
 For all other accesses when the hart is not in Debug Mode, if the selected trigger has `tdata1`.DMODE=1, these registers read 0 and writes are ignored. All accesses remain subject to the field modifications in <<utrig-access>> and the access control in <<utrig-access-control>>.
 
@@ -58,8 +58,6 @@ When Smstateen is implemented and `uiselect` holds the trigger access value, acc
 | U-mode, without S-mode | `mstateen0`.TR
 | VU-mode | `mstateen0`.TR, `hstateen0`.TR, and `sstateen0`.TR
 |===
-
-All applicable UCSRIND bits must also be 1, as defined by <<sucsrind, Sucsrind>>. These conditions enable access through the user-level interface regardless of which privilege mode uses it; the `DMODE` rules in <<utrig-dmode>> still apply.
 
 The applicable TR bits are checked in machine, hypervisor, then supervisor order. If a checked bit is 0, the access raises an illegal-instruction exception for `mstateen0`, a virtual-instruction exception for `hstateen0`, or, for `sstateen0`, an illegal-instruction exception from U-mode and a virtual-instruction exception from VU-mode.
 
