@@ -6,13 +6,11 @@ This appendix lists valid external debug and trace extension combinations for th
 
 === External Debug Security Extension Combinations
 
-Table <<validimplcomb>> shows valid external debug extension combinations for different architectures:
-
 [[validimplcomb]]
 .Valid External Debug Extension Combinations
 [cols="25%,75%", options="header"]
 |=====================================================================
-| Architecture    | Valid Debug Extension Combinations           
+| Architecture    | Valid Debug Extension Combinations
 | M-only          | • Smmedbgsec
 | M/U             | • Smmedbgsec +
                     • Smmedbgsec + Smuedbgsec
@@ -62,7 +60,7 @@ M-mode software should:
 1. Initialize debug/trace security policy for lower privilege modes based on security requirements.
 2. Provide interfaces for dynamic debug/trace security policy updates (e.g., through SBI calls from lower privilege modes).
 3. Save and restore debug/trace security policies when switching between supervisor software contexts.
-4. Save and restore trigger context (using DMODE access when `mdbgen`=0) during supervisor software context switches to prevent side-channel attacks.
+4. Manage trigger context as described in <<trigger-context-switching>> when switching external debug policy.
 5. When Smtdeleg or Sutcfg is implemented, set `mstateen0`.TR when prepared to delegate trigger access to less privileged modes.
 
 === S/HS-mode Management
@@ -72,7 +70,7 @@ S/HS-mode software is responsible for managing the debug/trace security policy f
 1. Call M-mode to apply the debug/trace security policy before launching an application or VM.
 2. Provide interfaces to handle dynamic debug/trace security policy update requests (e.g., SBI calls from VMs) and call M-mode to apply the security policy accordingly.
 3. Save and restore debug/trace security policies when switching between applications or VMs.
-4. When Smtdeleg is implemented and external debug is disallowed for S/HS-mode (`mdbgen`=0 and `SEDBGEN`=0), save and restore the trigger context of applications and VMs, including triggers with `DMODE`=1, through `sireg*` and `vsireg*` (<<sstcfg-dmode>>).
+4. Manage trigger context as described in <<trigger-context-switching>> when switching external debug policy.
 5. When Sutcfg is implemented, set `sstateen0`.TR when prepared to delegate trigger access to U-mode.
 
 === VS-mode Management
@@ -81,11 +79,8 @@ VS-mode software is responsible for managing the debug/trace security policy for
 
 1. Call S/HS-mode to apply the debug/trace security policy before launching an application.
 2. Save and restore debug/trace security policies when switching between applications.
-3. When Sutcfg is implemented, set `sstateen0`.TR when prepared to delegate trigger access to VU-mode.
-
-=== Restoring a Trigger
-
-To restore a trigger, software writes 0 to `tdata1` (or `sireg`/`vsireg`), then writes `tdata2` and `tdata3`, and then writes the final `tdata1` value, as described for Sdtrig cite:[dbgspec].
+3. Manage trigger context as described in <<trigger-context-switching>> when switching external debug policy.
+4. When Sutcfg is implemented, set `sstateen0`.TR when prepared to delegate trigger access to VU-mode.
 
 [appendix]
 == Execution-Based Implementation with Sdsec

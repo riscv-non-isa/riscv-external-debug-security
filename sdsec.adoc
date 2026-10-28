@@ -165,7 +165,7 @@ When `mdbgen` is set to 0 and the hart is running in M-mode, external debug is d
 - The external trigger outputs (with ACTION=8/9) will not match or fire.
 - Accesses to M-mode accessible CSRs (e.g., `dcsr`, `dpc`, and `dscratch0/1`) will fail and `abstractcs`.CMDERR is set to 3 (exception). 
 - The configuration in `dcsr` will be ignored as if it were 0.
-- DMODE is read/write for accesses from M-mode when Sdtrig is implemented.
+- `DMODE` is read/write for accesses from M-mode when Sdtrig is implemented.
 
 [NOTE]
 M-mode is given write access to DMODE when `mdbgen` is 0 to allow M-mode software to save and restore trigger context at S/HS-mode software boundaries. This capability is necessary to prevent triggers from serving as a side-channel attack vector against S/HS-mode software where external debugging is disallowed. Without this, an external debugger could indirectly observe states (such as PC and data addresses) from the debug-disallowed software, potentially leading to information leakage or Denial of Service (DoS). By enabling M-mode to switch trigger contexts at privilege mode boundaries, such attacks can be prevented. When `mdbgen` is 1, DMODE remains accessible only from Debug Mode.
@@ -206,7 +206,7 @@ When `SEDBGEN` is set to 0 and the hart is running in S/HS-mode, external debug 
 - The external trigger outputs (with ACTION=8/9) will not match or fire while in S/HS-mode.
 - Accesses to S/HS-mode accessible CSRs (e.g., `sdcsr` and `sdpc`) will fail and `abstractcs`.CMDERR is set to 3 (exception).
 - The configuration visible in `sdcsr` will be ignored as if it were 0.
-- DMODE is read/write for accesses from S/HS-mode through `sireg*` and `vsireg*` when Smtdeleg is implemented, as specified in <<sstcfg-dmode>>.
+- `DMODE` in trigger state may be read/write from S/HS-mode, as specified in <<sstcfg-dmode>>.
 
 When `SEDBGEN` is set to 0 and the hart is running in a debug-allowed lower privilege mode (e.g., U-mode), the following restrictions apply:
 
@@ -310,6 +310,7 @@ When `VSEDBGEN` is set to 0 and the hart is running in VS-mode, external debug i
 - The external trigger outputs (with ACTION=8/9) will not match or fire while in VS-mode.
 - Accesses to VS-mode accessible CSRs (e.g., `sdcsr` and `sdpc`) will fail and `abstractcs`.CMDERR is set to 3 (exception).
 - The configuration visible to VS-mode through `sdcsr` will be ignored as if it were 0.
+- `DMODE` in trigger state may be read/write from VS-mode, as specified in <<sstcfg-dmode>>.
 
 When `VSEDBGEN` is set to 0 and the hart is running in a debug-allowed VU-mode, the following restrictions apply:
 

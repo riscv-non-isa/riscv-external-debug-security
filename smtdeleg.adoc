@@ -26,7 +26,7 @@ Similarly, when `vsiselect` holds the trigger access value, the `vsireg*` regist
 Attempts to access `sireg6` while `siselect` holds the trigger access value, or `vsireg6` while `vsiselect` holds the trigger access value, raise an illegal-instruction exception.
 
 [NOTE]
-`sireg5` and `vsireg5` access the one trigger selection index of the hart, so software that changes it saves and restores it as it does `tselect`. Placing the index in `sireg5` instead of a new `stselect` CSR uses no direct CSR address, and selecting a trigger needs no additional `siselect` write.
+Trigger interfaces follow the normal CSR privilege and virtualization rules. Software may use any accessible interface, subject to that interface's field mappings and access controls. For example, the S/HS-mode can access trigger state through `sireg*` and `vsireg*` while `siselect` and `vsiselect` hold the trigger access value.
 
 [[sstcfg-field-mods]]
 === Trigger State Access Modifications
@@ -53,42 +53,47 @@ The M, VS, and VU fields of `vsireg` are read-only 0
 | MHVALUE and MHSELECT are read-only 0
 |===
 
-Through `sireg*` and `vsireg*`, a trigger whose `tdata1`.TYPE is not listed above and is not 15 (disabled) reads 0, and writes to it are ignored. `tdata1`.TYPE is WARL and can select only a listed type or 15.
+The trigger types supported through `sireg*` and `vsireg*` are `mcontrol6`, `icount`, `etrigger`, `itrigger`, and disabled (TYPE=15). If the selected trigger has any other type, accesses to its trigger state read 0 and writes are ignored.
 
-[NOTE]
-The bit positions for the M, S, U, VS, and VU fields vary based on the trigger type specified by `tdata1`.TYPE; see _The RISC-V Debug Specification_ cite:[dbgspec].
-
-[NOTE]
-VS-mode runs a guest OS that uses the S and U fields of `vsireg` for its own kernel and applications. The hart has no further virtualization level for the VS and VU fields of `vsireg` to control.
-
-[NOTE]
-A hypervisor enables trigger match in VS-mode or VU-mode through `vsiselect`/`vsireg*`. This simplifies support for nested virtualization. A nested hypervisor (running in VS-mode) that configures triggers to match in its guest attempts to access `vsiselect`/`vsireg*`, which traps to HS-mode, so the L0 hypervisor (running in HS-mode) can emulate the desired behavior.
 
 [[sstcfg-dmode]]
 === DMODE
 
-When `tdata1`.DMODE=1 for the selected trigger, the trigger is reserved for Debug Mode use. In that case, when the hart is not in Debug Mode, `sireg` through `sireg4` read 0 and writes to them are ignored while `siselect` holds the trigger access value, and `vsireg` through `vsireg4` read 0 and writes to them are ignored while `vsiselect` holds the trigger access value.
+When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode, `sireg` through `sireg4` and `vsireg` through `vsireg4` read 0 and writes are ignored while their corresponding select register holds the trigger access value, unless the access is from:
 
-When `mdbgen`=0 and `SEDBGEN`=0, S/HS-mode accesses to `sireg` through `sireg4` and HS-mode accesses to `vsireg` through `vsireg4` are an exception to this rule. These accesses read `DMODE` and the trigger state, and they can write `DMODE` and the trigger state, as M-mode can through `tdata1` through `tdata3` when `mdbgen`=0 (<<mdbgctl>>). This lets S/HS-mode software save and restore the trigger context of less-privileged software. These accesses remain subject to the access control in <<sstcfg-access-control>>.
+* M-mode with `mdbgen`=0 (<<mdbgctl>>).
+* S/HS-mode with `mdbgen`=0 and `SEDBGEN`=0.
+* VS-mode with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
+
+For accesses meeting these conditions, `DMODE` and trigger state are readable and writable through any accessible trigger interface, including `uiselect`/`uireg*` when Sutcfg is implemented. The field mappings and access controls of the interface used still apply.
+
+[[trigger-context-switching,Trigger context switching]]
+[NOTE]
+====
+Allowing read/write when `DMODE`=1 is to enable trigger context switching. Saving and restoring trigger context is required for policy isolation when the applicable Secure Debug and trigger delegation extensions are implemented, triggers are delegated to the directly less-privileged implemented mode, external debug is allowed for that mode in at least one context, and switching contexts changes the external debug policy.
+
+The software responsible for switching that trigger context is:
+
+* M-mode for S/HS-mode, or for U-mode when S-mode is not implemented.
+* S/HS-mode for U-mode and VS-mode.
+* VS-mode for VU-mode.
+
+When the external debug policy is uniform across those contexts, trigger save and restore can be skipped for policy isolation.
+====
 
 [[sstcfg-access-control]]
 === Supervisor and Virtual Supervisor Trigger State Access Control
 
-When Smstateen is implemented, the `mstateen0`.TR bit controls access to trigger state from privilege modes less privileged than M-mode. When `mstateen0`.TR=0 and the privilege mode is less privileged than M-mode, attempts to access `sireg` through `sireg5` while `siselect` holds the trigger access value, or `vsireg` through `vsireg5` while `vsiselect` holds the trigger access value, raise an illegal-instruction exception.
+When Smstateen is implemented, `mstateen0`.TR=1 delegates trigger access to S/HS-mode. If S-mode is not implemented, it instead delegates trigger access to U-mode through Sutcfg (<<utrig-access-control>>). When `mstateen0`.TR=0, S/HS-mode accesses to `sireg` through `sireg5` or `vsireg` through `vsireg5` raise an illegal-instruction exception while the corresponding select register holds the trigger access value.
 
-If the H extension is implemented, the `hstateen0`.TR bit controls access to trigger state when V=1. `hstateen0`.TR is read-only 0 when `mstateen0`.TR=0. When `mstateen0`.TR=1 and `hstateen0`.TR=0, attempts from VS-mode to access `sireg` through `sireg5` (really `vsireg` through `vsireg5`) while `vsiselect` holds the trigger access value raise a virtual-instruction exception.
+If the H extension is implemented, `hstateen0`.TR=1 delegates trigger access from HS-mode to VS-mode, provided `mstateen0`.TR=1. VS-mode accesses to `sireg` through `sireg5` are substituted by Sscsrind to `vsireg` through `vsireg5`. While `vsiselect` holds the trigger access value, these accesses raise an illegal-instruction exception if `mstateen0`.TR=0, or a virtual-instruction exception if `mstateen0`.TR=1 and `hstateen0`.TR=0. `hstateen0`.TR is read-only 0 when `mstateen0`.TR=0.
+
+These enables remain subject to the CSR privilege rules, other applicable state-enable controls, and the `DMODE` rules in <<sstcfg-dmode>>.
 
 The TR bit is bit 3 in `mstateen0` and `hstateen0`. The combination of Sstcfg and Ssstateen incorporates the TR bit of `hstateen0` but not that of `mstateen0`, since machine-level CSRs are not visible to supervisor level.
 
 [NOTE]
 See the Sscsrind specification cite:[indirectcsr] for how bit 60 (CSRIND) in `mstateen0` and `hstateen0` can also restrict access to `siselect`/`sireg*` and `vsiselect`/`vsireg*` from privilege modes less privileged than M-mode.
-
-[NOTE]
-TR delegates all triggers at once. While TR=1, the triggers are used by the less-privileged mode, and higher-privilege software accesses them only to save and restore that mode's trigger context. If selective delegation is needed in the future, per-trigger delegation registers (for example `tdelegX` and `htdelegX`) could be defined.
-
-=== Debugger Access
-
-When Smsedbgsec is implemented, `mdbgen`=0, and `SEDBGEN`=1, an external debugger with S/HS-mode debug access privilege accesses triggers through `siselect`/`sireg*`. When Smvsedbgsec is implemented, `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=1, an external debugger with VS-mode debug access privilege accesses triggers through `siselect`/`sireg*` (really `vsiselect`/`vsireg*`). An S/HS-mode debugger can also access `vsiselect`/`vsireg*` directly to configure triggers for VS-mode and VU-mode. These accesses are subject to the access control in <<sstcfg-access-control>>, so the debugger can access triggers only when the state-enable bits permit the access. In Debug Mode, `DMODE` is writable as specified by Sdtrig, so the debugger can program triggers with `ACTION`=1.
 
 === Dependencies
 
