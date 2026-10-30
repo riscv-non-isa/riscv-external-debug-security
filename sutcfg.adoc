@@ -1,0 +1,75 @@
+[[sutcfg]]
+== Sutcfg (ISA Extension)
+
+The Sutcfg extension lets U-mode and VU-mode access Sdtrig cite:[dbgspec] triggers through the user-level indirect CSR interface defined by <<sucsrind, Sucsrind>>. Sutcfg requires Sucsrind. When S-mode is implemented, Sutcfg also requires <<smtdeleg, Smtdeleg and Sstcfg>>. Sutcfg is not a member of the Secure Debug or Secure Trace families.
+
+[[utrig-access]]
+=== User Trigger Access
+
+The `uiselect` value for trigger access is the trigger access value defined in <<trig-access-value>>. While `uiselect` holds the trigger access value, `uireg` through `uireg5` access the same state as `sireg` through `sireg5` in <<trig-access-value>>, with the field modifications below. Attempts to access `uireg6` while `uiselect` holds the trigger access value raise an illegal-instruction exception.
+
+.User Trigger CSR Field Modifications
+[cols="30%,35%,35%", options="header"]
+|===
+| Sdtrig Register | Accesses with V=0 | Accesses with V=1
+
+| `mcontrol6`, `icount`
+
+(accessed by `tdata1`)
+| The M, S, VS, and VU fields of `uireg` are read-only 0
+| The U field of `uireg` accesses `tdata1`.VU +
+The M, S, VS, and VU fields of `uireg` are read-only 0
+
+| `textra32`, `textra64`
+
+(accessed by `tdata3`)
+| MHVALUE, MHSELECT, SVALUE, SSELECT, and SBYTEMASK are read-only 0
+| MHVALUE, MHSELECT, SVALUE, SSELECT, and SBYTEMASK are read-only 0
+|===
+
+The trigger types supported through `uireg*` are `mcontrol6`, `icount`, and disabled (TYPE=15). If the selected trigger has any other type, accesses to its trigger state read 0 and writes are ignored.
+[NOTE]
+`itrigger` and `etrigger` are not available through `uireg*`. Sdtrig fires them just before the first instruction of a trap handler, and U-mode and VU-mode do not execute trap handlers.
+
+[[utrig-dmode]]
+=== DMODE
+
+While `uiselect` holds the trigger access value, `DMODE` and trigger state are readable and writable through `uireg` through `uireg4`, even when the hart is not in Debug Mode, for:
+
+* M-mode accesses with `mdbgen`=0.
+* S/HS-mode accesses with `mdbgen`=0 and `SEDBGEN`=0.
+* VS-mode accesses with `mdbgen`=0, `SEDBGEN`=0, `UEDBGEN`=0, and `VSEDBGEN`=0.
+
+For all other accesses when the hart is not in Debug Mode, if the selected trigger has `tdata1`.DMODE=1, these registers read 0 and writes are ignored. All accesses remain subject to the field modifications in <<utrig-access>> and the access control in <<utrig-access-control>>.
+
+[[utrig-access-control]]
+=== User Trigger State Access Control
+
+When Smstateen is implemented and `uiselect` holds the trigger access value, access to trigger state through `uireg` through `uireg5` is enabled when *all* TR bits applicable to the accessing privilege mode are 1:
+
+.Required TR Enables for the User Trigger Interface
+[cols="35%,65%", options="header"]
+|===
+| Accessing Privilege Mode | TR Bits Required to Be 1
+| M-mode | None
+| S/HS-mode | `mstateen0`.TR
+| VS-mode | `mstateen0`.TR and `hstateen0`.TR
+| U-mode, with S-mode implemented | `mstateen0`.TR and `sstateen0`.TR
+| U-mode, without S-mode | `mstateen0`.TR
+| VU-mode | `mstateen0`.TR, `hstateen0`.TR, and `sstateen0`.TR
+|===
+
+The applicable TR bits are checked in machine, hypervisor, then supervisor order. If a checked bit is 0, the access raises an illegal-instruction exception for `mstateen0`, a virtual-instruction exception for `hstateen0`, or, for `sstateen0`, an illegal-instruction exception from U-mode and a virtual-instruction exception from VU-mode.
+
+When S-mode is not implemented, `mstateen0`.TR alone controls U-mode access. `mstateen0`.TR and `hstateen0`.TR are defined in <<smtdeleg>>. The TR bit is bit 3 in `sstateen0`. The combination of Sutcfg and Ssstateen incorporates the TR bit of `sstateen0`.
+
+=== Summary of New State
+
+Sutcfg adds no CSRs. It uses the trigger access value in the `uiselect` select space and the following state-enable bit. When S-mode is not implemented, Sutcfg also defines `mstateen0`.TR (bit 3), as specified in <<smtdeleg>>.
+
+.New Smstateen Bits Introduced by Sutcfg
+[cols="30%,20%,50%", options="header"]
+|===
+| Register | Bit | Purpose
+| `sstateen0` | 3 (TR) | Controls U-mode and VU-mode trigger access
+|===
