@@ -71,7 +71,7 @@ S/HS-mode software is responsible for managing the debug/trace security policy f
 2. Provide interfaces to handle dynamic debug/trace security policy update requests (e.g., SBI calls from VMs) and call M-mode to apply the security policy accordingly.
 3. Save and restore debug/trace security policies when switching between applications or VMs.
 4. Manage trigger context as described in <<trigger-context-switching>> when switching external debug policy.
-5. When Sstcfg or Sutcfg is implemented, set `hstateen0`.TR and/or `sstateen0`.TR when prepared to delegate trigger access to VS-mode, U-mode, or VU-mode.
+5. When the H extension and Sstcfg are implemented, set `hstateen0`.TR when prepared to delegate trigger access to VS-mode. This bit is also required for VU-mode trigger access when Sutcfg is implemented; VS-mode must additionally set `sstateen0`.TR, as described below. When Sutcfg is implemented, set `sstateen0`.TR when prepared to delegate trigger access to U-mode.
 
 === VS-mode Management
 
