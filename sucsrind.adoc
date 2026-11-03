@@ -96,5 +96,5 @@ Sucsrind depends on the following extensions:
 | Register | Bit | Purpose
 | `mstateen0` | 4 (UCSRIND) | Controls access to `uiselect` and `uireg*` below M-mode
 | `hstateen0` | 4 (UCSRIND) | Controls access to `uiselect` and `uireg*` in VS/VU-mode when V=1
-| `sstateen0` | 4 (UCSRIND) | Controls U-mode access to `uiselect` and `uireg*`
+| `sstateen0` | 4 (UCSRIND) | Controls U-mode and VU-mode access to `uiselect` and `uireg*`
 |===

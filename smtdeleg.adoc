@@ -6,7 +6,7 @@ Sdtrig cite:[dbgspec] CSRs are accessible only with M-mode privilege. A self-hos
 The Smtdeleg extension lets S/HS-mode and VS-mode access Sdtrig triggers through the indirect CSR interface (Sscsrind) cite:[indirectcsr], and controls that access with the state-enable extensions (Smstateen/Ssstateen) cite:[smstateen]. Sstcfg comprises the supervisor components of Smtdeleg. Smtdeleg and Sstcfg are not members of the Secure Debug or Secure Trace families.
 
 [NOTE]
-Trigger access delegation is all-or-none: the state-enable controls do not select individual triggers. When external debug is enabled, software shall not delegate trigger access to a mode less privileged than the <<dbgaccpriv, debug access privilege>>. This leaves the mode at the debug access privilege able to manage triggers for both external and self-hosted debug. When software delegates trigger access, it is expected to provide a clean trigger state for the delegated mode, which then has full control over that state. Sharing trigger state between the delegating and delegated modes, or between contexts managed by the delegating mode, is entirely software-managed. If software chooses to share trigger state, it is responsible for saving the state before switching away from a context and restoring it when that context resumes.
+Trigger access delegation is all-or-none: the state-enable controls do not select individual triggers. When external debug is enabled, software is not expected to delegate trigger access to a mode less privileged than the <<dbgaccpriv, debug access privilege>>. This leaves the mode at the debug access privilege able to manage triggers for both external and self-hosted debug. When software delegates trigger access, it is expected to provide a clean trigger state for the delegated mode, which then has full control over that state. Sharing trigger state between the delegating and delegated modes, or between contexts managed by the delegating mode, is entirely software-managed. If software chooses to share trigger state, it is responsible for saving the state before switching away from a context and restoring it when that context resumes.
 
 [[trig-access-value]]
 === Supervisor and Virtual Supervisor Trigger Access
@@ -29,7 +29,7 @@ Similarly, when `vsiselect` holds the trigger access value, the `vsireg*` regist
 Attempts to access `sireg6` while `siselect` holds the trigger access value, or `vsireg6` while `vsiselect` holds the trigger access value, raise an illegal-instruction exception.
 
 [NOTE]
-Trigger interfaces follow the normal CSR privilege and virtualization rules. Software may use any accessible interface, subject to that interface's field mappings and access controls. For example, the S/HS-mode can access trigger state through `sireg*` and `vsireg*` while `siselect` and `vsiselect` hold the trigger access value.
+Trigger interfaces follow the normal CSR privilege and virtualization rules. Software may use any accessible interface, subject to that interface's field mappings and access controls. For example, S/HS-mode can access trigger state through `sireg*` and `vsireg*` while `siselect` and `vsiselect` hold the trigger access value.
 
 [[sstcfg-field-mods]]
 === Trigger State Access Modifications
