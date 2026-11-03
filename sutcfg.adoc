@@ -3,6 +3,9 @@
 
 The Sutcfg extension lets U-mode and VU-mode access Sdtrig cite:[dbgspec] triggers through the user-level indirect CSR interface defined by <<sucsrind, Sucsrind>>. Sutcfg requires Sucsrind. When S-mode is implemented, Sutcfg also requires <<smtdeleg, Smtdeleg and Sstcfg>>. Sutcfg is not a member of the Secure Debug or Secure Trace families.
 
+[NOTE]
+Trigger access delegation to U-mode and VU-mode is managed by the higher-privileged mode, as described in the note in <<smtdeleg>>.
+
 [[utrig-access]]
 === User Trigger Access
 

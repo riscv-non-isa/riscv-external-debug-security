@@ -5,6 +5,9 @@ Sdtrig cite:[dbgspec] CSRs are accessible only with M-mode privilege. A self-hos
 
 The Smtdeleg extension lets S/HS-mode and VS-mode access Sdtrig triggers through the indirect CSR interface (Sscsrind) cite:[indirectcsr], and controls that access with the state-enable extensions (Smstateen/Ssstateen) cite:[smstateen]. Sstcfg comprises the supervisor components of Smtdeleg. Smtdeleg and Sstcfg are not members of the Secure Debug or Secure Trace families.
 
+[NOTE]
+Trigger access delegation is all-or-none: the state-enable controls do not select individual triggers. When external debug is enabled, software shall not delegate trigger access to a mode less privileged than the <<dbgaccpriv, debug access privilege>>. This leaves the mode at the debug access privilege able to manage triggers for both external and self-hosted debug. When software delegates trigger access, it is expected to provide a clean trigger state for the delegated mode, which then has full control over that state. Sharing trigger state between the delegating and delegated modes, or between contexts managed by the delegating mode, is entirely software-managed. If software chooses to share trigger state, it is responsible for saving the state before switching away from a context and restoring it when that context resumes.
+
 [[trig-access-value]]
 === Supervisor and Virtual Supervisor Trigger Access
 
@@ -53,6 +56,9 @@ The M, VS, and VU fields of `vsireg` are read-only 0
 | MHVALUE and MHSELECT are read-only 0
 |===
 
+[NOTE]
+Because the delegating mode is expected to provide a clean trigger state before delegation, fields marked read-only 0 are effectively zero when accessed by the delegated mode.
+
 The trigger types supported through `sireg*` and `vsireg*` are `mcontrol6`, `icount`, `etrigger`, `itrigger`, and disabled (TYPE=15). If the selected trigger has any other type, accesses to its trigger state read 0 and writes are ignored.
 
 
@@ -63,7 +69,7 @@ When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode
 
 * M-mode with `mdbgen`=0 (<<mdbgctl>>).
 * S/HS-mode with `mdbgen`=0 and `SEDBGEN`=0.
-* VS-mode with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
+* VS-mode with `mdbgen`=0, `SEDBGEN`=0, `UEDBGEN`=0, and `VSEDBGEN`=0.
 
 For accesses meeting these conditions, `DMODE` and trigger state are readable and writable through any accessible trigger interface. VS-mode accesses to `sireg` through `sireg4` are substituted by Sscsrind to `vsireg` through `vsireg4`. The field mappings and access controls of the interface used still apply.
 
