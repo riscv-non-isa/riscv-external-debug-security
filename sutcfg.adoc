@@ -41,7 +41,7 @@ While `uiselect` holds the trigger access value, `DMODE` and trigger state are r
 
 * M-mode accesses with `mdbgen`=0.
 * S/HS-mode accesses with `mdbgen`=0 and `SEDBGEN`=0.
-* VS-mode accesses with `mdbgen`=0, `SEDBGEN`=0, `UEDBGEN`=0, and `VSEDBGEN`=0.
+* VS-mode accesses with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
 
 For all other accesses when the hart is not in Debug Mode, if the selected trigger has `tdata1`.DMODE=1, these registers read 0 and writes are ignored. All accesses remain subject to the field modifications in <<utrig-access>> and the access control in <<utrig-access-control>>.
 
