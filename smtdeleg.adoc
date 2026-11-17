@@ -69,7 +69,7 @@ When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode
 
 * M-mode with `mdbgen`=0 (<<mdbgctl>>).
 * S/HS-mode with `mdbgen`=0 and `SEDBGEN`=0.
-* VS-mode with `mdbgen`=0, `SEDBGEN`=0, `UEDBGEN`=0, and `VSEDBGEN`=0.
+* VS-mode with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
 
 For accesses meeting these conditions, `DMODE` and trigger state are readable and writable through any accessible trigger interface. VS-mode accesses to `sireg` through `sireg4` are substituted by Sscsrind to `vsireg` through `vsireg4`. The field mappings and access controls of the interface used still apply.
 
@@ -84,7 +84,8 @@ The software responsible for switching that trigger context is:
 * S/HS-mode for U-mode and VS-mode.
 * VS-mode for VU-mode.
 
-When the external debug policy is uniform across those contexts, trigger save and restore can be skipped for policy isolation.
+S/HS-mode must save and restore trigger context at U-mode/VS-mode boundaries when any of `UEDBGEN`, `VSEDBGEN`, or `VUEDBGEN` is 1.
+This prevents VS-mode from modifying U-mode's trigger state when both U-mode and VU-mode debug are enabled.
 ====
 
 [[sstcfg-access-control]]
