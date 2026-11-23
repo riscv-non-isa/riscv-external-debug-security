@@ -69,22 +69,20 @@ When `tdata1`.DMODE=1 for the selected trigger and the hart is not in Debug Mode
 
 * M-mode with `mdbgen`=0 (<<mdbgctl>>).
 * S/HS-mode with `mdbgen`=0 and `SEDBGEN`=0.
-* VS-mode with `mdbgen`=0, `SEDBGEN`=0, `UEDBGEN`=0, and `VSEDBGEN`=0.
+* VS-mode with `mdbgen`=0, `SEDBGEN`=0, and `VSEDBGEN`=0.
 
 For accesses meeting these conditions, `DMODE` and trigger state are readable and writable through any accessible trigger interface. VS-mode accesses to `sireg` through `sireg4` are substituted by Sscsrind to `vsireg` through `vsireg4`. The field mappings and access controls of the interface used still apply.
 
 [[trigger-context-switching,Trigger context switching]]
 [NOTE]
 ====
-Allowing read/write when `DMODE`=1 is to enable trigger context switching. Saving and restoring trigger context is required for policy isolation when the applicable Secure Debug and trigger delegation extensions are implemented, triggers are delegated to the directly less-privileged implemented mode, external debug is allowed for that mode in at least one context, and switching contexts changes the external debug policy.
-
-The software responsible for switching that trigger context is:
+Read/write access to `DMODE`=1 triggers outside Debug Mode enables higher-privilege software to save and restore trigger context across lower-privilege contexts:
 
 * M-mode for S/HS-mode, or for U-mode when S-mode is not implemented.
 * S/HS-mode for U-mode and VS-mode.
 * VS-mode for VU-mode.
 
-When the external debug policy is uniform across those contexts, trigger save and restore can be skipped for policy isolation.
+To maintain external debug policy isolation when triggers are delegated, the managing mode saves and restores trigger context whenever a context switch changes the external debug policy of a lower-privilege mode. S/HS-mode also saves and restores trigger context at U-mode/VS-mode boundaries when `mdbgen`=0, `SEDBGEN`=0, and any of `UEDBGEN`, `VSEDBGEN`, or `VUEDBGEN` is 1.
 ====
 
 [[sstcfg-access-control]]
